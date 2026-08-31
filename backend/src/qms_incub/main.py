@@ -1,8 +1,10 @@
-from fastapi import FastAPI
+from fastapi import BackgroundTasks, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from qms_incub.chat.service import answer_question
+from qms_incub.documents.batch import run_batch
+from qms_incub.documents.repository import list_all
 
 app = FastAPI(title="QMS Incub API")
 
@@ -46,3 +48,59 @@ def chat(request: ChatRequest) -> ChatResponse:
             for c in result.citations
         ],
     )
+
+
+class BatchRequest(BaseModel):
+    count: int = Field(default=5, gt=0, le=100)
+    seed: int = 0
+    table_row_min: int = Field(default=2, gt=0)
+    table_row_max: int = Field(default=6, gt=0)
+    flowchart_step_min: int = Field(default=2, gt=0)
+    flowchart_step_max: int = Field(default=6, gt=0)
+
+
+class BatchStartedResponse(BaseModel):
+    status: str
+    count: int
+
+
+@app.post("/documents/batch")
+def start_batch(request: BatchRequest, background_tasks: BackgroundTasks) -> BatchStartedResponse:
+    # Runs in the background (Starlette's threadpool) rather than blocking
+    # the request — a 20+ document batch (each doc: render, PDF export,
+    # Docling parse, embed) takes well over a typical request timeout. The
+    # ingestion status dashboard (GET /documents) is what you watch instead.
+    background_tasks.add_task(
+        run_batch,
+        count=request.count,
+        seed=request.seed,
+        table_row_range=(request.table_row_min, request.table_row_max),
+        flowchart_step_range=(request.flowchart_step_min, request.flowchart_step_max),
+    )
+    return BatchStartedResponse(status="started", count=request.count)
+
+
+class PolicyDocumentStatusOut(BaseModel):
+    id: str
+    title: str
+    origin: str
+    is_synthetic: bool
+    status: str
+    chunk_count: int | None
+    error: str | None
+
+
+@app.get("/documents")
+def get_documents() -> list[PolicyDocumentStatusOut]:
+    return [
+        PolicyDocumentStatusOut(
+            id=d.id,
+            title=d.title,
+            origin=d.origin,
+            is_synthetic=d.is_synthetic,
+            status=d.status,
+            chunk_count=d.chunk_count,
+            error=d.error,
+        )
+        for d in list_all()
+    ]

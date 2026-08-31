@@ -1,4 +1,4 @@
-.PHONY: up down seed test lint typecheck install install-hooks backend-dev frontend-dev
+.PHONY: up down migrate seed test lint typecheck install install-hooks backend-dev frontend-dev
 
 # One-command local bring-up (ADR-0005, ADR-0009): Postgres + Qdrant in
 # Docker, FastAPI backend and Svelte/Vite frontend on the host. Ctrl+C stops
@@ -7,6 +7,7 @@ up:
 	docker compose up -d postgres qdrant
 	@echo "Waiting for Postgres and Qdrant to be healthy..."
 	@until [ "$$(docker compose ps -q postgres | xargs docker inspect -f '{{.State.Health.Status}}')" = "healthy" ]; do sleep 1; done
+	$(MAKE) migrate
 	@trap 'kill 0' EXIT INT TERM; \
 	 (cd backend && uv run uvicorn qms_incub.main:app --reload --port 8000) & \
 	 (cd frontend && npm run dev) & \
@@ -14,6 +15,11 @@ up:
 
 down:
 	docker compose down
+
+# V5: applies Alembic migrations (needs Postgres up — `make up` calls this
+# automatically before starting the dev servers).
+migrate:
+	cd backend && uv run alembic upgrade head
 
 # V1 (SLICES.md § V1): builds the one hardcoded seed policy document,
 # exports it to PDF, and ingests it into Qdrant. Requires `make up` running

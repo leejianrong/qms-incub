@@ -9,14 +9,16 @@ built and how to work in the repo day to day.
 
 | Area | Status |
 |------|--------|
-| Backend (FastAPI) | V1 (RAG spike) built — see below. No data model/auth beyond that yet |
+| Backend (FastAPI) | V1 (RAG spike) + V5 (synthetic batch generation) built — see below |
 | V1: document engine (S4) | Block model (text/table/flowchart/image), Jinja2 HTML render, flowchart step-list → SVG (hand-rolled, no Mermaid CLI), WeasyPrint PDF export. One hardcoded seed document (`qms_incub.documents.seed`) — no composer UI yet (V4) |
-| V1: ingestion (S6) | `make seed` renders the seed doc, exports PDF, Docling-parses it, chunks (LlamaIndex `SentenceSplitter`), embeds (local HF `BAAI/bge-small-en-v1.5`), stores in Qdrant. Only the one seed doc — no publish workflow yet |
+| V1: ingestion (S6) | `make seed` renders the seed doc, exports PDF, Docling-parses it, chunks (LlamaIndex `SentenceSplitter`), embeds (local HF `BAAI/bge-small-en-v1.5`), stores in Qdrant. Idempotent per document ID — re-running clears old chunks first (`ingestion/pipeline.py`) |
 | V1: chat (S8) | `POST /chat` — vector retrieval + LLM call, citations derived from retrieved chunks (not parsed from model output). LLM provider swappable, see Secrets/Q37 |
-| Frontend (Svelte+Vite) | Walking skeleton — one page that calls `/health`; V1's chat UI not yet wired in (SLICES.md § V1 step 5) |
-| Database (PostgreSQL) | Runs via `make up`, no migrations/schema yet — V1 doesn't need it (no `Project`/`TodoItem` model yet) |
+| V5: batch generation (S5) | `qms_incub.documents.random_generator` produces N randomized documents (seeded, reproducible) from V1's exact block model/render/ingest path, flagged `is_synthetic`. `POST /documents/batch` kicks off a batch as a FastAPI background task |
+| V5: ingestion status (S6 dashboard) | `GET /documents` lists every `PolicyDocumentRow` (pending/embedded/failed, chunk count, error) — the first slice to touch the relational data model. Frontend dashboard polls this while anything is pending |
+| Frontend (Svelte+Vite) | Chat panel (V1) + "Generate synthetic variants" panel and status dashboard (V5, `lib/BatchDashboard.svelte`) |
+| Database (PostgreSQL) | `policy_documents` table only (V5) — Alembic-managed, see `backend/migrations/`. Not the full `Project`/`TodoItem`/`Standard`/`Clause`/`Requirement` model yet (V2/ADR-0008) |
 | Vector store (Qdrant) | In real use since V1 — collection `qms_incub_corpus`, see `qms_incub.rag_clients` |
-| Everything else in PLAN.md / SLICES.md (V2+) | **Not built yet.** |
+| Everything else in PLAN.md / SLICES.md (V2–V4, V6–V8) | **Not built yet.** |
 
 If you're about to implement a slice, check this table (and `git log`)
 before trusting a stale claim elsewhere that something is "done."
@@ -61,6 +63,14 @@ Run from the repo root unless noted.
 - `make seed` — builds V1's one hardcoded seed policy document, exports it
   to PDF, and ingests it into Qdrant. Needs `make up` running (Qdrant) —
   first run also downloads the embedding model.
+- `make migrate` — applies Alembic migrations against Postgres. `make up`
+  runs this automatically once Postgres is healthy, before starting the
+  dev servers.
+
+Backend-only, from `backend/`: `uv run alembic revision --autogenerate -m
+"..."` after changing a model in `models.py`, then `uv run alembic upgrade
+head` — review the generated migration before committing it, autogenerate
+doesn't catch everything (renames, some constraint changes).
 
 Backend-only, from `backend/`: `uv run pytest -q`, `uv run ruff check .`,
 `uv run mypy src`, `uv run uvicorn qms_incub.main:app --reload --port 8000`.

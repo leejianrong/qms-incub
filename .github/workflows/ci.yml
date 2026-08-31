@@ -25,6 +25,22 @@ jobs:
         image: qdrant/qdrant:latest
         ports:
           - 6333:6333
+      # V5: the batch-ingestion integration test needs a migrated Postgres
+      # to persist PolicyDocumentRow status. Port/credentials match
+      # docker-compose.yml and config.py's DATABASE_URL default.
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: qms_incub
+          POSTGRES_PASSWORD: qms_incub
+          POSTGRES_DB: qms_incub
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U qms_incub"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.0.1
@@ -35,6 +51,7 @@ jobs:
       - run: uv run ruff check .
       - run: uv run mypy src
       - run: uv run pytest -q
+      - run: uv run alembic upgrade head
       - run: uv run pytest -q -m integration
 
   frontend:
