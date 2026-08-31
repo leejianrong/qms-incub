@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Fast local gate — mirrors the cheap CI jobs (dev-playbook: ci-cd.md).
+# Only no-infra checks belong here: lint, type-check, the fast test layer.
+# Scoped exception: git push --no-verify (use sparingly, CI is still the
+# real gate).
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+echo "pre-push: lint"
+make lint
+
+echo "pre-push: typecheck"
+make typecheck
+
+echo "pre-push: test (fast layer)"
+make test
+
+echo "pre-push: all checks passed"

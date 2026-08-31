@@ -1,0 +1,28 @@
+# Python (backend)
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node (frontend) — frontend/ has its own .gitignore too, this covers
+# the case of running npm/vite from the repo root by mistake.
+node_modules/
+dist/
+dist-ssr/
+
+# Env files — never commit secrets/local overrides
+.env
+.env.local
+*.local
+
+# Editor/OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+
+# Logs
+*.log
