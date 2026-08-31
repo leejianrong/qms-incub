@@ -1,4 +1,8 @@
-.PHONY: up down migrate seed test lint typecheck install install-hooks backend-dev frontend-dev
+.PHONY: up down migrate seed batch test lint typecheck install install-hooks backend-dev frontend-dev
+
+# V5 batch defaults — override, e.g. `make batch COUNT=20 SEED=1`.
+COUNT ?= 5
+SEED ?= 0
 
 # One-command local bring-up (ADR-0005, ADR-0009): Postgres + Qdrant in
 # Docker, FastAPI backend and Svelte/Vite frontend on the host. Ctrl+C stops
@@ -26,6 +30,14 @@ migrate:
 # (Qdrant) and, for embeddings, a first-run HuggingFace model download.
 seed:
 	cd backend && uv run python -m qms_incub.seed_v1
+
+# V5 (SLICES.md § V5): generates COUNT randomized synthetic policy
+# documents and ingests them, for stress-testing the RAG pipeline locally.
+# Deliberately CLI-only — not part of the web app (real policy documents
+# are sensitive; synthetic ones are a local dev/test aid, not a feature
+# of the QMS platform itself). Requires `make up` running.
+batch:
+	cd backend && uv run python -m qms_incub.batch_v5 --count $(COUNT) --seed $(SEED)
 
 install:
 	cd backend && uv sync

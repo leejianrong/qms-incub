@@ -2,10 +2,9 @@
 
 A QMS tool for project managers at a large company: classify a software
 project, get a generated compliance todo list, upload proof you've done
-the work, and ask a chatbot grounded in the company's policy documents
-(including ones synthetically generated or imported to stress-test the RAG
-pipeline itself). Internal project — see below before you assume anything
-about scope is final.
+the work, and ask a chatbot grounded in the company's own policy
+documents. Internal project — see below before you assume anything about
+scope is final.
 
 ## Read this first
 
@@ -43,13 +42,14 @@ flowchart LR
     end
 ```
 
-V1 (the RAG spike) and V5 (synthetic batch generation) are built: a
-hardcoded policy document (and any number of randomized synthetic ones)
-generated, exported to PDF, ingested into Qdrant, queryable through a
-chat panel with citations, with an ingestion-status dashboard showing
-per-document pending/embedded/failed state. Everything else in
-PLAN.md/SLICES.md is still ahead — see `CLAUDE.md`'s build-status table
-for exactly what exists.
+V1 (the RAG spike) is built: a policy document generated, exported to
+PDF, ingested into Qdrant, and queryable through a chat panel with
+citations. Real company QMS documents are sensitive and not available
+yet, so V5 adds a local CLI (`make batch`) that generates synthetic
+policy documents to exercise the same pipeline — deliberately not part
+of the running app (ADR-0011). Everything else in PLAN.md/SLICES.md is
+still ahead — see `CLAUDE.md`'s build-status table for exactly what
+exists.
 
 ## Quick start
 
@@ -72,9 +72,17 @@ make seed
 
 Open http://localhost:5173, ask "Who is the approving authority for this
 policy?", and you should get a grounded answer citing the seeded document.
-Below the chat panel, try "Generate synthetic variants" to produce a batch
-of randomized documents and watch the ingestion status dashboard update.
 `make down` stops the containers; Ctrl+C stops the dev servers.
+
+To generate more test documents locally and stress-test ingestion
+(without any real, sensitive QMS content — see ADR-0011), run:
+
+```bash
+make batch COUNT=20 SEED=1
+```
+
+This prints a per-document status summary; it's CLI-only, not reachable
+through the app itself.
 
 ## Configuration
 

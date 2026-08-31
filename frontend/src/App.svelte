@@ -1,6 +1,5 @@
 <script lang="ts">
   import { resolveApiBase, fetchHealth, askChat, type ChatAnswer } from "./lib/api";
-  import BatchDashboard from "./lib/BatchDashboard.svelte";
 
   const apiBase = resolveApiBase(import.meta.env);
   const health = fetchHealth(apiBase);
@@ -68,8 +67,6 @@
       </div>
     {/if}
   </section>
-
-  <BatchDashboard {apiBase} />
 </main>
 
 <style>

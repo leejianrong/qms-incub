@@ -28,20 +28,27 @@ grounded in the company's policy corpus *and* the asking PM's own
 compliance state — "who is the approving authority for X" as much as "am I
 compliant yet". A QA-author role composes the canonical policy documents
 (text, tables, flowcharts, images) through a block-based generator that
-exports PDF, and the same generator can batch-produce synthetic variant
-documents to stress-test the RAG ingestion pipeline. The same corpus can
-also be grown by importing existing open-source QMS documents — real PDFs
-sourced from elsewhere — so the QA-author can switch between generating
-synthetic content and ingesting real-world documents as needed. Blog posts
-and FAQ entries are lighter-weight content feeding the same knowledge base
-as the chatbot.
+exports PDF. The same corpus can also be grown by importing existing
+open-source QMS documents — real PDFs sourced from elsewhere — so the
+QA-author can switch between generating synthetic content and ingesting
+real-world documents as needed. Blog posts and FAQ entries are
+lighter-weight content feeding the same knowledge base as the chatbot.
+
+Separately (and not part of the web app itself — ADR-0011), the same
+block engine can batch-produce randomized synthetic documents from a
+local CLI. Real company QMS documents are sensitive and not available
+during this build, so this is how the RAG pipeline gets exercised and
+validated before any real policy content is ingested.
 
 ## Users and actors
 
 - **Project Manager (PM)** — primary. Runs the wizard, works the todo list,
   uploads compliance artifacts, asks the chatbot.
 - **QA-author** — secondary. Authors policy documents, blog posts, and FAQ
-  entries; triggers synthetic batch generation for RAG testing.
+  entries.
+- **Developer** — non-product actor. Runs synthetic batch generation
+  locally (CLI, not the web app) to validate the RAG pipeline before real
+  policy documents are available (ADR-0011).
 - **RAG ingestion pipeline** — non-human actor, runs on every publish.
 - **OpenRouter LLM** — non-human actor, answers chat queries.
 - No reviewer/approver actor exists yet (see Out). Where that would create a
@@ -61,8 +68,9 @@ as the chatbot.
 - PM dashboard: todo list, compliance %, uploaded artifacts.
 - Block-based policy document composer (text / table / flowchart / image
   blocks) for the QA-author role, with PDF export.
-- Synthetic batch generation mode: produce N variant documents from the
-  same composer for the RAG test corpus.
+- Synthetic batch generation: a local CLI (not a web app feature —
+  ADR-0011) produces N variant documents from the same block engine, for
+  the RAG test corpus.
 - Import existing open-source QMS documents (real PDFs) into the same
   corpus, with a switch between generating and importing (ADR-0007).
 - RAG ingestion pipeline for published policy documents (generated or
@@ -102,7 +110,7 @@ as the chatbot.
 | R2 | Todo list is auto-generated from the risk tier | Must-have |
 | R3 | PM can upload an artifact against a todo item; it self-attests to Complied | Must-have |
 | R4 | QA-author adds a policy document to the corpus either by composing it from text/table/flowchart/image blocks and exporting PDF, or by importing an existing open-source QMS PDF, switching between the two | Must-have |
-| R5 | QA-author triggers synthetic batch generation of N variant documents for the RAG test corpus | Must-have |
+| R5 | Synthetic batch generation of N variant documents for the RAG test corpus, run locally via CLI (ADR-0011) — not a QA-author-facing web app feature | Must-have |
 | R6 | Published policy documents (generated or imported), blog posts, and FAQ entries are ingested automatically | Must-have |
 | R7 | Chatbot answers grounded questions using the corpus plus the asking PM's own compliance state, with citations | Must-have |
 | R8 | Blog and FAQ sections exist as simple admin-authored content | Must-have |
@@ -115,7 +123,7 @@ as the chatbot.
 | S2 | Todo generation: risk tier → matching `Requirement` rows (under user-defined Standard → Clause) → TodoItem rows on the Project, each linked back to its Requirement | ADR-0008 |
 | S3 | Artifact compliance: upload → Artifact record linked to TodoItem → status flips to Complied (self-attestation, no gate) | ADR-0002 |
 | S4 | Document generation engine: block model (text/table/flowchart/image) → HTML render → HTML-to-PDF export; flowchart blocks render via a structured DSL to SVG before export | ADR-0001, ADR-0006 |
-| S5 | Synthetic batch mode: parametrized generator reuses S4's block engine to produce N randomized documents, flagged synthetic, auto-published | ADR-0001 |
+| S5 | Synthetic batch mode: parametrized generator reuses S4's block engine to produce N randomized documents, flagged synthetic, auto-published. Local CLI only, not exposed via the web app's UI or API (ADR-0011) | ADR-0001, ADR-0011 |
 | S6 | RAG ingestion: on publish (policy doc / blog post / FAQ entry, generated or imported) → chunk → embed → store with source-type + doc-id metadata | ADR-0003 |
 | S7 | Document import: QA-author uploads an existing PDF + attribution → stored as a `PolicyDocument` with `origin = imported` (no blocks) → S6 ingests its extracted text directly | ADR-0007 |
 | S8 | RAG chatbot: query → vector retrieval (top-k) + structured injection of the asking PM's project/todo/artifact state → OpenRouter LLM prompt → grounded answer with citations | ADR-0003 |
@@ -133,10 +141,8 @@ as the chatbot.
 | Artifact upload control | Todo item row | S3 |
 | Block-based document composer | QA-author document editor | S4 |
 | PDF export button | Document composer | S4 |
-| "Generate synthetic variants" panel | QA-author tools | S5 |
 | Import document (upload PDF + attribution) | QA-author tools, same document list as composer | S7 |
 | Generate / Import switch | Document list toolbar | S4, S7 |
-| Ingestion status dashboard | QA-author tools | S6 |
 | Blog list + post view | Blog section | S9 |
 | FAQ list | FAQ section | S9 |
 | Chat panel with citations | Persistent panel on PM dashboard | S8 |
@@ -151,6 +157,8 @@ as the chatbot.
 | LlamaIndex ingestion/query pipeline | library, orchestrates S6/S8 | S6, S8 |
 | OpenRouter API client | handler | S8 |
 | HTML-to-PDF renderer | service | S4, S5 |
+| Synthetic batch-generation CLI (`make batch`) | local dev tool, not part of the web app (ADR-0011) | S5 |
+| Ingestion status output (CLI, per batch run) | local dev tool, not part of the web app (ADR-0011) | S5, S6 |
 | `make up` / `make seed` (Makefile) | one-command local bring-up | all — ADR-0005 |
 
 ## Implementation decisions

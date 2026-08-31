@@ -9,13 +9,12 @@ built and how to work in the repo day to day.
 
 | Area | Status |
 |------|--------|
-| Backend (FastAPI) | V1 (RAG spike) + V5 (synthetic batch generation) built — see below |
+| Backend (FastAPI) | V1 (RAG spike) built and exposed via the API. V5 (synthetic batch generation) built as **local CLI tooling only** — not reachable through the running app (ADR-0011) |
 | V1: document engine (S4) | Block model (text/table/flowchart/image), Jinja2 HTML render, flowchart step-list → SVG (hand-rolled, no Mermaid CLI), WeasyPrint PDF export. One hardcoded seed document (`qms_incub.documents.seed`) — no composer UI yet (V4) |
 | V1: ingestion (S6) | `make seed` renders the seed doc, exports PDF, Docling-parses it, chunks (LlamaIndex `SentenceSplitter`), embeds (local HF `BAAI/bge-small-en-v1.5`), stores in Qdrant. Idempotent per document ID — re-running clears old chunks first (`ingestion/pipeline.py`) |
-| V1: chat (S8) | `POST /chat` — vector retrieval + LLM call, citations derived from retrieved chunks (not parsed from model output). LLM provider swappable, see Secrets/Q37 |
-| V5: batch generation (S5) | `qms_incub.documents.random_generator` produces N randomized documents (seeded, reproducible) from V1's exact block model/render/ingest path, flagged `is_synthetic`. `POST /documents/batch` kicks off a batch as a FastAPI background task |
-| V5: ingestion status (S6 dashboard) | `GET /documents` lists every `PolicyDocumentRow` (pending/embedded/failed, chunk count, error) — the first slice to touch the relational data model. Frontend dashboard polls this while anything is pending |
-| Frontend (Svelte+Vite) | Chat panel (V1) + "Generate synthetic variants" panel and status dashboard (V5, `lib/BatchDashboard.svelte`) |
+| V1: chat (S8) | `POST /chat` — the app's only real endpoint besides `/health`. Vector retrieval + LLM call, citations derived from retrieved chunks (not parsed from model output). LLM provider swappable, see Secrets/Q37 |
+| V5: batch generation (S5, CLI-only — ADR-0011) | `make batch COUNT=N SEED=S` → `qms_incub.batch_v5`. `documents/random_generator.py` produces N randomized documents (seeded, reproducible) from V1's exact block model/render/ingest path, flagged `is_synthetic`; `documents/batch.py` orchestrates render → export → ingest per document, tracking status in `PolicyDocumentRow` (Postgres — the first slice to touch the relational data model) and printing a summary. No HTTP endpoint, no UI — real QMS documents are sensitive and unavailable, so this exists purely to validate the RAG pipeline locally |
+| Frontend (Svelte+Vite) | Chat panel only (V1). No batch-generation UI — see ADR-0011 |
 | Database (PostgreSQL) | `policy_documents` table only (V5) — Alembic-managed, see `backend/migrations/`. Not the full `Project`/`TodoItem`/`Standard`/`Clause`/`Requirement` model yet (V2/ADR-0008) |
 | Vector store (Qdrant) | In real use since V1 — collection `qms_incub_corpus`, see `qms_incub.rag_clients` |
 | Everything else in PLAN.md / SLICES.md (V2–V4, V6–V8) | **Not built yet.** |
@@ -66,6 +65,9 @@ Run from the repo root unless noted.
 - `make migrate` — applies Alembic migrations against Postgres. `make up`
   runs this automatically once Postgres is healthy, before starting the
   dev servers.
+- `make batch COUNT=20 SEED=1` — generates and ingests N synthetic policy
+  documents locally (ADR-0011). Deliberately **not** part of the running
+  app — no endpoint, no UI. Defaults: `COUNT=5 SEED=0`.
 
 Backend-only, from `backend/`: `uv run alembic revision --autogenerate -m
 "..."` after changing a model in `models.py`, then `uv run alembic upgrade

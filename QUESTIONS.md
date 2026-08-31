@@ -52,13 +52,14 @@ existed (fresh mode).
 | Q35 | PDF rendering engine, given the backend is now Python (Puppeteer is Node-only) | DECIDED | WeasyPrint — pure Python, no browser process, fits V5's batch-generation call volume | ADR-0010 |
 | Q36 | Embedding model for RAG ingestion/retrieval (S6/S8) — OpenRouter is a chat/completion gateway, not an embeddings provider | ASSUMED | Local HuggingFace sentence-embedding model (BAAI/bge-small-en-v1.5) via LlamaIndex's `HuggingFaceEmbedding`, run in-process — no API key, no extra paid dependency, offline-capable | V1 implementation |
 | Q37 | LLM provider for local dev/testing vs. the ADR-0003-decided OpenRouter default | ASSUMED | Chat client is provider-swappable (`LLM_PROVIDER` env var) via an OpenAI-compatible client pointed at either Ollama (`http://localhost:11434/v1`, local, no key — used for dev/testing per user request) or OpenRouter (ADR-0003's decided default for anything beyond local dev). Not a reversal of ADR-0003 — Ollama is a local convenience, OpenRouter stays the recorded decision | ADR-0003, V1 implementation |
+| Q38 | Is synthetic batch generation (S5) a QA-author-facing web app feature, or local dev tooling? | DECIDED | Local dev tooling only — a CLI (`make batch`), no HTTP endpoint, no UI. Real company QMS documents exist but are sensitive and unavailable during this build; synthetic generation exists solely to validate the RAG pipeline before real content is ingested, not as a product feature | ADR-0011 |
 
 ## Coverage
 
 | Category | Covered by |
 |----------|-----------|
 | Primary user and actors | Q1 |
-| Scope boundary | Q2, Q3, Q16, Q17, Q18, Q19, Q20, Q21 |
+| Scope boundary | Q2, Q3, Q16, Q17, Q18, Q19, Q20, Q21, Q38 |
 | Data model and identity | Q22, Q30, Q31, Q32, Q33 |
 | State and storage | Q23 |
 | Concurrency and conflict | Q13, Q24 |

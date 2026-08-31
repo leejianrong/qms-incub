@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { askChat, fetchDocuments, fetchHealth, resolveApiBase, startBatch } from "./api";
+import { askChat, fetchHealth, resolveApiBase } from "./api";
 
 describe("resolveApiBase", () => {
   it("falls back to localhost when VITE_API_BASE is unset", () => {
@@ -72,67 +72,6 @@ describe("askChat", () => {
 
     await expect(
       askChat("http://api.internal", "irrelevant", fakeFetch as typeof fetch),
-    ).rejects.toThrow("500");
-  });
-});
-
-describe("startBatch", () => {
-  it("posts batch options and returns the started response", async () => {
-    const fakeFetch = vi.fn(async () =>
-      new Response(JSON.stringify({ status: "started", count: 5 }), { status: 200 }),
-    );
-
-    const result = await startBatch(
-      "http://api.internal",
-      { count: 5, seed: 42 },
-      fakeFetch as typeof fetch,
-    );
-
-    expect(result).toEqual({ status: "started", count: 5 });
-    expect(fakeFetch).toHaveBeenCalledWith(
-      "http://api.internal/documents/batch",
-      expect.objectContaining({
-        method: "POST",
-        body: JSON.stringify({ count: 5, seed: 42 }),
-      }),
-    );
-  });
-
-  it("throws when the backend responds with an error status", async () => {
-    const fakeFetch = vi.fn(async () => new Response("", { status: 500 }));
-
-    await expect(
-      startBatch("http://api.internal", { count: 5, seed: 0 }, fakeFetch as typeof fetch),
-    ).rejects.toThrow("500");
-  });
-});
-
-describe("fetchDocuments", () => {
-  it("returns the document status list", async () => {
-    const documents = [
-      {
-        id: "synthetic-0001",
-        title: "Synthetic Policy Document 1",
-        origin: "generated",
-        is_synthetic: true,
-        status: "embedded",
-        chunk_count: 2,
-        error: null,
-      },
-    ];
-    const fakeFetch = vi.fn(async () => new Response(JSON.stringify(documents), { status: 200 }));
-
-    const result = await fetchDocuments("http://api.internal", fakeFetch as typeof fetch);
-
-    expect(result).toEqual(documents);
-    expect(fakeFetch).toHaveBeenCalledWith("http://api.internal/documents");
-  });
-
-  it("throws when the backend responds with an error status", async () => {
-    const fakeFetch = vi.fn(async () => new Response("", { status: 500 }));
-
-    await expect(
-      fetchDocuments("http://api.internal", fakeFetch as typeof fetch),
     ).rejects.toThrow("500");
   });
 });
