@@ -15,9 +15,11 @@ up:
 down:
 	docker compose down
 
-# Stub until the data model (PLAN.md, ADR-0008) has migrations to seed.
+# V1 (SLICES.md § V1): builds the one hardcoded seed policy document,
+# exports it to PDF, and ingests it into Qdrant. Requires `make up` running
+# (Qdrant) and, for embeddings, a first-run HuggingFace model download.
 seed:
-	@echo "No schema/migrations yet — nothing to seed."
+	cd backend && uv run python -m qms_incub.seed_v1
 
 install:
 	cd backend && uv sync

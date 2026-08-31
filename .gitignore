@@ -6,6 +6,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 *.egg-info/
+backend/var/
 
 # Node (frontend) — frontend/ has its own .gitignore too, this covers
 # the case of running npm/vite from the repo root by mistake.

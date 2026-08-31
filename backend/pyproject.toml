@@ -2,10 +2,19 @@
 name = "qms-incub"
 version = "0.0.1"
 description = "QMS Incub backend (FastAPI) — walking skeleton"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.32",
+    "weasyprint>=62",
+    "jinja2>=3.1",
+    "pydantic-settings>=2.6",
+    "llama-index-core>=0.11",
+    "llama-index-vector-stores-qdrant>=0.3",
+    "llama-index-embeddings-huggingface>=0.3",
+    "docling>=2.5",
+    "qdrant-client>=1.12",
+    "openai>=1.50",
 ]
 
 [dependency-groups]
@@ -14,25 +23,41 @@ dev = [
     "httpx>=0.27",
     "ruff>=0.7",
     "mypy>=1.13",
+    "pypdf>=5.0",
 ]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.uv]
+# copy, not hardlink: llama-index ships bundled NLTK data under
+# site-packages, and some sandboxed/hardened environments refuse to open
+# multiply-linked files (CWE-59 guards). Copies avoid that entirely.
+link-mode = "copy"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/qms_incub"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = true
+
+[[tool.mypy.overrides]]
+module = "weasyprint"
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "integration: needs a running Qdrant (docker compose) plus a first-run embedding-model download",
+    "e2e: needs Qdrant, an ingested corpus, and a live LLM (Ollama or OpenRouter) — local-only, not run in CI",
+]
+addopts = "-m 'not integration and not e2e'"

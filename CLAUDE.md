@@ -9,11 +9,14 @@ built and how to work in the repo day to day.
 
 | Area | Status |
 |------|--------|
-| Backend (FastAPI) | Walking skeleton — one `/health` endpoint, no data model, no auth, no ingestion pipeline yet |
-| Frontend (Svelte+Vite) | Walking skeleton — one page that calls `/health` and shows the result |
-| Database (PostgreSQL) | Runs via `make up`, no migrations/schema yet |
-| Vector store (Qdrant) | Runs via `make up`, unused so far |
-| Everything in PLAN.md / SLICES.md | **Not built yet.** V1 (the RAG spike) is the first real slice — see SLICES.md |
+| Backend (FastAPI) | V1 (RAG spike) built — see below. No data model/auth beyond that yet |
+| V1: document engine (S4) | Block model (text/table/flowchart/image), Jinja2 HTML render, flowchart step-list → SVG (hand-rolled, no Mermaid CLI), WeasyPrint PDF export. One hardcoded seed document (`qms_incub.documents.seed`) — no composer UI yet (V4) |
+| V1: ingestion (S6) | `make seed` renders the seed doc, exports PDF, Docling-parses it, chunks (LlamaIndex `SentenceSplitter`), embeds (local HF `BAAI/bge-small-en-v1.5`), stores in Qdrant. Only the one seed doc — no publish workflow yet |
+| V1: chat (S8) | `POST /chat` — vector retrieval + LLM call, citations derived from retrieved chunks (not parsed from model output). LLM provider swappable, see Secrets/Q37 |
+| Frontend (Svelte+Vite) | Walking skeleton — one page that calls `/health`; V1's chat UI not yet wired in (SLICES.md § V1 step 5) |
+| Database (PostgreSQL) | Runs via `make up`, no migrations/schema yet — V1 doesn't need it (no `Project`/`TodoItem` model yet) |
+| Vector store (Qdrant) | In real use since V1 — collection `qms_incub_corpus`, see `qms_incub.rag_clients` |
+| Everything else in PLAN.md / SLICES.md (V2+) | **Not built yet.** |
 
 If you're about to implement a slice, check this table (and `git log`)
 before trusting a stale claim elsewhere that something is "done."
@@ -22,8 +25,19 @@ before trusting a stale claim elsewhere that something is "done."
 
 Python/FastAPI backend, Svelte+Vite frontend, PostgreSQL, Qdrant, LlamaIndex
 + Docling for the RAG pipeline. Decided in ADR-0009 (supersedes ADR-0005's
-original defaults). PDF-rendering engine is **not yet decided** — see
-QUESTIONS.md Q35 before touching S4 (document generation).
+original defaults). PDF export is WeasyPrint (ADR-0010, resolves Q35).
+Embeddings are a local HuggingFace model, no API key (Q36). LLM is
+provider-swappable — Ollama for local dev, OpenRouter as ADR-0003's
+decided default otherwise (Q37) — see Secrets below.
+
+## Secrets
+
+`backend/.env` (gitignored) holds real local secrets — currently
+`OPENROUTER_API_KEY`. **Never read `backend/.env` with a file-read tool.**
+Access its values only the proper way: through `qms_incub.config.settings`
+(loaded automatically by `pydantic-settings`) in app code, or by letting
+the user tell you a value directly. `backend/.env.example` documents every
+variable and is safe to read.
 
 ## Commands
 
@@ -40,7 +54,13 @@ Run from the repo root unless noted.
 - `make typecheck` — `mypy` (backend) + `svelte-check`/`tsc` (frontend).
 - `make test` — `pytest` (backend) + `vitest run` (frontend). Fast, no-infra
   layer only — this is what the pre-push hook and CI's fast jobs run.
-- `make seed` — currently a stub; there's no schema to seed yet.
+  Backend `integration` (needs Qdrant, wired into CI via a service
+  container) and `e2e` (needs a live LLM too — local-only) tests are
+  excluded by default; run explicitly with `uv run pytest -m integration`
+  or `-m e2e` from `backend/`.
+- `make seed` — builds V1's one hardcoded seed policy document, exports it
+  to PDF, and ingests it into Qdrant. Needs `make up` running (Qdrant) —
+  first run also downloads the embedding model.
 
 Backend-only, from `backend/`: `uv run pytest -q`, `uv run ruff check .`,
 `uv run mypy src`, `uv run uvicorn qms_incub.main:app --reload --port 8000`.
@@ -66,6 +86,9 @@ Frontend-only, from `frontend/`: `npm run test`, `npm run lint`,
 - Every finished bug fix or flake gets a regression test — see
   `dev-playbook`'s `layered-testing.md` for the pattern (fast/no-infra
   tests are the default; integration/e2e stay containerized and CI-only).
+- **Sub-agents: hard cap of 3 running in parallel at any one time.** Don't
+  spin one up unless the task genuinely needs the parallelism — most work
+  in this repo is a single sequential thread.
 
 ## Layout
 

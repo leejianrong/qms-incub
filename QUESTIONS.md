@@ -49,7 +49,9 @@ existed (fresh mode).
 | Q32 | Image block type | ASSUMED | Added as a fourth block type alongside text/table/flowchart | ADR-0001 |
 | Q33 | Data model for Q2/Q3's compliance hierarchy | DECIDED | `ComplianceStandard`/`Clause`/`Requirement` entities, user-authored; `TodoItem` traces to a `Requirement` instead of a flat practice string | ADR-0008 |
 | Q34 | Local one-command bring-up | DECIDED | `make up` starts Postgres + Qdrant (Docker Compose), runs migrations, seeds demo data, starts the FastAPI backend and the Svelte/Vite dev server — per `dev-playbook` principle 17 | ADR-0005, ADR-0009 |
-| Q35 | PDF rendering engine, given the backend is now Python (Puppeteer is Node-only) | ASSUMED | Not yet confirmed by the team — flagged as an open follow-up rather than decided; candidates are Python-native (WeasyPrint) or Playwright's Python bindings | ADR-0009 |
+| Q35 | PDF rendering engine, given the backend is now Python (Puppeteer is Node-only) | DECIDED | WeasyPrint — pure Python, no browser process, fits V5's batch-generation call volume | ADR-0010 |
+| Q36 | Embedding model for RAG ingestion/retrieval (S6/S8) — OpenRouter is a chat/completion gateway, not an embeddings provider | ASSUMED | Local HuggingFace sentence-embedding model (BAAI/bge-small-en-v1.5) via LlamaIndex's `HuggingFaceEmbedding`, run in-process — no API key, no extra paid dependency, offline-capable | V1 implementation |
+| Q37 | LLM provider for local dev/testing vs. the ADR-0003-decided OpenRouter default | ASSUMED | Chat client is provider-swappable (`LLM_PROVIDER` env var) via an OpenAI-compatible client pointed at either Ollama (`http://localhost:11434/v1`, local, no key — used for dev/testing per user request) or OpenRouter (ADR-0003's decided default for anything beyond local dev). Not a reversal of ADR-0003 — Ollama is a local convenience, OpenRouter stays the recorded decision | ADR-0003, V1 implementation |
 
 ## Coverage
 
@@ -62,7 +64,7 @@ existed (fresh mode).
 | Concurrency and conflict | Q13, Q24 |
 | Interfaces and contracts | Q25, Q30 |
 | Failure behaviour | Q26 |
-| External dependencies | Q11, Q14, Q35 |
+| External dependencies | Q11, Q14, Q35, Q36, Q37 |
 | Runtime and deployment | Q5, Q34 |
 | Measurable success | Q29 |
 | Security and secrets | Q27 |
