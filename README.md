@@ -43,9 +43,10 @@ flowchart LR
     end
 ```
 
-Right now this is a walking skeleton: the frontend calls the backend's
-`/health` endpoint and shows the result. Nothing else is built yet — see
-`CLAUDE.md`'s build-status table and `SLICES.md` for what's next.
+V1 (the RAG spike) is built: one hardcoded policy document generated,
+exported to PDF, ingested into Qdrant, and queryable through a chat panel
+with citations. Everything else in PLAN.md/SLICES.md is still ahead — see
+`CLAUDE.md`'s build-status table for exactly what exists.
 
 ## Quick start
 
@@ -56,17 +57,27 @@ git clone https://github.com/leejianrong/qms-incub.git
 cd qms-incub
 make install        # backend + frontend dependencies
 make install-hooks  # pre-push hook — run once
+cp backend/.env.example backend/.env  # then fill in an OpenRouter key if you want it (see below)
 make up              # Postgres + Qdrant (Docker), backend :8000, frontend :5173
 ```
 
-Open http://localhost:5173 — you should see "Backend health: ok". `make
-down` stops the containers; Ctrl+C stops the dev servers.
+In another terminal, seed V1's demo document (needs `make up` running):
+
+```bash
+make seed
+```
+
+Open http://localhost:5173, ask "Who is the approving authority for this
+policy?", and you should get a grounded answer citing the seeded document.
+`make down` stops the containers; Ctrl+C stops the dev servers.
 
 ## Configuration
 
 | Variable | Where | Default | Purpose |
 |----------|-------|---------|---------|
 | `VITE_API_BASE` | `frontend/.env.local` (see `.env.example`) | `http://localhost:8000` | Where the frontend looks for the backend |
+| `LLM_PROVIDER` | `backend/.env` (see `.env.example`) | `ollama` | `ollama` (local, no key) or `openrouter` (ADR-0003's decided default — needs `OPENROUTER_API_KEY`) |
+| `OPENROUTER_API_KEY` | `backend/.env` | unset | Required only when `LLM_PROVIDER=openrouter`. Get one at https://openrouter.ai/keys |
 
 Postgres and Qdrant ports (`5433`, `6333`) are set in `docker-compose.yml`;
 5433 rather than Postgres's usual 5432 to avoid colliding with a Postgres
