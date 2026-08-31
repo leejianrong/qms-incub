@@ -11,6 +11,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from llama_index.core.schema import BaseNode, TextNode
+from llama_index.core.vector_stores.types import MetadataFilter, MetadataFilters
 
 from qms_incub.ingestion.chunking import chunk_text
 from qms_incub.ingestion.docling_parse import extract_pdf_text
@@ -25,8 +26,22 @@ def ingest_pdf(
 ) -> int:
     """Parse, chunk, embed, and store `pdf_path` in Qdrant.
 
+    Idempotent per `document_id`: any chunks already stored for this
+    document are deleted first, so re-ingesting (re-seeding, re-running a
+    batch with the same ID) doesn't accumulate duplicate vectors.
+
     Returns the number of chunks stored.
     """
+    vector_store = get_vector_store()
+    # Nothing to delete before the collection has ever been created (first
+    # ingestion ever) — delete_nodes has no lazy-create like add() does.
+    if vector_store.client.collection_exists(vector_store.collection_name):
+        vector_store.delete_nodes(
+            filters=MetadataFilters(
+                filters=[MetadataFilter(key="qms_document_id", value=document_id)]
+            )
+        )
+
     text = extract_pdf_text(pdf_path)
     chunks = chunk_text(text)
     if not chunks:
@@ -53,5 +68,5 @@ def ingest_pdf(
             )
         )
 
-    get_vector_store().add(nodes)
+    vector_store.add(nodes)
     return len(nodes)

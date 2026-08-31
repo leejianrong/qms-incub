@@ -72,7 +72,7 @@
 <style>
   main {
     font-family: system-ui, sans-serif;
-    max-width: 32rem;
+    max-width: 40rem;
     margin: 4rem auto;
     padding: 0 1rem;
   }

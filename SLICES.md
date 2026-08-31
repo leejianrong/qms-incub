@@ -179,19 +179,29 @@ document into the real authoring surface.
 
 **Delivers:** R5, R6 (breadth)
 
+**Not part of the web app** (ADR-0011): real company QMS documents exist
+but are sensitive and unavailable during this build, so this slice is
+local developer tooling — a CLI, not a QA-author-facing panel — that
+exercises the RAG pipeline (S6) with realistic-shaped test data until real
+documents can be imported (V7).
+
 **Build plan**
 
-1. "Generate N variants" panel: pick block templates, a count N, and a
-   complexity range (table row count, flowchart step count) (ADR-0001).
-2. Batch job produces N `PolicyDocument` rows with randomized block
-   composition, flagged `is_synthetic = true`, auto-published.
-3. Ingestion status dashboard: per-document status (chunked, embedded,
-   failed) so a QA-author can see if any synthetic document broke the
-   pipeline.
+1. `documents/random_generator.py`: a seeded, reproducible random
+   generator reuses V1/V4's exact block model — a count N and a complexity
+   range (table row count, flowchart step count) (ADR-0001).
+2. `documents/batch.py`: reuses V1's exact render → PDF export → ingest
+   path per document, flagged `is_synthetic = true`. `PolicyDocumentRow`
+   (Postgres, Alembic-managed — the first slice to touch the relational
+   data model) tracks per-document status (pending/embedded/failed, chunk
+   count, error) so a run can report whether any synthetic document broke
+   the pipeline.
+3. `qms_incub.batch_v5` CLI (`make batch COUNT=20 SEED=1`): runs a batch
+   and prints a per-document status summary to the terminal.
 
-**Demo:** Generate 20 synthetic variants with tables/flowcharts, watch the
-ingestion dashboard confirm 20/20 processed (or flag the ones that
-didn't).
+**Demo:** `make batch COUNT=20 SEED=1` generates 20 synthetic variants
+with tables/flowcharts; the CLI's summary output confirms 20/20 processed
+(or flags the ones that didn't).
 
 **Rests on assumptions:** Q7 carried forward — batch generation needs the
 same programmatic block model V1/V4 already assume.
@@ -200,8 +210,8 @@ same programmatic block model V1/V4 already assume.
 
 #### End-to-end
 
-- Triggering a 20-document batch generation shows the ingestion dashboard
-  at 20/20 processed with no unexplained failures.
+- Running `make batch COUNT=20` prints a summary showing 20/20 processed
+  with no unexplained failures.
 
 #### Integration
 

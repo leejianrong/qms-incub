@@ -33,5 +33,8 @@ class Settings(BaseSettings):
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "qms_incub_corpus"
 
+    # Matches docker-compose.yml's postgres service (ADR-0005/ADR-0009).
+    database_url: str = "postgresql+psycopg://qms_incub:qms_incub@localhost:5433/qms_incub"
+
 
 settings = Settings()
