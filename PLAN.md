@@ -146,13 +146,19 @@ as the chatbot.
 | Affordance | Kind | Wires to |
 |------------|------|----------|
 | Ingestion worker | job, runs on publish | S6 |
-| Vector store (pgvector) | store | S6, S8 |
+| Vector store (Qdrant) | store | S6, S8 |
+| Docling parser | service (invoked by LlamaIndex ingestion) | S6, S7 |
+| LlamaIndex ingestion/query pipeline | library, orchestrates S6/S8 | S6, S8 |
 | OpenRouter API client | handler | S8 |
 | HTML-to-PDF renderer | service | S4, S5 |
 | `make up` / `make seed` (Makefile) | one-command local bring-up | all — ADR-0005 |
 
 ## Implementation decisions
 
+- Stack: Python/FastAPI backend, Svelte+Vite frontend, PostgreSQL,
+  Qdrant vector store, LlamaIndex + Docling for the RAG pipeline
+  (ADR-0009, supersedes ADR-0005's original stack defaults). PDF rendering
+  engine not yet confirmed by the team (Q35).
 - Core entities: `ComplianceStandard` (name, description), `Clause` (belongs
   to a Standard, ordering, text), `Requirement` (belongs to a Clause,
   description, applicable risk tiers) — user-authored, no hardcoded
@@ -205,7 +211,8 @@ SLICES.md.
 |----|---------|---------------|
 | Q7 | Flowcharts are auto-composed from structured step data (Mermaid-style DSL), not hand-drawn | High if wrong — a freeform diagram editor is a different feature with different UI, data model, and PDF-rendering path |
 | Q9 | Chatbot is retrieval-QA only, no agentic actions on the wizard/todos | Low — extending to agentic actions adds tool-calling to S8 without changing S1–S6 |
-| Q11 | Stack: Next.js/React, Postgres+pgvector, Puppeteer for PDF, Mermaid for flowcharts | Medium — swapping the vector store or PDF engine touches S4–S8's implementations but not their shape |
+| Q11 | *(superseded — see ADR-0009)* | |
+| Q35 | PDF rendering engine given a Python backend (e.g. WeasyPrint, Playwright-Python) — not yet confirmed by the team | Low — swapping the PDF library only touches S4's implementation, not its shape |
 | Q15 | Chatbot grounding is hybrid: vector retrieval over the corpus plus direct structured injection of the asking user's own state (not vectorized) | Medium — if user state needs to be searchable/cross-referenced at scale later, S8's context assembly is rebuilt but S6 (ingestion) is unaffected |
 
 ## Open risks

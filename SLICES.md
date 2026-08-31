@@ -16,14 +16,17 @@ per-user state yet)
 1. Minimal block model: `text`, `table`, `flowchart` block types; seed one
    policy document combining all three, with a fact (e.g. an approving
    authority's name) placed inside the table.
-2. HTML-to-PDF export of that document (Puppeteer); the flowchart block
-   renders via a Mermaid-style DSL to SVG, embedded before export (ADR-0006).
-3. Ingestion worker: chunk the document's text, embed, store in Postgres +
-   pgvector with source-type/doc-id metadata (ADR-0003, ADR-0005).
-4. Chat endpoint: given a question, retrieve top-k chunks, call the
-   OpenRouter LLM with the retrieved context, return an answer + citation.
-5. Minimal chat UI: single input box, answer, citation — no auth or wizard
-   yet.
+2. HTML-to-PDF export of that document (engine per Q35, not yet
+   confirmed); the flowchart block renders via a Mermaid-style DSL to SVG,
+   embedded before export (ADR-0006).
+3. Ingestion pipeline: Docling parses the document, LlamaIndex chunks and
+   embeds it, stored in Qdrant with source-type/doc-id metadata (ADR-0003,
+   ADR-0009).
+4. Chat endpoint (FastAPI): given a question, retrieve top-k chunks via
+   LlamaIndex's Qdrant query engine, call the OpenRouter LLM with the
+   retrieved context, return an answer + citation.
+5. Minimal chat UI (Svelte): single input box, answer, citation — no auth
+   or wizard yet.
 
 **Demo:** Ask the chatbot "who is the approving authority for this
 policy?" and see a correct answer citing the seeded document, where the
@@ -31,8 +34,8 @@ answer's fact lives inside a table cell.
 
 **Rests on assumptions:** Q7 (flowcharts auto-render via a structured DSL)
 — if wrong, this slice's PDF-generation step needs a different rendering
-approach. Q11 (pgvector-based stack) — if wrong, the ingestion/retrieval
-client is swapped but the pipeline shape holds.
+approach. Q35 (PDF engine, unconfirmed) — this slice can't finish until
+that's picked.
 
 ### Test plan
 

@@ -25,7 +25,7 @@ existed (fresh mode).
 | Q8 | Classification wizard dimensions | ASSUMED | 3 fixed dimensions (data sensitivity, customer-facing, regulatory exposure) → Low/Medium/High tier | PLAN §Implementation decisions |
 | Q9 | Is the chatbot agentic (can it act on the wizard/todos)? | ASSUMED | No — retrieval-QA only in v1 | PLAN §Shape (S7) |
 | Q10 | Who authors blog/FAQ, and do they feed the RAG corpus? | ASSUMED | Admin-authored simple CMS content, ingested alongside policy documents | PLAN §Shape (S8) |
-| Q11 | Tech stack | ASSUMED | Next.js/React, Postgres + pgvector, Puppeteer for PDF, Mermaid for flowcharts | ADR-0005 |
+| Q11 | Tech stack | DECIDED | *(superseded)* Python/FastAPI, Svelte+Vite, PostgreSQL, Qdrant, LlamaIndex + Docling — team decision, round 6 | ADR-0009 |
 | Q12 (F6) | Policy document generation: one authoring surface, or an engine serving both authoring and synthetic batch generation? | DECIDED | One block-based engine, two modes (author + batch-generate) | ADR-0001 |
 | Q13 (F7) | Compliance artifact workflow: self-attestation or QA-reviewer approval gate? | DECIDED | Self-attestation in v1; reviewer approval gate confirmed as a wanted next-iteration feature, not cut | ADR-0002 |
 | Q14 | LLM provider | DECIDED | OpenRouter API | ADR-0003 |
@@ -48,7 +48,8 @@ existed (fresh mode).
 | Q31 | Do imported documents need a source/attribution field? | ASSUMED | Yes — `source_attribution` required before publish, since these are "open source" documents | ADR-0007, PLAN §Implementation decisions |
 | Q32 | Image block type | ASSUMED | Added as a fourth block type alongside text/table/flowchart | ADR-0001 |
 | Q33 | Data model for Q2/Q3's compliance hierarchy | DECIDED | `ComplianceStandard`/`Clause`/`Requirement` entities, user-authored; `TodoItem` traces to a `Requirement` instead of a flat practice string | ADR-0008 |
-| Q34 | Local one-command bring-up | DECIDED | `make up` starts Postgres (Docker Compose), runs migrations, seeds demo data, starts the Next.js dev server — per `dev-playbook` principle 17 | ADR-0005 |
+| Q34 | Local one-command bring-up | DECIDED | `make up` starts Postgres + Qdrant (Docker Compose), runs migrations, seeds demo data, starts the FastAPI backend and the Svelte/Vite dev server — per `dev-playbook` principle 17 | ADR-0005, ADR-0009 |
+| Q35 | PDF rendering engine, given the backend is now Python (Puppeteer is Node-only) | ASSUMED | Not yet confirmed by the team — flagged as an open follow-up rather than decided; candidates are Python-native (WeasyPrint) or Playwright's Python bindings | ADR-0009 |
 
 ## Coverage
 
@@ -61,7 +62,7 @@ existed (fresh mode).
 | Concurrency and conflict | Q13, Q24 |
 | Interfaces and contracts | Q25, Q30 |
 | Failure behaviour | Q26 |
-| External dependencies | Q11, Q14 |
+| External dependencies | Q11, Q14, Q35 |
 | Runtime and deployment | Q5, Q34 |
 | Measurable success | Q29 |
 | Security and secrets | Q27 |

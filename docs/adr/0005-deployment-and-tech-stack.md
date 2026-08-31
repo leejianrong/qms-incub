@@ -1,6 +1,11 @@
 # ADR-0005: Local-only stack via Docker Compose + Makefile — Next.js, Postgres+pgvector, Puppeteer for PDF
 
-- Status: Accepted
+- Status: Accepted — **the specific technology choices below (Next.js,
+  pgvector, Puppeteer) are superseded by ADR-0009** (team-decided stack:
+  FastAPI, Svelte+Vite, Qdrant, LlamaIndex+Docling). The decision this ADR
+  is actually about — everything runs locally via Docker Compose + one
+  Makefile, no cloud deploy target — is unaffected and still stands; see
+  ADR-0009 for the current Makefile service list.
 - Date: 2026-08-31
 - Deciders: agent (plan-new-project skill, assumed default Q11); leejianrong (user, round 5 — Q5 corrected: no cloud deploy, local demo only)
 
