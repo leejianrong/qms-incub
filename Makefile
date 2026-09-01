@@ -25,9 +25,17 @@ up:
 	@echo "Waiting for Postgres and Qdrant to be healthy..."
 	@until [ "$$(docker compose ps -q postgres | xargs docker inspect -f '{{.State.Health.Status}}')" = "healthy" ]; do sleep 1; done
 	$(MAKE) migrate
-	@trap 'kill 0' EXIT INT TERM; \
-	 (cd backend && uv run uvicorn qms_incub.main:app --reload --port 8000) & \
-	 (cd frontend && npm run dev) & \
+	@port=8000; \
+	 while ss -ltn "( sport = :$$port )" 2>/dev/null | grep -q LISTEN; do \
+	   echo "Port $$port is already in use, trying $$((port + 1))..."; \
+	   port=$$((port + 1)); \
+	 done; \
+	 if [ "$$port" != 8000 ]; then \
+	   echo "Backend will run on port $$port (8000 was busy)"; \
+	 fi; \
+	 trap 'kill 0' EXIT INT TERM; \
+	 (cd backend && uv run uvicorn qms_incub.main:app --reload --port $$port) & \
+	 (cd frontend && VITE_API_BASE="http://localhost:$$port" npm run dev) & \
 	 wait
 
 down:
