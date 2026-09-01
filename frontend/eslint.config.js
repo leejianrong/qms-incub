@@ -21,6 +21,16 @@ export default tseslint.config(
     },
   },
   {
+    // shadcn-svelte components are vendored, copied-into-repo source
+    // (ADR-0013) — not hand-authored, so custom-element prop inference
+    // (irrelevant here; this project compiles no custom elements) is
+    // relaxed rather than reformatted to satisfy it.
+    files: ["src/lib/components/ui/**/*.svelte"],
+    rules: {
+      "svelte/valid-compile": "off",
+    },
+  },
+  {
     ignores: ["dist/", "node_modules/"],
   },
 );
