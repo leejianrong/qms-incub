@@ -5,9 +5,11 @@ import {
   createProject,
   fetchHealth,
   getProject,
+  listDocuments,
   resolveApiBase,
   uploadAor,
   uploadArtifact,
+  uploadDocument,
 } from "./api";
 
 describe("resolveApiBase", () => {
@@ -82,6 +84,56 @@ describe("askChat", () => {
     await expect(
       askChat("http://api.internal", "irrelevant", fakeFetch as typeof fetch),
     ).rejects.toThrow("500");
+  });
+});
+
+describe("policy documents", () => {
+  it("uploads a PDF as multipart form data", async () => {
+    const fakeFetch = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          id: "document-1",
+          title: "QMS Policy.pdf",
+          status: "embedded",
+          chunk_count: 3,
+          error: null,
+        }),
+        { status: 201 },
+      ),
+    );
+    const file = new File(["fake pdf bytes"], "QMS Policy.pdf", { type: "application/pdf" });
+
+    const result = await uploadDocument("http://api.internal", file, fakeFetch as typeof fetch);
+
+    expect(result.status).toBe("embedded");
+    expect(fakeFetch).toHaveBeenCalledWith(
+      "http://api.internal/documents",
+      expect.objectContaining({ method: "POST" }),
+    );
+    const init = (fakeFetch.mock.calls[0] as unknown as [string, RequestInit])[1];
+    expect(init.body).toBeInstanceOf(FormData);
+  });
+
+  it("lists uploaded documents and their ingestion status", async () => {
+    const fakeFetch = vi.fn(async () =>
+      new Response(
+        JSON.stringify([
+          {
+            id: "document-1",
+            title: "QMS Policy.pdf",
+            status: "embedded",
+            chunk_count: 3,
+            error: null,
+          },
+        ]),
+        { status: 200 },
+      ),
+    );
+
+    const result = await listDocuments("http://api.internal", fakeFetch as typeof fetch);
+
+    expect(result).toHaveLength(1);
+    expect(fakeFetch).toHaveBeenCalledWith("http://api.internal/documents");
   });
 });
 

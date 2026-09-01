@@ -24,6 +24,14 @@ export interface ChatAnswer {
   citations: Citation[];
 }
 
+export interface PolicyDocument {
+  id: string;
+  title: string;
+  status: "pending" | "embedded" | "failed";
+  chunk_count: number | null;
+  error: string | null;
+}
+
 export async function askChat(
   apiBase: string,
   question: string,
@@ -38,6 +46,30 @@ export async function askChat(
     throw new Error(`backend returned ${response.status}`);
   }
   return (await response.json()) as ChatAnswer;
+}
+
+export async function uploadDocument(
+  apiBase: string,
+  file: File,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PolicyDocument> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await fetchImpl(`${apiBase}/documents`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!response.ok) {
+    throw new Error(`backend returned ${response.status}`);
+  }
+  return (await response.json()) as PolicyDocument;
+}
+
+export async function listDocuments(
+  apiBase: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PolicyDocument[]> {
+  return getJson(apiBase, "/documents", fetchImpl);
 }
 
 // --- Compliance hierarchy (QA-author editor, ADR-0008) ---
