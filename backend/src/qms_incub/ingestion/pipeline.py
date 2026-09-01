@@ -70,3 +70,46 @@ def ingest_pdf(
 
     vector_store.add(nodes)
     return len(nodes)
+
+
+def ingest_text(
+    text: str,
+    document_id: str,
+    document_title: str,
+    source_type: str,
+) -> int:
+    """Chunk, embed and store admin-authored text.
+
+    V6 deliberately shares the same metadata contract as PDF ingestion so
+    retrieval and citations do not need a content-source special case.
+    Re-publishing replaces this source's existing chunks.
+    """
+    vector_store = get_vector_store()
+    if vector_store.client.collection_exists(vector_store.collection_name):
+        vector_store.delete_nodes(
+            filters=MetadataFilters(
+                filters=[MetadataFilter(key="qms_document_id", value=document_id)]
+            )
+        )
+
+    chunks = chunk_text(text)
+    if not chunks:
+        return 0
+
+    embed_model = get_embed_model()
+    nodes: list[BaseNode] = []
+    for i, chunk in enumerate(chunks):
+        nodes.append(
+            TextNode(
+                text=chunk,
+                embedding=embed_model.get_text_embedding(chunk),
+                metadata={
+                    "qms_document_id": document_id,
+                    "qms_document_title": document_title,
+                    "source_type": source_type,
+                    "chunk_index": i,
+                },
+            )
+        )
+    vector_store.add(nodes)
+    return len(nodes)

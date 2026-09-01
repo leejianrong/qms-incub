@@ -11,6 +11,8 @@ import {
   uploadAor,
   uploadArtifact,
   uploadDocument,
+  createBlogPost,
+  publishFAQEntry,
 } from "./api";
 
 describe("resolveApiBase", () => {
@@ -136,6 +138,36 @@ describe("policy documents", () => {
 
     expect(result).toHaveLength(1);
     expect(fakeFetch).toHaveBeenCalledWith("http://api.internal/documents");
+  });
+});
+
+describe("blog and FAQ content", () => {
+  it("creates a plain-text blog draft", async () => {
+    const fakeFetch = vi.fn(async () => new Response(JSON.stringify({
+      id: "blog-1", title: "Release notes", body: "Content", published_at: null, chunk_count: null,
+    }), { status: 201 }));
+
+    const result = await createBlogPost("http://api.internal", "Release notes", "Content", fakeFetch as typeof fetch);
+
+    expect(result.title).toBe("Release notes");
+    expect(fakeFetch).toHaveBeenCalledWith(
+      "http://api.internal/blog-posts",
+      expect.objectContaining({ method: "POST", body: JSON.stringify({ title: "Release notes", body: "Content" }) }),
+    );
+  });
+
+  it("publishes an FAQ entry", async () => {
+    const fakeFetch = vi.fn(async () => new Response(JSON.stringify({
+      id: "faq-1", question: "Who approves?", answer: "QA Office", published_at: "2026-09-01T00:00:00Z", chunk_count: 1,
+    }), { status: 200 }));
+
+    const result = await publishFAQEntry("http://api.internal", "faq-1", fakeFetch as typeof fetch);
+
+    expect(result.chunk_count).toBe(1);
+    expect(fakeFetch).toHaveBeenCalledWith(
+      "http://api.internal/faq-entries/faq-1/publish",
+      expect.objectContaining({ method: "POST" }),
+    );
   });
 });
 
