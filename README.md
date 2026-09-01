@@ -83,11 +83,18 @@ the same way.
 
 ## Configuration
 
+> **2026-09-01 through 2026-09-05 only:** prefer `LLM_PROVIDER=zenmux` — a
+> ZenMux API key was sent to the team separately for this promotional
+> window (Q39, `QUESTIONS.md`). From 2026-09-06, this lapses automatically;
+> go back to `openrouter` (preferred) or `ollama`, whichever you'd use
+> normally.
+
 | Variable | Where | Default | Purpose |
 |----------|-------|---------|---------|
 | `VITE_API_BASE` | `frontend/.env.local` (see `.env.example`) | `http://localhost:8000` | Where the frontend looks for the backend |
-| `LLM_PROVIDER` | `backend/.env` (see `.env.example`) | `ollama` | `ollama` (local, no key) or `openrouter` (ADR-0003's decided default — needs `OPENROUTER_API_KEY`) |
+| `LLM_PROVIDER` | `backend/.env` (see `.env.example`) | `ollama` | `ollama` (local, no key), `openrouter` (ADR-0003's decided default — needs `OPENROUTER_API_KEY`), or `zenmux` (needs `ZENMUX_API_KEY` — promotional window only, see above) |
 | `OPENROUTER_API_KEY` | `backend/.env` | unset | Required only when `LLM_PROVIDER=openrouter`. Get one at https://openrouter.ai/keys |
+| `ZENMUX_API_KEY` | `backend/.env` | unset | Required only when `LLM_PROVIDER=zenmux` (2026-09-01 through 2026-09-05 only). Sent to the team separately, not published here |
 
 Postgres and Qdrant ports (`5433`, `6333`) are set in `docker-compose.yml`;
 5433 rather than Postgres's usual 5432 to avoid colliding with a Postgres

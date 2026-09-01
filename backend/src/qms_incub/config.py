@@ -2,8 +2,10 @@
 
 LLM provider is swappable (Q37, QUESTIONS.md): `ollama` for local dev/
 testing with no API key, or `openrouter` — the ADR-0003-decided default
-for anything beyond local dev. Both are OpenAI-compatible endpoints, so
-one client implementation serves either (see chat/llm.py).
+for anything beyond local dev. `zenmux` is a third option, preferred only
+during a promotional API-key window, 2026-09-01 through 2026-09-05 (Q39)
+— see README.md/CLAUDE.md. All three are OpenAI-compatible endpoints, so
+one client implementation serves any of them (see chat/llm.py).
 """
 
 from __future__ import annotations
@@ -16,7 +18,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    llm_provider: Literal["ollama", "openrouter"] = "ollama"
+    llm_provider: Literal["ollama", "openrouter", "zenmux"] = "ollama"
 
     ollama_base_url: str = "http://localhost:11434/v1"
     ollama_model: str = "qwen2.5:7b-instruct-q4_K_M"
@@ -27,6 +29,11 @@ class Settings(BaseSettings):
     # a running-cost preference, not an architectural decision) — override
     # via OPENROUTER_MODEL for anything else on OpenRouter's catalog.
     openrouter_model: str = "deepseek/deepseek-chat"
+
+    # Q39: promotional-window provider (2026-09-01 through 2026-09-05 only).
+    zenmux_api_key: str | None = None
+    zenmux_base_url: str = "https://zenmux.ai/api/"
+    zenmux_model: str = "deepseek/deepseek-chat"
 
     embedding_model: str = "BAAI/bge-small-en-v1.5"
 

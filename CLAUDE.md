@@ -38,11 +38,21 @@ are a local HuggingFace model, no API key (Q36). LLM is provider-swappable
 — Ollama for local dev, OpenRouter as ADR-0003's decided default otherwise
 (Q37) — see Secrets below.
 
+**2026-09-01 through 2026-09-05 only (Q39):** prefer `LLM_PROVIDER=zenmux`
+— a ZenMux API key was distributed to the team separately for this
+promotional window. This lapses automatically from 2026-09-06; go back to
+`openrouter` (preferred) or `ollama` after that date, same as before this
+note existed. Doesn't change Q37's decision or ADR-0003.
+
 ## Secrets
 
 `backend/.env` (gitignored) holds real local secrets — currently
-`OPENROUTER_API_KEY`. **Never read `backend/.env` with a file-read tool.**
-Access its values only the proper way: through `qms_incub.config.settings`
+`OPENROUTER_API_KEY` and, during the Q39 window only, `ZENMUX_API_KEY`.
+**Never read `backend/.env` with a file-read tool** — and note that
+`grep`/`cat`/`sed` etc. via Bash expose secrets just as much as a
+file-read tool would; the rule is about not exposing the values, not
+about which specific tool is used. Access its values only the proper
+way: through `qms_incub.config.settings`
 (loaded automatically by `pydantic-settings`) in app code, or by letting
 the user tell you a value directly. `backend/.env.example` documents every
 variable and is safe to read.

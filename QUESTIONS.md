@@ -53,6 +53,7 @@ existed (fresh mode).
 | Q36 | Embedding model for RAG ingestion/retrieval (S6/S8) — OpenRouter is a chat/completion gateway, not an embeddings provider | ASSUMED | Local HuggingFace sentence-embedding model (BAAI/bge-small-en-v1.5) via LlamaIndex's `HuggingFaceEmbedding`, run in-process — no API key, no extra paid dependency, offline-capable | V1 implementation |
 | Q37 | LLM provider for local dev/testing vs. the ADR-0003-decided OpenRouter default | ASSUMED | Chat client is provider-swappable (`LLM_PROVIDER` env var) via an OpenAI-compatible client pointed at either Ollama (`http://localhost:11434/v1`, local, no key — used for dev/testing per user request) or OpenRouter (ADR-0003's decided default for anything beyond local dev). Not a reversal of ADR-0003 — Ollama is a local convenience, OpenRouter stays the recorded decision | ADR-0003, V1 implementation |
 | Q38 | Is synthetic batch generation (S5) a QA-author-facing web app feature, or local dev tooling? | DECIDED | Neither, as it turns out — it isn't even a question about *this repo's backend* anymore. Synthetic generation is a fully separate tool (`synthetic-corpus/`), no shared code, no HTTP call to the backend at all. ADR-0011's local-CLI framing was a first correction; ADR-0012 is the complete one | ADR-0011, ADR-0012 |
+| Q39 | Temporary LLM provider preference for a promotional API-key window | DECIDED | From 2026-09-01 through 2026-09-05, prefer `LLM_PROVIDER=zenmux` (a ZenMux API key was distributed to the team separately for this window). From 2026-09-06 onward, this lapses automatically — OpenRouter (ADR-0003's decided default) or Ollama are both fine again, OpenRouter preferred. Does not change Q37's decision or the code default, which stays `openrouter` throughout | Q37 |
 
 ## Coverage
 
@@ -65,7 +66,7 @@ existed (fresh mode).
 | Concurrency and conflict | Q13, Q24 |
 | Interfaces and contracts | Q25, Q30 |
 | Failure behaviour | Q26 |
-| External dependencies | Q11, Q14, Q35, Q36, Q37 |
+| External dependencies | Q11, Q14, Q35, Q36, Q37, Q39 |
 | Runtime and deployment | Q5, Q34 |
 | Measurable success | Q29 |
 | Security and secrets | Q27 |
