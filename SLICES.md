@@ -518,6 +518,71 @@ slice's screens, not its own logic.
 - Wizard step-validation (can't advance without a name, date, AOR, and all
   3 answers) matches V2/V9's stated preconditions.
 
+## V17: AOR Route Classification (R&T/SSD)
+
+**Documented retroactively.** This slice landed via PR #40 without going
+through the usual plan-first process — it was decided in a conversation
+that wasn't recorded in these docs at the time. This entry records what
+was actually built, per CLAUDE.md's convention of fixing a stale doc in
+the same PR that noticed the gap. Not part of the V9-V13 AOR-intake/wizard
+arc — see the note under Q51 (QUESTIONS.md) on why the two stay separate.
+
+A `POST /aor/classify` endpoint (and an equivalent `scripts/classify_aor.py`
+CLI for testing without the UI) classifies an uploaded AOR PDF as one of
+two QMS routes, **R&T** (Research & Technology) or **SSD** (Software/System
+Development), by embedding its extracted text with the RAG pipeline's own
+local model (`BAAI/bge-small-en-v1.5`) and comparing it via cosine
+similarity against two labeled reference descriptions
+(`backend/resources/aor-routing/{rt,ssd}.txt`). The response carries the
+selected route, both similarity scores, a heuristic confidence score, an
+evidence excerpt, and a `needs_review` flag (set when the two scores are
+too close to trust an unattended routing decision). No LLM call, no
+Qdrant, no Postgres — the classification never enters the RAG corpus and
+is unrelated to `Project`/`TodoItem` state. See `docs/aor-routing.md` for
+the full file layout and manual-testing instructions.
+
+**Delivers:** R12/S13
+
+**Build plan (as implemented)**
+
+1. `backend/src/qms_incub/aor_routing/classifier.py`: pure `classify_text`/
+   `classify_aor_pdf` functions — chunk, embed, cosine-compare against the
+   two reference profiles, pick the closer one.
+2. `POST /aor/classify` (`main.py`): multipart PDF upload → temp storage
+   under `backend/var/aor-routing/uploads/` (gitignored) → classifier call
+   → JSON response. Rejects non-PDF uploads with 422.
+3. `scripts/classify_aor.py`: same classifier, CLI entry point, JSON output
+   — for testing without the API or UI running.
+4. Two labeled reference-description files and two demo fixture PDFs
+   committed so the classifier is testable without external data.
+
+**Demo:** `uv run python backend/scripts/classify_aor.py
+backend/tests/fixtures/aor-routing/demo_rt.pdf
+backend/tests/fixtures/aor-routing/demo_ssd.pdf` — or `curl -F
+"file=@backend/tests/fixtures/aor-routing/demo_rt.pdf"
+http://localhost:8000/aor/classify` with `make up` running — routes each
+demo file to its expected label.
+
+**Rests on assumptions:** the similarity-margin threshold that sets
+`needs_review` is an initial engineering default (see `docs/aor-routing.md`),
+not calibrated against a larger labeled AOR set — a genuinely ambiguous
+real AOR may get routed with unwarranted confidence until that
+calibration happens.
+
+### Test plan
+
+#### Integration
+
+- `POST /aor/classify` rejects a non-PDF upload with 422
+  (`backend/tests/test_aor_api.py`).
+- `POST /aor/classify` returns a route for a real PDF upload
+  (`backend/tests/test_aor_api.py`).
+
+#### Unit
+
+- Classifying text against the two labeled references picks the correct
+  route for each (`backend/tests/test_aor_classifier.py`).
+
 ## Next milestone: agents & identity
 
 Not part of this MVP. PLAN.md's Scope > Out ("SSO / external identity
