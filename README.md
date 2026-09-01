@@ -76,9 +76,10 @@ policy?", and you should get a grounded answer citing the uploaded
 document. `make down` stops the containers; Ctrl+C stops the dev servers.
 
 To generate more realistic test documents and stress-test ingestion by
-hand (without any real, sensitive QMS content), see `synthetic-corpus/` —
-an independent tool, documented separately, that writes PDFs to a local
-directory for you to upload the same way.
+hand (without any real, sensitive QMS content), see
+[`synthetic-corpus/README.md`](synthetic-corpus/README.md) — an
+independent tool that writes PDFs to a local directory for you to upload
+the same way.
 
 ## Configuration
 
