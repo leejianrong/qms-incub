@@ -54,19 +54,24 @@ existed (fresh mode).
 | Q37 | LLM provider for local dev/testing vs. the ADR-0003-decided OpenRouter default | ASSUMED | Chat client is provider-swappable (`LLM_PROVIDER` env var) via an OpenAI-compatible client pointed at either Ollama (`http://localhost:11434/v1`, local, no key — used for dev/testing per user request) or OpenRouter (ADR-0003's decided default for anything beyond local dev). Not a reversal of ADR-0003 — Ollama is a local convenience, OpenRouter stays the recorded decision | ADR-0003, V1 implementation |
 | Q38 | Is synthetic batch generation (S5) a QA-author-facing web app feature, or local dev tooling? | DECIDED | Neither, as it turns out — it isn't even a question about *this repo's backend* anymore. Synthetic generation is a fully separate tool (`synthetic-corpus/`), no shared code, no HTTP call to the backend at all. ADR-0011's local-CLI framing was a first correction; ADR-0012 is the complete one | ADR-0011, ADR-0012 |
 | Q39 | Temporary LLM provider preference for a promotional API-key window | DECIDED | From 2026-09-01 through 2026-09-05, prefer `LLM_PROVIDER=zenmux` (a ZenMux API key was distributed to the team separately for this window). From 2026-09-06 onward, this lapses automatically — OpenRouter (ADR-0003's decided default) or Ollama are both fine again, OpenRouter preferred. Does not change Q37's decision or the code default, which stays `openrouter` throughout | Q37 |
+| Q40 | `ui-reference/QMS Console.dc.html` (a UI/UX engineer's design mock) shows a project-intake "AOR" upload feeding the classification wizard — does that need a new document-upload path? | DECIDED | Yes — distinct from V4's QA-author corpus upload. The AOR is Docling-parsed and then LLM-extracted into a fixed set of structured fields (criticality tier, data classification, external dependencies, in-house rationale) that pre-fill wizard context. This is extraction of an uploaded document's existing content, not authoring new content, so it stays inside ADR-0012's boundary | new slice, SLICES.md V9 |
+| Q41 | The mock groups `TodoItem`s into a small set of fixed process phases with a collapsible step/sub-step navigator — does a fixed grouping layer reopen ADR-0008's rejection of a hardcoded regulatory schema? | DECIDED | No. `ProcessStep` is a fixed, config-seeded PM-workflow grouping label (e.g. Initiation/Design/Build/Test/Deploy/Closure) — organizing UI, not regulatory content. `Requirement`s stay fully user-authored per ADR-0008; only the *display grouping* of the `TodoItem`s they generate is fixed | ADR-0008 (unchanged), new slice, SLICES.md V10 |
+| Q42 | The mock shows a full PM → QA Office → Authority approval route (submitted/approved/returned, SLA). ADR-0002 decided self-attestation only, reviewer gate deferred — should `TodoItem` gain approval-state fields now? | DECIDED | Yes, schema-only. Add `approval_state`/`approval_authority`/`sla_target`/`decided_at` now so the UI can render the approval-route pill from the mock, but the PM's own self-attestation action sets them in this milestone — no second role, no auth gate. Matches ADR-0002's Consequences ("adding a reviewer role later is additive... not a rework"); does not reopen or reverse ADR-0002 | ADR-0002 (unchanged), new slice, SLICES.md V11 |
+| Q43 | The mock auto-offers an AI-drafted "project learnings" blog post on project completion, for the PM to publish — does the backend author it? | DECIDED | No — drafting new document content, even unpublished, is exactly what ADR-0012 forbids, and collides with V6's admin-authored blog scope. Replaced with a chat capability: the PM can ask V8's compliance-aware chatbot to summarize a completed project as a chat answer — never a publishable or authored artifact | ADR-0012 (unchanged), V8 (unchanged) |
+| Q44 | ADR-0009 picked Svelte + Vite for the frontend but never a component library — replicating the mock's dashboard/wizard/navigator needs a consistent set of primitives (steppers, dropdowns, modals, cards). Which library? | DECIDED | shadcn-svelte, components copied into the repo and themed to the mock's tokens rather than pulled in as an opaque dependency. Brings Tailwind CSS and Bits UI into the frontend toolchain for the first time | ADR-0013 |
 
 ## Coverage
 
 | Category | Covered by |
 |----------|-----------|
 | Primary user and actors | Q1 |
-| Scope boundary | Q2, Q3, Q16, Q17, Q18, Q19, Q20, Q21, Q38 |
-| Data model and identity | Q22, Q30, Q31, Q32, Q33 |
+| Scope boundary | Q2, Q3, Q16, Q17, Q18, Q19, Q20, Q21, Q38, Q40, Q43 |
+| Data model and identity | Q22, Q30, Q31, Q32, Q33, Q41, Q42 |
 | State and storage | Q23 |
 | Concurrency and conflict | Q13, Q24 |
 | Interfaces and contracts | Q25, Q30 |
 | Failure behaviour | Q26 |
-| External dependencies | Q11, Q14, Q35, Q36, Q37, Q39 |
+| External dependencies | Q11, Q14, Q35, Q36, Q37, Q39, Q44 |
 | Runtime and deployment | Q5, Q34 |
 | Measurable success | Q29 |
 | Security and secrets | Q27 |

@@ -40,6 +40,13 @@ for exercising the pipeline by hand before real content is ever uploaded.
 See `docs/shaping/synthetic-doc-realism/` for that tool's own planning —
 it isn't part of this plan.
 
+The console's look and workflow follow a UI/UX engineer's design mock at
+`ui-reference/QMS Console.dc.html` (a static reference, not shipped code).
+Where that mock implied scope beyond what's decided here — a full
+multi-role approval workflow, an AI-authored blog post, a hardcoded
+regulatory-schema-shaped plan tree — those were resolved against the
+existing ADRs rather than adopted wholesale; see Q40–Q44.
+
 ## Users and actors
 
 - **Project Manager (PM)** — primary. Runs the wizard, works the todo list,
@@ -65,6 +72,16 @@ it isn't part of this plan.
 - PM dashboard: todo list, compliance %, uploaded artifacts.
 - Document upload: a QA-author uploads a PDF, which is the only way a
   policy document enters the corpus (ADR-0012).
+- Project intake document ("AOR") upload: parsed and LLM-extracted into a
+  fixed set of structured fields that inform the wizard — extraction of an
+  uploaded document's own content, not corpus ingestion and not authoring
+  (Q40).
+- Todos grouped for navigation under a small, fixed set of process-phase
+  steps (Q41) — a display grouping, not a change to how todos are
+  generated or to `Requirement`'s user-authored hierarchy (ADR-0008).
+- Approval-state fields on a todo (state/authority/SLA), set by the PM's
+  own self-attestation action — schema only, no reviewer role or gate
+  (Q42).
 - RAG ingestion pipeline for uploaded policy documents, blog posts, and
   FAQ entries.
 - RAG chatbot (OpenRouter): grounded answers from the ingested corpus plus
@@ -74,7 +91,14 @@ it isn't part of this plan.
 **Out.**
 
 - QA-reviewer approval gate on submitted artifacts. Confirmed as a wanted
-  next-iteration feature (not cut, deferred) — F7 in QUESTIONS.md.
+  next-iteration feature (not cut, deferred) — F7 in QUESTIONS.md. The
+  data model gains approval-state fields this milestone (Q42), but no
+  second role or real gate does.
+- Any content the backend authors, drafts, or generates on its own,
+  including an AI-drafted blog post — the backend ingests and answers
+  questions, it doesn't write (ADR-0012, Q43). A completed project's
+  history is available as a chat answer (V8), never as a publishable
+  artifact.
 - Multi-tenant SaaS (multiple companies in one deployment). Single-org for
   this milestone; data model carries an org-scoping column so this isn't
   expensive to add later (ADR-0004).
@@ -107,6 +131,9 @@ it isn't part of this plan.
 | R6 | Uploaded policy documents, blog posts, and FAQ entries are ingested automatically | Must-have |
 | R7 | Chatbot answers grounded questions using the corpus plus the asking PM's own compliance state, with citations | Must-have |
 | R8 | Blog and FAQ sections exist as simple admin-authored content | Must-have |
+| R9 | A project's intake document is parsed and its declared attributes extracted to inform classification (Q40) | Must-have |
+| R10 | Todos are grouped for navigation under a small, fixed set of process-phase steps (Q41) | Must-have |
+| R11 | A todo surfaces an approval-route status (state/authority/SLA), even though only self-attestation gates completion this milestone (Q42) | Must-have |
 
 ## Shape
 
@@ -121,6 +148,9 @@ it isn't part of this plan.
 | S7 | *(retired — merged into S4, see ADR-0012)* | |
 | S8 | RAG chatbot: query → vector retrieval (top-k) + structured injection of the asking PM's project/todo/artifact state → OpenRouter LLM prompt → grounded answer with citations | ADR-0003 |
 | S9 | Blog/FAQ CMS: simple admin-authored content list; publish triggers S6 | |
+| S10 | AOR intake: project-scoped upload → Docling parse → LLM structured-field extraction → stored on the `Project`, never enters the corpus | ADR-0012 |
+| S11 | Process-step grouping: fixed, config-seeded `ProcessStep` rows; todo generation (S2) assigns each `TodoItem` a step | ADR-0008 |
+| S12 | Approval-state fields: `TodoItem` carries state/authority/SLA, set by S3's self-attestation action, no reviewer role | ADR-0002 |
 
 ## Affordances
 
@@ -129,9 +159,12 @@ it isn't part of this plan.
 | Affordance | Place | Wires to |
 |------------|-------|----------|
 | Standard / Clause / Requirement editor | QA-author tools | S2 (ADR-0008) |
+| AOR upload + extracted-fields panel | New project flow, wizard step 1 | S10 |
 | Classification wizard (multi-step form) | New project flow | S1, S2 |
+| QMS plan navigator (steps → todos) | Project detail | S11 |
 | Todo list + compliance % | PM dashboard | S2, S3 |
 | Artifact upload control | Todo item row | S3 |
+| Approval-route card | Todo detail | S12 |
 | Upload document | QA-author tools | S4 |
 | Blog list + post view | Blog section | S9 |
 | FAQ list | FAQ section | S9 |
@@ -154,12 +187,18 @@ it isn't part of this plan.
   Qdrant vector store, LlamaIndex + Docling for the RAG pipeline
   (ADR-0009, supersedes ADR-0005's original stack defaults). No PDF
   rendering engine in the backend at all — there's nothing left to render
-  (ADR-0012 supersedes ADR-0010).
+  (ADR-0012 supersedes ADR-0010). Frontend components come from
+  shadcn-svelte, copied into the repo and themed to match `ui-reference/`
+  (ADR-0013).
 - Core entities: `ComplianceStandard` (name, description), `Clause` (belongs
   to a Standard, ordering, text), `Requirement` (belongs to a Clause,
   description, applicable risk tiers) — user-authored, no hardcoded
-  regulatory schema (ADR-0008). `Project` (owner=PM, risk tier), `TodoItem`
-  (project, the `Requirement` it traces to, status), `Artifact` (todo item,
+  regulatory schema (ADR-0008). `Project` (owner=PM, risk tier), `ProcessStep`
+  (fixed, config-seeded phase — a display grouping, not user-authored;
+  Q41), `TodoItem` (project, the `Requirement` it traces to, its
+  `ProcessStep`, status, and approval-state fields — `approval_state`/
+  `approval_authority`/`sla_target`/`decided_at`, set by self-attestation
+  alone this milestone; Q42), `Artifact` (todo item,
   file, uploader), `PolicyDocument` (id, title, ingestion status
   pending/embedded/failed, chunk count, error) — a record of an uploaded
   file's progress through ingestion, not document content; the app stores

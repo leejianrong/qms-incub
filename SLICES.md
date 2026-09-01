@@ -272,3 +272,248 @@ unbuilt mechanism (ADR-0003's Consequences).
 
 - Prompt-assembly function, given a fixed retrieval result and fixed user
   state, produces the expected structured sections.
+
+## V9: AOR Intake & Structured Extraction
+
+A UI/UX engineer's design mock (`ui-reference/QMS Console.dc.html`) shows
+a project-creation wizard that opens with an "AOR" (Approval of
+Requirement) document upload, then shows fields the system claims to have
+"read from the pack." This slice is the real version of that: a new,
+project-scoped upload path distinct from V4's QA-author corpus upload,
+whose only job is answering "what does this project's own intake document
+say" — not adding anything to the RAG corpus.
+
+**Delivers:** new — not in PLAN.md's original R-list; a Q40 addition
+
+**Build plan**
+
+1. `POST /projects/{id}/aor`: multipart upload (PDF/DOCX/XLSX), stores the
+   file against the `Project`, distinct from `PolicyDocumentRow` (V4) —
+   this document never enters the Qdrant corpus.
+2. Docling parses the upload; an LLM call (same OpenRouter client as S8)
+   extracts a fixed, small set of structured fields (criticality tier,
+   data classification, external dependencies, in-house rationale) into a
+   JSON column on the project's intake record. Extraction only — no new
+   content is authored, per ADR-0012 (Q40).
+3. Wizard UI: drag-drop/click uploader, then a read-only "read from the
+   pack" panel showing the extracted fields before the 3 classification
+   questions (V2).
+
+**Demo:** Upload a real intake document with a stated criticality tier and
+external dependency, see both values appear correctly in the "read from
+the pack" panel before answering the wizard's questions.
+
+**Rests on assumptions:** Q40 (extraction, not authoring, stays inside
+ADR-0012) — if extraction quality is too unreliable to trust unattended,
+the fields become PM-editable suggestions rather than authoritative
+inputs, which doesn't change the mechanism, only whether its output is
+locked.
+
+### Test plan
+
+#### End-to-end
+
+- Uploading an intake document with known values for all four fields
+  produces an extraction result matching each value, shown in the wizard
+  before the classification questions.
+
+#### Integration
+
+- `POST /projects/{id}/aor` stores the file, runs extraction, and persists
+  the structured result on the project's intake record in one request; the
+  document does not appear in `GET /documents` or the Qdrant corpus.
+
+#### Unit
+
+- Extraction-prompt assembly, given fixed Docling output, requests exactly
+  the four defined fields and rejects a response missing one.
+
+## V10: QMS Plan Navigator (Process-Step Grouping)
+
+V2's dashboard is a flat todo list. The design mock groups todos into a
+small set of fixed process phases (Initiation/Design/Build/Test/Deploy/
+Closure or similar) shown as a collapsible step/sub-step navigator. This
+slice adds that grouping without touching how todos are generated.
+
+**Delivers:** new — not in PLAN.md's original R-list; a Q41 addition
+
+**Build plan**
+
+1. `ProcessStep` table: fixed, config-seeded rows (id, title, ordering) —
+   not user-authored, not a regulatory concept (Q41). Seeded once, same
+   for every org.
+2. `TodoItem` gains a `process_step_id`, assigned at generation time (S2)
+   by a fixed mapping from `Requirement` to phase.
+3. Project detail UI: two-pane layout — a collapsible left-hand navigator
+   (steps → their todos, done/total + progress bar per step) and a right-
+   hand panel for the selected todo.
+
+**Demo:** Complete the wizard, land on the project detail view, see the
+generated todos grouped correctly under their process steps with an
+accurate per-step done-count, collapse the navigator to its icon rail and
+back.
+
+**Rests on assumptions:** Q41 (fixed `ProcessStep` grouping doesn't reopen
+ADR-0008) — if a future need arises for org-specific phase sets, that's a
+new decision, not a resurrection of a hardcoded regulatory schema.
+
+### Test plan
+
+#### End-to-end
+
+- Completing the wizard shows every generated todo under its correct
+  process step, with each step's done-count and progress bar matching the
+  underlying `TodoItem` statuses.
+
+#### Integration
+
+- Todo generation (S2) assigns a `process_step_id` to every created
+  `TodoItem` in the same transaction that creates it.
+
+#### Unit
+
+- Requirement-to-`ProcessStep` mapping returns the expected step for each
+  seeded `Requirement`.
+
+## V11: Approval-State Schema
+
+The design mock shows a full PM → QA Office → Authority approval route per
+todo (submitted/approved/returned, SLA, "chase the approver"). ADR-0002
+decided self-attestation only, with a reviewer gate deferred as a named
+future feature. This slice adds the schema so the UI can render that
+route now, without building the second role or the gate itself (Q42).
+
+**Delivers:** new — extends R3/V3; a Q42 addition
+
+**Build plan**
+
+1. `TodoItem` gains `approval_state` (`not_required`/`not_started`/
+   `submitted`/`approved`/`returned`), `approval_authority` (free text),
+   `sla_target`, `decided_at`.
+2. Self-attestation (V3) sets `approval_state` to `submitted` then
+   `approved` in the same action, still driven entirely by the PM's own
+   upload — no second user, no gate.
+3. Todo detail UI: an approval-route card (3-node flow, current state
+   highlighted, authority + SLA shown) sourced from these fields.
+
+**Demo:** Upload an artifact against a todo requiring approval, see it
+move through `submitted` → `approved` in the UI's approval-route card,
+authority and SLA text populated from seed data — all driven by the same
+single self-attesting action.
+
+**Rests on assumptions:** Q42 (schema-only, additive to ADR-0002, not a
+reversal) — if a real reviewer role and gate get built later, this slice's
+fields are exactly what that work extends, not fields to migrate away
+from.
+
+### Test plan
+
+#### End-to-end
+
+- Self-attesting a todo with `approval_state != not_required` shows the
+  approval-route card transition to `approved` with the correct authority
+  and SLA text.
+
+#### Integration
+
+- Self-attestation (V3's upload handler) sets `approval_state` and
+  `decided_at` in the same transaction as the `Artifact` row and the
+  `Complied` status flip.
+
+#### Unit
+
+- Approval-route card view-model, given each `approval_state` value,
+  renders the correct node highlighted and correct status text.
+
+## V12: Frontend Design System — shadcn-svelte Adoption
+
+Infrastructure slice: before V10/V11/V13's screens can be built, the
+frontend needs the component primitives and design tokens the
+`ui-reference/` mock uses (ADR-0013). No new product behavior — this
+slice ends in a component showcase, not a user-facing feature.
+
+**Delivers:** none (R-list) — enabling work for V9–V11's UI and V13
+
+**Build plan**
+
+1. Add Tailwind CSS + its Vite plugin, and shadcn-svelte's CLI, to
+   `frontend/` (ADR-0013).
+2. Port `ui-reference/`'s design tokens (accent color, radius, shadow,
+   typography) into Tailwind theme config / CSS custom properties.
+3. Pull in the shadcn-svelte components the mock actually uses: button,
+   input, select, card, dialog, dropdown-menu, tabs/stepper primitives,
+   badge/tag.
+4. A local-only component showcase route (not shipped) exercising each
+   component against the ported tokens, for visual comparison against the
+   mock.
+
+**Demo:** Open the showcase route side-by-side with `ui-reference/QMS
+Console.dc.html` and confirm button, input, card, and tag styling matches
+(accent color, radius, shadow) at a glance.
+
+**Rests on assumptions:** none — ADR-0013 already settled the library
+choice.
+
+### Test plan
+
+#### Integration
+
+- `npm run build` succeeds with Tailwind + shadcn-svelte wired in, and the
+  showcase route renders every adopted component without a console error.
+
+#### Unit
+
+- Design-token values (accent color, radius) match `ui-reference/`'s
+  `:root` custom properties exactly, asserted from the ported Tailwind
+  config.
+
+## V13: Frontend — Console UI (Dashboard, Wizard, Plan Navigator)
+
+Wires V12's components to the backend surfaces from V2/V3/V9/V10/V11,
+replacing the frontend's current chat-panel-only state (CLAUDE.md build
+status) with the console experience `ui-reference/` depicts — scoped to
+the core workflow only. Blog/FAQ (V6), notifications, favourites, mentions,
+the floating AI assistant, and the per-todo "contact the owner" chat are
+explicitly out of this slice, to be planned separately once this core
+lands.
+
+**Delivers:** frontend surface for R1, R2, R3 plus V9/V10/V11's new backend
+work
+
+**Build plan**
+
+1. Project dashboard: list + status (no notifications/favourites/mentions
+   panels).
+2. Create-project wizard: step 1 (details + AOR upload, V9), step 2 (3
+   classification questions, V2), step 3 (generated todo/plan preview).
+3. Project detail: progress header, V10's collapsible plan navigator.
+4. Todo detail panel: gist, artifact upload (V3), V11's approval-route
+   card, comment thread.
+5. Chat panel (V8) surfaced on the project detail view, project-aware.
+
+**Demo:** Create a project end to end through the real UI — upload an AOR,
+answer the 3 questions, land on a generated plan grouped by process step,
+self-attest one todo requiring approval and watch its approval-route card
+update — with no step of this flow touching a script or a fixture.
+
+**Rests on assumptions:** none new — this is the UI for mechanisms V2,
+V3, V9, V10, and V11 already define; a change to any of those changes this
+slice's screens, not its own logic.
+
+### Test plan
+
+#### End-to-end
+
+- The full create-project → wizard → generated plan → self-attest flow,
+  driven through the UI, produces the same state V2/V3/V9/V10/V11's own
+  end-to-end tests assert for their backend surfaces.
+
+#### Integration
+
+- Each screen's data-fetching wires to the correct endpoint and renders a
+  loading/error state when that endpoint fails.
+
+#### Unit
+
+- Wizard step-validation (can't advance without a name, date, AOR, and all
+  3 answers) matches V2/V9's stated preconditions.
