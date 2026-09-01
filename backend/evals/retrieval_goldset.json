@@ -1,0 +1,1907 @@
+{
+  "meta": {
+    "source": "synthetic-corpus/rag_policy_compliance_qa.md",
+    "collection": "qms_incub_corpus",
+    "relevance_key": "document_title::chunk_index",
+    "grades": {
+      "primary": 2,
+      "cross_reference": 1
+    },
+    "counts": {
+      "total": 110,
+      "answerable": 100,
+      "guardrail": 10
+    },
+    "build_problems": []
+  },
+  "queries": [
+    {
+      "query_id": "QA-001",
+      "query": "I am preparing a production change request. What do I need to include before it can be queued for CAB review?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-001",
+      "sections": [
+        "POL-001 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-001.pdf::2": 2,
+        "POL-001.pdf::3": 2
+      },
+      "relevant_documents": [
+        "POL-001.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-002",
+      "query": "We made an emergency production change during an active incident without the normal CAB approval sequence. What do we need to record afterward?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-001",
+      "sections": [
+        "POL-001 \u00a72",
+        "POL-001 \u00a74.4"
+      ],
+      "relevant": {
+        "POL-001.pdf::0": 2,
+        "POL-001.pdf::1": 2,
+        "POL-001.pdf::3": 2,
+        "POL-001.pdf::4": 2
+      },
+      "relevant_documents": [
+        "POL-001.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-003",
+      "query": "We deployed code behind a feature flag that defaulted to off. Do we need a change record when we later enable the flag for production traffic?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-001",
+      "sections": [
+        "POL-001 \u00a72"
+      ],
+      "relevant": {
+        "POL-001.pdf::0": 2,
+        "POL-001.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-001.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-004",
+      "query": "Our change is high risk. What approval evidence and pre-approval work must exist?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-001",
+      "sections": [
+        "POL-001 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-001.pdf::3": 2
+      },
+      "relevant_documents": [
+        "POL-001.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-005",
+      "query": "My production change provisions or modifies production credentials. What extra approval do I need before CAB approval?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-001",
+      "sections": [
+        "POL-001 \u00a74.2",
+        "POL-006 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-001.pdf::3": 2,
+        "POL-006.pdf::2": 1
+      },
+      "relevant_documents": [
+        "POL-001.pdf",
+        "POL-006.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-006",
+      "query": "Can the same person submit a low-risk change and approve it for the CAB?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-001",
+      "sections": [
+        "POL-001 \u00a73"
+      ],
+      "relevant": {
+        "POL-001.pdf::1": 2,
+        "POL-001.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-001.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-007",
+      "query": "I perform the same low-risk certificate rotation regularly. What evidence do I need if it has been designated a Standard Change?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-001",
+      "sections": [
+        "POL-001 \u00a74.6"
+      ],
+      "relevant": {
+        "POL-001.pdf::4": 2,
+        "POL-001.pdf::5": 2
+      },
+      "relevant_documents": [
+        "POL-001.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-008",
+      "query": "We need to deploy during a published blackout period. What can proceed and what must be documented if we need an exception?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-001",
+      "sections": [
+        "POL-001 \u00a74.5"
+      ],
+      "relevant": {
+        "POL-001.pdf::4": 2
+      },
+      "relevant_documents": [
+        "POL-001.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-009",
+      "query": "Our change spans several services owned by different teams. How should I package the request and determine the risk level?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-001",
+      "sections": [
+        "POL-001 \u00a74.7",
+        "POL-001 \u00a74.14"
+      ],
+      "relevant": {
+        "POL-001.pdf::5": 2,
+        "POL-001.pdf::7": 2
+      },
+      "relevant_documents": [
+        "POL-001.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-010",
+      "query": "What records need to exist so our production changes are traceable and how long are they retained?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-001",
+      "sections": [
+        "POL-001 \u00a73",
+        "POL-001 \u00a74.8",
+        "POL-001 \u00a74.11",
+        "POL-001 \u00a75"
+      ],
+      "relevant": {
+        "POL-001.pdf::1": 2,
+        "POL-001.pdf::2": 2,
+        "POL-001.pdf::5": 2,
+        "POL-001.pdf::6": 2,
+        "POL-001.pdf::7": 2,
+        "POL-001.pdf::8": 2
+      },
+      "relevant_documents": [
+        "POL-001.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-011",
+      "query": "Before we start building an in-scope service, what security design artifacts do we need?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-002",
+      "sections": [
+        "POL-002 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-002.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-002.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-012",
+      "query": "Our threat model found an unmitigated high-severity threat. Can we start implementation while the mitigation is figured out?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-002",
+      "sections": [
+        "POL-002 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-002.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-002.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-013",
+      "query": "How should we provide credentials used by the build pipeline?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-002",
+      "sections": [
+        "POL-002 \u00a74.2",
+        "POL-006 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-002.pdf::1": 2,
+        "POL-002.pdf::2": 2,
+        "POL-006.pdf::1": 1,
+        "POL-006.pdf::2": 1
+      },
+      "relevant_documents": [
+        "POL-002.pdf",
+        "POL-006.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-014",
+      "query": "Can our production build pull a dependency directly from a public package registry?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-002",
+      "sections": [
+        "POL-002 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-002.pdf::1": 2,
+        "POL-002.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-002.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-015",
+      "query": "What security testing evidence is required for each release candidate?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-002",
+      "sections": [
+        "POL-002 \u00a74.3"
+      ],
+      "relevant": {
+        "POL-002.pdf::2": 2,
+        "POL-007.pdf::2": 1
+      },
+      "relevant_documents": [
+        "POL-002.pdf",
+        "POL-007.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-016",
+      "query": "A security test finds a high-severity issue in the release candidate. Can the Product Manager accept it with a future deadline?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-002",
+      "sections": [
+        "POL-002 \u00a74.3"
+      ],
+      "relevant": {
+        "POL-002.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-002.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-017",
+      "query": "We changed authentication or authorization code. What post-deployment evidence do we need?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-002",
+      "sections": [
+        "POL-002 \u00a74.4"
+      ],
+      "relevant": {
+        "POL-002.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-002.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-018",
+      "query": "What do I need to record when introducing a third-party or open-source component?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-002",
+      "sections": [
+        "POL-002 \u00a74.5"
+      ],
+      "relevant": {
+        "POL-002.pdf::2": 2,
+        "POL-002.pdf::3": 2
+      },
+      "relevant_documents": [
+        "POL-002.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-019",
+      "query": "A dependency already in our SBOM is later found to have a newly disclosed critical vulnerability. Can remediation wait for our normal release schedule?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-002",
+      "sections": [
+        "POL-002 \u00a74.5"
+      ],
+      "relevant": {
+        "POL-002.pdf::2": 2,
+        "POL-002.pdf::3": 2
+      },
+      "relevant_documents": [
+        "POL-002.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-020",
+      "query": "How long do we need to retain threat-model and security-test evidence, and does an internal tool get a full exemption?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-002",
+      "sections": [
+        "POL-002 \u00a72",
+        "POL-002 \u00a75"
+      ],
+      "relevant": {
+        "POL-002.pdf::0": 2,
+        "POL-002.pdf::3": 2
+      },
+      "relevant_documents": [
+        "POL-002.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-021",
+      "query": "Does every code change to a production repository need a reviewer, even if I am very senior or the change is tiny?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-003",
+      "sections": [
+        "POL-003 \u00a72",
+        "POL-003 \u00a73"
+      ],
+      "relevant": {
+        "POL-003.pdf::0": 2,
+        "POL-003.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-003.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-022",
+      "query": "My pull request only changes documentation or test fixtures. What gates still apply?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-003",
+      "sections": [
+        "POL-003 \u00a72"
+      ],
+      "relevant": {
+        "POL-003.pdf::0": 2
+      },
+      "relevant_documents": [
+        "POL-003.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-023",
+      "query": "Do generated source files need manual review?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-003",
+      "sections": [
+        "POL-003 \u00a72"
+      ],
+      "relevant": {
+        "POL-003.pdf::0": 2
+      },
+      "relevant_documents": [
+        "POL-003.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-024",
+      "query": "What information should I put in the pull request description?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-003",
+      "sections": [
+        "POL-003 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-003.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-003.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-025",
+      "query": "My pull request touches about 600 lines of production code. Is there a policy expectation about how I structure it?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-003",
+      "sections": [
+        "POL-003 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-003.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-003.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-026",
+      "query": "What quality gates must pass before a production-code pull request is eligible to merge?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-003",
+      "sections": [
+        "POL-003 \u00a73",
+        "POL-003 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-003.pdf::0": 2,
+        "POL-003.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-003.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-027",
+      "query": "I do not understand an unfamiliar subsystem touched by a pull request. What should I record or do instead of approving it?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-003",
+      "sections": [
+        "POL-003 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-003.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-003.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-028",
+      "query": "We need to revert a merged change. Can we direct-push the revert to main?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-003",
+      "sections": [
+        "POL-003 \u00a74.3"
+      ],
+      "relevant": {
+        "POL-003.pdf::1": 2,
+        "POL-003.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-003.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-029",
+      "query": "During an active incident, what can we bypass in code review and what evidence still has to exist?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-003",
+      "sections": [
+        "POL-003 \u00a74.4"
+      ],
+      "relevant": {
+        "POL-003.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-003.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-030",
+      "query": "What review-process records should we retain and monitor over time?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-003",
+      "sections": [
+        "POL-003 \u00a73",
+        "POL-003 \u00a74.5",
+        "POL-003 \u00a75"
+      ],
+      "relevant": {
+        "POL-003.pdf::0": 2,
+        "POL-003.pdf::1": 2,
+        "POL-003.pdf::2": 2,
+        "POL-003.pdf::3": 2
+      },
+      "relevant_documents": [
+        "POL-003.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-031",
+      "query": "What traceability evidence must exist before a release candidate can proceed past branch freeze?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-004",
+      "sections": [
+        "POL-004 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-004.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-004.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-032",
+      "query": "What evidence is required around branch freeze and regression testing?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-004",
+      "sections": [
+        "POL-004 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-004.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-004.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-033",
+      "query": "Our release includes a database schema migration. What additional pre-rollout evidence do we need?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-004",
+      "sections": [
+        "POL-004 \u00a72",
+        "POL-004 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-004.pdf::0": 2,
+        "POL-004.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-004.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-034",
+      "query": "What should we capture during the staged production rollout?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-004",
+      "sections": [
+        "POL-004 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-004.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-004.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-035",
+      "query": "What approvals are needed for staged production versus full production rollout?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-004",
+      "sections": [
+        "POL-004 \u00a73"
+      ],
+      "relevant": {
+        "POL-004.pdf::0": 2,
+        "POL-004.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-004.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-036",
+      "query": "What rollback time targets do we need to meet and how are they measured?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-004",
+      "sections": [
+        "POL-004 \u00a73"
+      ],
+      "relevant": {
+        "POL-004.pdf::0": 2,
+        "POL-004.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-004.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-037",
+      "query": "Monitoring confirms a release regression. Should I attempt a forward fix inside the release window?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-004",
+      "sections": [
+        "POL-004 \u00a74.3"
+      ],
+      "relevant": {
+        "POL-004.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-004.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-038",
+      "query": "What communications do we need to retain around a scheduled release?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-004",
+      "sections": [
+        "POL-004 \u00a74.4"
+      ],
+      "relevant": {
+        "POL-004.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-004.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-039",
+      "query": "Do we have to use automated canary analysis for every service?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-004",
+      "sections": [
+        "POL-004 \u00a74.5"
+      ],
+      "relevant": {
+        "POL-004.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-004.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-040",
+      "query": "How long should release, rollback, and stakeholder-notification records be retained?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-004",
+      "sections": [
+        "POL-004 \u00a75"
+      ],
+      "relevant": {
+        "POL-004.pdf::2": 2,
+        "POL-004.pdf::3": 2
+      },
+      "relevant_documents": [
+        "POL-004.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-041",
+      "query": "I think I found a production incident. What records/actions should I create immediately?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-005",
+      "sections": [
+        "POL-005 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-005.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-005.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-042",
+      "query": "How quickly do I need to make the initial severity call after being paged?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-005",
+      "sections": [
+        "POL-005 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-005.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-005.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-043",
+      "query": "We have a confirmed customer-data exposure. What severity and response targets apply?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-005",
+      "sections": [
+        "POL-005 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-005.pdf::1": 2,
+        "POL-005.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-005.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-044",
+      "query": "Can two people act as Incident Commander during the same active incident?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-005",
+      "sections": [
+        "POL-005 \u00a73"
+      ],
+      "relevant": {
+        "POL-005.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-005.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-045",
+      "query": "The incident may involve unauthorized access or credential compromise. What extra escalation evidence do we need?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-005",
+      "sections": [
+        "POL-005 \u00a72",
+        "POL-005 \u00a73"
+      ],
+      "relevant": {
+        "POL-005.pdf::0": 2,
+        "POL-005.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-005.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-046",
+      "query": "What update cadence should our incident timeline and communications show?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-005",
+      "sections": [
+        "POL-005 \u00a74.3"
+      ],
+      "relevant": {
+        "POL-005.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-005.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-047",
+      "query": "A Sev1 or Sev2 incident threatens an extended loss of a production data store or region. What additional decision should we record?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-005",
+      "sections": [
+        "POL-005 \u00a74.3",
+        "POL-009 \u00a74"
+      ],
+      "relevant": {
+        "POL-005.pdf::2": 2,
+        "POL-009.pdf::2": 1
+      },
+      "relevant_documents": [
+        "POL-005.pdf",
+        "POL-009.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-048",
+      "query": "When can I mark an incident resolved?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-005",
+      "sections": [
+        "POL-005 \u00a74.4"
+      ],
+      "relevant": {
+        "POL-005.pdf::2": 2,
+        "POL-005.pdf::3": 2
+      },
+      "relevant_documents": [
+        "POL-005.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-049",
+      "query": "What artifact is required after a Sev1 or Sev2 incident?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-005",
+      "sections": [
+        "POL-005 \u00a74.4"
+      ],
+      "relevant": {
+        "POL-005.pdf::2": 2,
+        "POL-005.pdf::3": 2
+      },
+      "relevant_documents": [
+        "POL-005.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-050",
+      "query": "A post-incident action requires a production change. Can we implement it directly because it came from the PIR?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-005",
+      "sections": [
+        "POL-005 \u00a74.4",
+        "POL-001 \u00a7ALL"
+      ],
+      "relevant": {
+        "POL-005.pdf::2": 2,
+        "POL-005.pdf::3": 2,
+        "POL-001.pdf::2": 1,
+        "POL-001.pdf::3": 1,
+        "POL-001.pdf::4": 1,
+        "POL-001.pdf::5": 1,
+        "POL-001.pdf::6": 1,
+        "POL-001.pdf::7": 1
+      },
+      "relevant_documents": [
+        "POL-001.pdf",
+        "POL-005.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-051",
+      "query": "What must an access request contain before IT can provision it?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-006",
+      "sections": [
+        "POL-006 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-006.pdf::1": 2,
+        "POL-006.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-006.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-052",
+      "query": "What approvals do I need for production write access or sensitive data access?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-006",
+      "sections": [
+        "POL-006 \u00a73",
+        "POL-006 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-006.pdf::1": 2,
+        "POL-006.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-006.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-053",
+      "query": "I have admin rights. Can I approve my own access request?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-006",
+      "sections": [
+        "POL-006 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-006.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-006.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-054",
+      "query": "How should break-glass production access be provisioned during an incident?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-006",
+      "sections": [
+        "POL-006 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-006.pdf::1": 2,
+        "POL-006.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-006.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-055",
+      "query": "After an access request is approved, what provisioning evidence should I leave behind?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-006",
+      "sections": [
+        "POL-006 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-006.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-006.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-056",
+      "query": "A legacy system has no automated provisioning interface. Can I grant access manually?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-006",
+      "sections": [
+        "POL-006 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-006.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-006.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-057",
+      "query": "What evidence do we need for the quarterly access review?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-006",
+      "sections": [
+        "POL-006 \u00a74.3"
+      ],
+      "relevant": {
+        "POL-006.pdf::2": 2,
+        "POL-006.pdf::3": 2
+      },
+      "relevant_documents": [
+        "POL-006.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-058",
+      "query": "What evidence is required for service accounts with standing write access to production data?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-006",
+      "sections": [
+        "POL-006 \u00a74.3"
+      ],
+      "relevant": {
+        "POL-006.pdf::2": 2,
+        "POL-006.pdf::3": 2
+      },
+      "relevant_documents": [
+        "POL-006.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-059",
+      "query": "When must access be revoked and how quickly do I need to confirm it?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-006",
+      "sections": [
+        "POL-006 \u00a74.4"
+      ],
+      "relevant": {
+        "POL-006.pdf::3": 2
+      },
+      "relevant_documents": [
+        "POL-006.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-060",
+      "query": "What audit trail and exception records do we need to maintain for access control?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-006",
+      "sections": [
+        "POL-006 \u00a74.5",
+        "POL-006 \u00a74.6"
+      ],
+      "relevant": {
+        "POL-006.pdf::3": 2,
+        "POL-006.pdf::4": 2
+      },
+      "relevant_documents": [
+        "POL-006.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-061",
+      "query": "We are creating a new data store. What classification evidence must exist before real data is written to it?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-007",
+      "sections": [
+        "POL-007 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-007.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-007.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-062",
+      "query": "Our dataset contains both Internal and Restricted fields. What classification should the dataset carry?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-007",
+      "sections": [
+        "POL-007 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-007.pdf::1": 2,
+        "POL-007.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-007.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-063",
+      "query": "How do I distinguish the four data tiers when documenting a dataset?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-007",
+      "sections": [
+        "POL-007 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-007.pdf::1": 2,
+        "POL-007.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-007.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-064",
+      "query": "What controls must I show for Confidential or Restricted data?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-007",
+      "sections": [
+        "POL-007 \u00a74.2",
+        "POL-006 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-007.pdf::2": 2,
+        "POL-006.pdf::2": 1
+      },
+      "relevant_documents": [
+        "POL-006.pdf",
+        "POL-007.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-065",
+      "query": "I exported Confidential data from the production system into a spreadsheet for analysis. Can I treat the export as Internal because it is only temporary?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-007",
+      "sections": [
+        "POL-007 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-007.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-007.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-066",
+      "query": "We already use a vendor for another purpose. Can I send it Confidential data for a new use without another vendor-risk step?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-007",
+      "sections": [
+        "POL-007 \u00a74.3",
+        "POL-008 \u00a74"
+      ],
+      "relevant": {
+        "POL-007.pdf::2": 2,
+        "POL-008.pdf::3": 1
+      },
+      "relevant_documents": [
+        "POL-007.pdf",
+        "POL-008.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-067",
+      "query": "How should we document disposal of Confidential or Restricted data?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-007",
+      "sections": [
+        "POL-007 \u00a74.3"
+      ],
+      "relevant": {
+        "POL-007.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-007.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-068",
+      "query": "Our scanning tool found a likely government identifier in a system not classified Restricted. What compliant artifact should result?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-007",
+      "sections": [
+        "POL-007 \u00a74.4"
+      ],
+      "relevant": {
+        "POL-007.pdf::2": 2,
+        "POL-007.pdf::3": 2
+      },
+      "relevant_documents": [
+        "POL-007.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-069",
+      "query": "Who sets and who can challenge or override a data classification?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-007",
+      "sections": [
+        "POL-007 \u00a73"
+      ],
+      "relevant": {
+        "POL-007.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-007.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-070",
+      "query": "What handling controls apply to Internal versus Public data?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-007",
+      "sections": [
+        "POL-007 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-007.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-007.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-071",
+      "query": "We want to run a free vendor proof of concept using a small anonymized sample of real data. Do I need vendor intake first?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-008",
+      "sections": [
+        "POL-008 \u00a72",
+        "POL-008 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-008.pdf::1": 2,
+        "POL-008.pdf::2": 2,
+        "POL-008.pdf::3": 2,
+        "POL-008.pdf::4": 2
+      },
+      "relevant_documents": [
+        "POL-008.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-072",
+      "query": "What information should I provide in the vendor intake artifact?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-008",
+      "sections": [
+        "POL-008 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-008.pdf::3": 2,
+        "POL-008.pdf::4": 2
+      },
+      "relevant_documents": [
+        "POL-008.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-073",
+      "query": "What due-diligence artifacts and reassessment cadence apply by vendor risk tier?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-008",
+      "sections": [
+        "POL-008 \u00a74",
+        "POL-008 \u00a7Table2"
+      ],
+      "relevant": {
+        "POL-008.pdf::3": 2
+      },
+      "relevant_documents": [
+        "POL-008.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-074",
+      "query": "A Critical or High vendor\u2019s SOC 2 report has a material finding. Can onboarding continue without addressing it?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-008",
+      "sections": [
+        "POL-008 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-008.pdf::3": 2,
+        "POL-008.pdf::4": 2
+      },
+      "relevant_documents": [
+        "POL-008.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-075",
+      "query": "What information must stay current in the vendor risk registry, and what happens if a vendor misses reassessments?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-008",
+      "sections": [
+        "POL-008 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-008.pdf::4": 2
+      },
+      "relevant_documents": [
+        "POL-008.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-076",
+      "query": "A Medium vendor will now connect to a production pipeline handling Confidential data. Can we wait until the annual reassessment to change its tier?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-008",
+      "sections": [
+        "POL-008 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-008.pdf::4": 2
+      },
+      "relevant_documents": [
+        "POL-008.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-077",
+      "query": "What incident-notification evidence should our vendor arrangement require?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-008",
+      "sections": [
+        "POL-008 \u00a74.3",
+        "POL-009 \u00a74"
+      ],
+      "relevant": {
+        "POL-008.pdf::4": 2,
+        "POL-008.pdf::5": 2,
+        "POL-009.pdf::2": 1
+      },
+      "relevant_documents": [
+        "POL-008.pdf",
+        "POL-009.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-078",
+      "query": "A vendor engagement is ending. What offboarding evidence must we produce?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-008",
+      "sections": [
+        "POL-008 \u00a74.4"
+      ],
+      "relevant": {
+        "POL-008.pdf::5": 2,
+        "POL-007.pdf::2": 1
+      },
+      "relevant_documents": [
+        "POL-007.pdf",
+        "POL-008.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-079",
+      "query": "What contractual and subprocessor artifacts are mandatory for a Critical or High vendor?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-008",
+      "sections": [
+        "POL-008 \u00a74.5",
+        "POL-008 \u00a74.6"
+      ],
+      "relevant": {
+        "POL-008.pdf::5": 2,
+        "POL-008.pdf::6": 2
+      },
+      "relevant_documents": [
+        "POL-008.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-080",
+      "query": "How should we document a cloud infrastructure provider or a payment processor that touches raw card data?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-008",
+      "sections": [
+        "POL-008 \u00a74.7",
+        "POL-008 \u00a74.9"
+      ],
+      "relevant": {
+        "POL-008.pdf::6": 2,
+        "POL-008.pdf::7": 2,
+        "POL-008.pdf::8": 2
+      },
+      "relevant_documents": [
+        "POL-008.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-081",
+      "query": "What recovery-plan and annual-test artifacts are required for Tier 1, Tier 2, and Tier 3 systems?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-009",
+      "sections": [
+        "POL-009 \u00a72",
+        "POL-009 \u00a74"
+      ],
+      "relevant": {
+        "POL-009.pdf::0": 2,
+        "POL-009.pdf::1": 2,
+        "POL-009.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-009.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-082",
+      "query": "If our Tier 1 system has no approved system-specific override, what RTO and RPO should our recovery plan and test results use?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-009",
+      "sections": [
+        "POL-009 \u00a74"
+      ],
+      "relevant": {
+        "POL-009.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-009.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-083",
+      "query": "How do we show that our Tier 1 recovery plan is not dependent on one person?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-009",
+      "sections": [
+        "POL-009 \u00a72"
+      ],
+      "relevant": {
+        "POL-009.pdf::0": 2,
+        "POL-009.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-009.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-084",
+      "query": "Once a DR event is declared, what should the recovery artifact show?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-009",
+      "sections": [
+        "POL-009 \u00a74.1",
+        "POL-009 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-009.pdf::2": 2,
+        "POL-009.pdf::3": 2
+      },
+      "relevant_documents": [
+        "POL-009.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-085",
+      "query": "When do we need to review or update a Tier 1/Tier 2 recovery plan?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-009",
+      "sections": [
+        "POL-009 \u00a74.5"
+      ],
+      "relevant": {
+        "POL-009.pdf::3": 2,
+        "POL-009.pdf::4": 2
+      },
+      "relevant_documents": [
+        "POL-009.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-086",
+      "query": "We are scheduling a live failover test. What change-control evidence is required, and what if the test is aborted?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-009",
+      "sections": [
+        "POL-009 \u00a74.8",
+        "POL-001 \u00a7ALL"
+      ],
+      "relevant": {
+        "POL-009.pdf::5": 2,
+        "POL-001.pdf::2": 1,
+        "POL-001.pdf::3": 1,
+        "POL-001.pdf::4": 1,
+        "POL-001.pdf::5": 1,
+        "POL-001.pdf::6": 1,
+        "POL-001.pdf::7": 1
+      },
+      "relevant_documents": [
+        "POL-001.pdf",
+        "POL-009.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-087",
+      "query": "What backup-restore evidence must we produce outside the annual failover test?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-009",
+      "sections": [
+        "POL-009 \u00a74.9"
+      ],
+      "relevant": {
+        "POL-009.pdf::5": 2,
+        "POL-009.pdf::6": 2
+      },
+      "relevant_documents": [
+        "POL-009.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-088",
+      "query": "What dependency information needs to be in a Tier 1 recovery plan and annual test?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-009",
+      "sections": [
+        "POL-009 \u00a74.10"
+      ],
+      "relevant": {
+        "POL-009.pdf::6": 2
+      },
+      "relevant_documents": [
+        "POL-009.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-089",
+      "query": "What communication evidence should exist during an active DR event?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-009",
+      "sections": [
+        "POL-009 \u00a74.7"
+      ],
+      "relevant": {
+        "POL-009.pdf::4": 2,
+        "POL-009.pdf::5": 2
+      },
+      "relevant_documents": [
+        "POL-009.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-090",
+      "query": "What must the annual DR readiness report contain, especially for a system that missed its test?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-009",
+      "sections": [
+        "POL-009 \u00a74.12"
+      ],
+      "relevant": {
+        "POL-009.pdf::7": 2
+      },
+      "relevant_documents": [
+        "POL-009.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-091",
+      "query": "What onboarding artifacts and timing do we need for a normal new hire?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-010",
+      "sections": [
+        "POL-010 \u00a74",
+        "POL-010 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-010.pdf::2": 2,
+        "POL-010.pdf::3": 2,
+        "POL-006.pdf::2": 1
+      },
+      "relevant_documents": [
+        "POL-006.pdf",
+        "POL-010.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-092",
+      "query": "What is different for an international new hire from an evidence/timing perspective?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-010",
+      "sections": [
+        "POL-010 \u00a74.9"
+      ],
+      "relevant": {
+        "POL-010.pdf::6": 2
+      },
+      "relevant_documents": [
+        "POL-010.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-093",
+      "query": "An employee changes roles internally. What should the access records show?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-010",
+      "sections": [
+        "POL-010 \u00a74",
+        "POL-010 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-010.pdf::2": 2,
+        "POL-010.pdf::3": 2,
+        "POL-010.pdf::4": 2
+      },
+      "relevant_documents": [
+        "POL-010.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-094",
+      "query": "What offboarding timing and account-state evidence is required for a planned departure?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-010",
+      "sections": [
+        "POL-010 \u00a74.3"
+      ],
+      "relevant": {
+        "POL-010.pdf::4": 2
+      },
+      "relevant_documents": [
+        "POL-010.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-095",
+      "query": "What recurring control should I document to prove missed offboarding steps are caught?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-010",
+      "sections": [
+        "POL-010 \u00a74.4"
+      ],
+      "relevant": {
+        "POL-010.pdf::4": 2
+      },
+      "relevant_documents": [
+        "POL-010.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-096",
+      "query": "How should contractor access be documented so it does not become indefinite?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-010",
+      "sections": [
+        "POL-010 \u00a74.5"
+      ],
+      "relevant": {
+        "POL-010.pdf::4": 2
+      },
+      "relevant_documents": [
+        "POL-010.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-097",
+      "query": "What additional evidence is needed for an involuntary high-risk termination?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-010",
+      "sections": [
+        "POL-010 \u00a74.6"
+      ],
+      "relevant": {
+        "POL-010.pdf::5": 2
+      },
+      "relevant_documents": [
+        "POL-010.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-098",
+      "query": "A former employee is rehired while the old account is still in the 90-day retention window. Can we reactivate it?",
+      "difficulty": "edge-case",
+      "guardrail": false,
+      "primary_policy": "POL-010",
+      "sections": [
+        "POL-010 \u00a74.7"
+      ],
+      "relevant": {
+        "POL-010.pdf::5": 2
+      },
+      "relevant_documents": [
+        "POL-010.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-099",
+      "query": "What should I do if the HR start/departure signal arrives late or is inconsistent?",
+      "difficulty": "direct",
+      "guardrail": false,
+      "primary_policy": "POL-010",
+      "sections": [
+        "POL-010 \u00a74.10"
+      ],
+      "relevant": {
+        "POL-010.pdf::6": 2
+      },
+      "relevant_documents": [
+        "POL-010.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-100",
+      "query": "What non-account artifacts should onboarding/offboarding track for equipment and changing approvers?",
+      "difficulty": "multi-hop",
+      "guardrail": false,
+      "primary_policy": "POL-010",
+      "sections": [
+        "POL-010 \u00a74.11",
+        "POL-010 \u00a74.12"
+      ],
+      "relevant": {
+        "POL-010.pdf::7": 2
+      },
+      "relevant_documents": [
+        "POL-010.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-101",
+      "query": "What exact numeric customer-count threshold makes a change high risk?",
+      "difficulty": "unanswerable-detail",
+      "guardrail": true,
+      "primary_policy": "POL-001",
+      "sections": [
+        "POL-001 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-001.pdf::3": 2
+      },
+      "relevant_documents": [
+        "POL-001.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-102",
+      "query": "What exact remediation deadline must be used for every medium-severity security finding?",
+      "difficulty": "unanswerable-detail",
+      "guardrail": true,
+      "primary_policy": "POL-002",
+      "sections": [
+        "POL-002 \u00a74.3"
+      ],
+      "relevant": {
+        "POL-002.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-002.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-103",
+      "query": "Is 400 lines a hard merge-blocking limit for a pull request?",
+      "difficulty": "unanswerable-detail",
+      "guardrail": true,
+      "primary_policy": "POL-003",
+      "sections": [
+        "POL-003 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-003.pdf::1": 2
+      },
+      "relevant_documents": [
+        "POL-003.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-104",
+      "query": "What exact canary error-rate percentage automatically triggers rollback?",
+      "difficulty": "unanswerable-detail",
+      "guardrail": true,
+      "primary_policy": "POL-004",
+      "sections": [
+        "POL-004 \u00a74.5"
+      ],
+      "relevant": {
+        "POL-004.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-004.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-105",
+      "query": "What exact revenue-loss amount changes a Sev2 into a Sev1?",
+      "difficulty": "unanswerable-detail",
+      "guardrail": true,
+      "primary_policy": "POL-005",
+      "sections": [
+        "POL-005 \u00a74.2"
+      ],
+      "relevant": {
+        "POL-005.pdf::1": 2,
+        "POL-005.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-005.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-106",
+      "query": "How many days of access-usage history must I pull for every quarterly review?",
+      "difficulty": "unanswerable-detail",
+      "guardrail": true,
+      "primary_policy": "POL-006",
+      "sections": [
+        "POL-006 \u00a74.3"
+      ],
+      "relevant": {
+        "POL-006.pdf::2": 2,
+        "POL-006.pdf::3": 2
+      },
+      "relevant_documents": [
+        "POL-006.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-107",
+      "query": "How many years must all Confidential data be retained?",
+      "difficulty": "unanswerable-detail",
+      "guardrail": true,
+      "primary_policy": "POL-007",
+      "sections": [
+        "POL-007 \u00a74.3"
+      ],
+      "relevant": {
+        "POL-007.pdf::2": 2
+      },
+      "relevant_documents": [
+        "POL-007.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-108",
+      "query": "What minimum penetration-test score must a Critical vendor achieve?",
+      "difficulty": "unanswerable-detail",
+      "guardrail": true,
+      "primary_policy": "POL-008",
+      "sections": [
+        "POL-008 \u00a74.1"
+      ],
+      "relevant": {
+        "POL-008.pdf::3": 2,
+        "POL-008.pdf::4": 2
+      },
+      "relevant_documents": [
+        "POL-008.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-109",
+      "query": "Does every Tier 1 system have to use a second cloud provider for failover?",
+      "difficulty": "unanswerable-detail",
+      "guardrail": true,
+      "primary_policy": "POL-009",
+      "sections": [
+        "POL-009 \u00a74.6"
+      ],
+      "relevant": {
+        "POL-009.pdf::4": 2
+      },
+      "relevant_documents": [
+        "POL-009.pdf"
+      ]
+    },
+    {
+      "query_id": "QA-110",
+      "query": "What dollar value should we charge a departing employee for an unreturned laptop?",
+      "difficulty": "unanswerable-detail",
+      "guardrail": true,
+      "primary_policy": "POL-010",
+      "sections": [
+        "POL-010 \u00a74.11"
+      ],
+      "relevant": {
+        "POL-010.pdf::7": 2
+      },
+      "relevant_documents": [
+        "POL-010.pdf"
+      ]
+    }
+  ]
+}

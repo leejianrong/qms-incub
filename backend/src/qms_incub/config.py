@@ -40,6 +40,22 @@ class Settings(BaseSettings):
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "qms_incub_corpus"
 
+    # Retrieval is BM25 sparse-only (see chat/retrieval.py). fastembed
+    # sparse model, shared by ingestion (indexing) and retrieval (query
+    # encoding) — the two MUST match. "Qdrant/bm25" is pure-lexical BM25;
+    # "prithivida/Splade_PP_en_v1" is learned-sparse (heavier).
+    sparse_embedding_model: str = "Qdrant/bm25"
+
+    # Candidates pulled from the retriever before the reranker narrows to
+    # the caller's top_k. Ignored when reranking is disabled.
+    retrieval_candidate_k: int = 20
+
+    # --- Reranker ---
+    reranker_provider: Literal["none", "zenmux"] = "zenmux"
+    reranker_model: str = "qwen/qwen3-rerank"
+    zenmux_rerank_url: str = "https://zenmux.ai/api/v1/rerank"
+    reranker_timeout_s: float = 30.0
+
     # Matches docker-compose.yml's postgres service (ADR-0005/ADR-0009).
     database_url: str = "postgresql+psycopg://qms_incub:qms_incub@localhost:5433/qms_incub"
 
