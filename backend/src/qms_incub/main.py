@@ -5,14 +5,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from qms_incub.aor_routing.classifier import classify_aor_pdf
-from qms_incub.chat.retrieval import retrieve
 from qms_incub.chat.service import ProjectNotFoundError, answer_question
 from qms_incub.compliance.api import router as compliance_router
 from qms_incub.config import settings
 from qms_incub.content.api import router as content_router
-from qms_incub.ingestion.pipeline import ingest_pdf
 from qms_incub.ingestion.repository import create_pending, list_all, mark_embedded, mark_failed
 from qms_incub.paths import AOR_UPLOADS_DIR, UPLOADED_DOCUMENTS_DIR
+from qms_incub.rag.factory import get_ingestion_port, get_retrieval_port
 
 app = FastAPI(title="QMS Incub API")
 app.include_router(compliance_router)
@@ -60,7 +59,9 @@ async def upload_document(file: UploadFile = File(...)) -> DocumentStatusOut:
 
     create_pending(document_id, title)
     try:
-        chunk_count = ingest_pdf(pdf_path, document_id=document_id, document_title=title)
+        chunk_count = get_ingestion_port().ingest_pdf(
+            pdf_path, document_id=document_id, document_title=title
+        )
     except Exception as exc:
         mark_failed(document_id, str(exc))
         raise HTTPException(status_code=500, detail=f"Ingestion failed: {exc}") from exc
@@ -165,7 +166,7 @@ def retrieve_chunks(request: RetrieveRequest) -> RetrieveResponse:
     on, and diff `rerank: true` vs `false` on the same query. Not used by
     the chat flow itself."""
     try:
-        chunks = retrieve(
+        chunks = get_retrieval_port().retrieve(
             request.query,
             k=request.k,
             rerank=request.rerank,

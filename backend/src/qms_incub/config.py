@@ -32,10 +32,22 @@ class Settings(BaseSettings):
 
     # Q39: promotional-window provider (2026-09-01 through 2026-09-05 only).
     zenmux_api_key: str | None = None
-    zenmux_base_url: str = "https://zenmux.ai/api/"
-    zenmux_model: str = "deepseek/deepseek-chat"
+    zenmux_base_url: str = "https://zenmux.ai/api/v1"
+    # "deepseek/deepseek-chat" was retired by ZenMux on 2026-07-24 in favor
+    # of an explicit version slug — kept cheap/non-thinking, matching the
+    # old alias's behavior.
+    zenmux_model: str = "deepseek/deepseek-v4-flash"
 
+    # "local" (default): HuggingFace sentence-embedding model, run in-process
+    #   (EMBEDDING_MODEL below) — no API key, offline-capable, but needs a
+    #   machine that can run it (see rag_clients.py docstring re: CPU/GPU).
+    # "openrouter" / "zenmux": hosted OpenAI-compatible /embeddings endpoint —
+    #   no local model to run, at the cost of a network call per chunk/query
+    #   and reusing that provider's API key from the LLM section above.
+    embedding_provider: Literal["local", "openrouter", "zenmux"] = "local"
     embedding_model: str = "BAAI/bge-small-en-v1.5"
+    openrouter_embedding_model: str = "openai/text-embedding-3-small"
+    zenmux_embedding_model: str = "openai/text-embedding-3-small"
 
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "qms_incub_corpus"

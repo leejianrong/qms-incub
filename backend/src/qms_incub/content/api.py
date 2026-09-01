@@ -14,7 +14,7 @@ from qms_incub.content.service import (
     validate_blog_publish,
     validate_faq_publish,
 )
-from qms_incub.ingestion.pipeline import ingest_text
+from qms_incub.rag.factory import get_ingestion_port
 
 router = APIRouter()
 
@@ -92,7 +92,7 @@ def publish_blog(post_id: str) -> BlogPostOut:
         validate_blog_publish(row.title, row.body)
     except PublishValidationError as exc:
         _publish_error(exc)
-    chunk_count = ingest_text(row.body, row.id, row.title, source_type="blog")
+    chunk_count = get_ingestion_port().ingest_text(row.body, row.id, row.title, source_type="blog")
     published = repository.mark_blog_published(post_id, chunk_count)
     assert published is not None
     return _blog_out(published)
@@ -133,7 +133,7 @@ def publish_faq(entry_id: str) -> FAQEntryOut:
         validate_faq_publish(row.question, row.answer)
     except PublishValidationError as exc:
         _publish_error(exc)
-    chunk_count = ingest_text(
+    chunk_count = get_ingestion_port().ingest_text(
         faq_corpus_text(row.question, row.answer), row.id, row.question, source_type="faq"
     )
     published = repository.mark_faq_published(entry_id, chunk_count)

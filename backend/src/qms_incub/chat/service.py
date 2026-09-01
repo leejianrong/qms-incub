@@ -18,7 +18,8 @@ from dataclasses import dataclass
 from qms_incub.chat.compliance_context import get_compliance_state
 from qms_incub.chat.llm import get_llm_client
 from qms_incub.chat.prompt import build_messages
-from qms_incub.chat.retrieval import RetrievedChunk, fetch_document, retrieve
+from qms_incub.rag.factory import get_retrieval_port
+from qms_incub.rag.ports import RetrievedChunk
 
 
 @dataclass
@@ -39,11 +40,12 @@ def _expand_to_documents(chunks: list[RetrievedChunk]) -> list[RetrievedChunk]:
     itself if the document can't be re-fetched."""
     seen: set[str] = set()
     docs: list[RetrievedChunk] = []
+    port = get_retrieval_port()
     for chunk in chunks:
         if chunk.document_id in seen:
             continue
         seen.add(chunk.document_id)
-        full = fetch_document(chunk.document_id, score=chunk.score)
+        full = port.fetch_document(chunk.document_id, score=chunk.score)
         docs.append(full if full is not None else chunk)
     return docs
 
@@ -72,7 +74,7 @@ def answer_question(question: str, project_id: str, top_k: int = 4) -> ChatAnswe
 
     # Retrieval (BM25 + rerank) selects the relevant documents; the LLM
     # then gets each of those documents in full.
-    chunks = retrieve(question, k=top_k)
+    chunks = get_retrieval_port().retrieve(question, k=top_k)
     documents = _expand_to_documents(chunks)
     messages = build_messages(question, documents, compliance_state)
 

@@ -3,6 +3,8 @@ Qdrant, no reranker network call)."""
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -31,7 +33,9 @@ def test_retrieve_returns_ranked_chunks(monkeypatch: pytest.MonkeyPatch) -> None
         captured.update(query=query, k=k, rerank=rerank, candidate_k=candidate_k)
         return [_chunk("doc-a", 0.9), _chunk("doc-b", 0.4)]
 
-    monkeypatch.setattr(main, "retrieve", _fake_retrieve)
+    monkeypatch.setattr(
+        main, "get_retrieval_port", lambda: SimpleNamespace(retrieve=_fake_retrieve)
+    )
 
     response = client.post("/retrieve", json={"query": "who approves changes?", "k": 2})
     assert response.status_code == 200
@@ -57,7 +61,9 @@ def test_retrieve_passes_through_rerank_toggle(monkeypatch: pytest.MonkeyPatch) 
         captured.update(rerank=rerank)
         return []
 
-    monkeypatch.setattr(main, "retrieve", _fake_retrieve)
+    monkeypatch.setattr(
+        main, "get_retrieval_port", lambda: SimpleNamespace(retrieve=_fake_retrieve)
+    )
 
     response = client.post("/retrieve", json={"query": "q", "rerank": False})
     assert response.status_code == 200
@@ -69,7 +75,7 @@ def test_retrieve_maps_backend_error_to_502(monkeypatch: pytest.MonkeyPatch) -> 
     def _boom(*_a: object, **_kw: object) -> list[RetrievedChunk]:
         raise RuntimeError("collection 'qms_incub_corpus' has no sparse vectors")
 
-    monkeypatch.setattr(main, "retrieve", _boom)
+    monkeypatch.setattr(main, "get_retrieval_port", lambda: SimpleNamespace(retrieve=_boom))
 
     response = client.post("/retrieve", json={"query": "q"})
     assert response.status_code == 502

@@ -66,9 +66,11 @@ Behind that endpoint, `ingestion/pipeline.py` does four things, in order:
    or diagram would show up as garbled or missing text.
 2. **Chunk.** The extracted text is split into passages (`chunking.py`, a
    LlamaIndex `SentenceSplitter` under the hood).
-3. **Embed.** Each chunk is embedded locally with a HuggingFace model,
-   `BAAI/bge-small-en-v1.5`. No API key needed here; this step never leaves
-   the machine.
+3. **Embed.** Each chunk is embedded via whichever provider `EMBEDDING_PROVIDER`
+   names (`rag_clients.py`): `local` (default) runs a HuggingFace model,
+   `BAAI/bge-small-en-v1.5`, in-process — no API key, this step never leaves
+   the machine. `openrouter`/`zenmux` instead call a hosted OpenAI-compatible
+   `/embeddings` endpoint, for a machine you'd rather not run a local model on.
 4. **Store.** Each chunk becomes a `TextNode` in Qdrant's `qms_incub_corpus`
    collection, carrying `qms_document_id`, `qms_document_title`,
    `source_type`, and `chunk_index` as metadata. That metadata is what makes
@@ -86,11 +88,13 @@ quickest way to confirm all ten landed before querying anything.
 `POST /chat` takes a `{"question": "..."}` body and walks through four
 files in `backend/src/qms_incub/chat/`:
 
-- **`retrieval.py`** embeds the question with the same local embedding
-  model used at ingestion time, then runs a vector similarity query against
-  Qdrant (`similarity_top_k`, four chunks by default). Each result comes
-  back as a `RetrievedChunk`: text, document id and title, source type, and
-  a similarity score.
+- **`retrieval.py`** fetches candidates via `RETRIEVAL_MODE` — `bm25`
+  (sparse lexical, the default) or `vector` (dense similarity, embedding the
+  question with the same embedding provider used at ingestion time) —
+  against the same Qdrant collection either way, then optionally reranks
+  (`rerank.py`, `RERANKER_PROVIDER`) down to the requested top-k (four by
+  default). Each result comes back as a `RetrievedChunk`: text, document id
+  and title, source type, and a score.
 - **`prompt.py`** builds the messages sent to the model. The system prompt
   is deliberately narrow: answer only from the context given, and say you
   don't know rather than guess if the answer isn't there.
@@ -99,7 +103,10 @@ files in `backend/src/qms_incub/chat/`:
   testing, `openrouter` as the project's decided default (ADR-0003), or
   `zenmux` during its current promotional window. All three speak the same
   OpenAI-compatible API, so one client handles all of them.
-- **`service.py`** assembles the final answer.
+- **`service.py`** expands each retrieved chunk's source document to its
+  full text (rather than handing the model only the matched passages —
+  retrieval picks *which documents* are relevant, not which excerpts),
+  then assembles the final answer.
 
 The detail that matters most if you're building anything that grades this
 pipeline's output: citations are derived from the chunks that were actually

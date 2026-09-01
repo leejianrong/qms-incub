@@ -56,7 +56,9 @@ def test_expand_to_documents_dedupes_and_keeps_order(monkeypatch: pytest.MonkeyP
             chunk_index=-1,
         )
 
-    monkeypatch.setattr(service, "fetch_document", _fake_fetch)
+    monkeypatch.setattr(
+        service, "get_retrieval_port", lambda: SimpleNamespace(fetch_document=_fake_fetch)
+    )
 
     retrieved = [
         _chunk("doc-a", 2, 0.9),
@@ -74,7 +76,11 @@ def test_expand_to_documents_dedupes_and_keeps_order(monkeypatch: pytest.MonkeyP
 def test_expand_to_documents_falls_back_to_chunk_when_fetch_returns_none(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(service, "fetch_document", lambda *_a, **_kw: None)
+    monkeypatch.setattr(
+        service,
+        "get_retrieval_port",
+        lambda: SimpleNamespace(fetch_document=lambda *_a, **_kw: None),
+    )
 
     retrieved = [_chunk("doc-a", 1, 0.5)]
     docs = service._expand_to_documents(retrieved)
@@ -115,10 +121,13 @@ def test_answer_question_sends_separate_policy_and_project_state_sections(
             )
 
     monkeypatch.setattr("qms_incub.chat.service.get_compliance_state", lambda _: _state())
-    monkeypatch.setattr("qms_incub.chat.service.retrieve", lambda *_args, **_kwargs: chunks)
     # No real store in this fast test — fall back to the retrieved chunk
     # itself, which already carries the text asserted on below.
-    monkeypatch.setattr("qms_incub.chat.service.fetch_document", lambda *_a, **_kw: None)
+    fake_port = SimpleNamespace(
+        retrieve=lambda *_args, **_kwargs: chunks,
+        fetch_document=lambda *_a, **_kw: None,
+    )
+    monkeypatch.setattr("qms_incub.chat.service.get_retrieval_port", lambda: fake_port)
     monkeypatch.setattr(
         "qms_incub.chat.service.get_llm_client",
         lambda: (

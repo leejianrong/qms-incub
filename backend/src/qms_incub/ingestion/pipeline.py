@@ -1,4 +1,8 @@
-"""Publish -> ingest pipeline (S6, ADR-0003, ADR-0009).
+"""Publish -> ingest pipeline (S6, ADR-0003, ADR-0009) — the concrete,
+Docling/LlamaIndex/Qdrant-backed implementation of `rag.ports.IngestionPort`
+(`DoclingLlamaIndexIngestion`, at the bottom of this module). Callers outside
+this module should go through `rag.factory.get_ingestion_port()` rather than
+importing `ingest_pdf`/`ingest_text` directly.
 
 Docling parses the exported PDF (not the source blocks directly) so the
 PDF-to-ingestion fidelity risk PLAN.md flags is actually exercised: table
@@ -113,3 +117,23 @@ def ingest_text(
         )
     vector_store.add(nodes)
     return len(nodes)
+
+
+class DoclingLlamaIndexIngestion:
+    """`rag.ports.IngestionPort` implementation backed by this module's
+    functions — the only implementation today. Returned by
+    `rag.factory.get_ingestion_port()`."""
+
+    def ingest_pdf(
+        self,
+        pdf_path: Path,
+        document_id: str,
+        document_title: str,
+        source_type: str = "policy_document",
+    ) -> int:
+        return ingest_pdf(pdf_path, document_id, document_title, source_type)
+
+    def ingest_text(
+        self, text: str, document_id: str, document_title: str, source_type: str
+    ) -> int:
+        return ingest_text(text, document_id, document_title, source_type)
