@@ -11,6 +11,7 @@ function todo(overrides: Partial<TodoItem>): TodoItem {
     clause_text: "clause",
     standard_name: "standard",
     status: "pending",
+    process_step_id: "initiation",
     approval_state: "not_started",
     approval_authority: "QA Office",
     sla_target: null,

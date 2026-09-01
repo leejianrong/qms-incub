@@ -14,9 +14,11 @@ from dataclasses import dataclass
 from sqlalchemy.orm import Session
 
 from qms_incub.compliance.models import (
+    DEFAULT_PROCESS_STEP_ID,
     Artifact,
     Clause,
     ComplianceStandard,
+    ProcessStep,
     Project,
     Requirement,
     RiskTier,
@@ -54,6 +56,14 @@ class RequirementOut:
     clause_id: str
     description: str
     risk_tiers: list[str]
+    process_step_id: str
+
+
+@dataclass
+class ProcessStepOut:
+    id: str
+    title: str
+    ordering: int
 
 
 @dataclass
@@ -74,6 +84,7 @@ class TodoItemOut:
     clause_text: str
     standard_name: str
     status: str
+    process_step_id: str
     approval_state: str
     approval_authority: str
     sla_target: datetime.datetime | None
@@ -99,6 +110,7 @@ def _todo_out(session: Session, todo: TodoItem) -> TodoItemOut:
         clause_text=clause.text if clause else "",
         standard_name=standard.name if standard else "",
         status=todo.status,
+        process_step_id=todo.process_step_id,
         approval_state=todo.approval_state,
         approval_authority=todo.approval_authority,
         sla_target=todo.sla_target,
@@ -144,9 +156,19 @@ def list_clauses(standard_id: str) -> list[ClauseOut]:
         ]
 
 
-def create_requirement(clause_id: str, description: str, risk_tiers: list[str]) -> RequirementOut:
+def create_requirement(
+    clause_id: str,
+    description: str,
+    risk_tiers: list[str],
+    process_step_id: str = DEFAULT_PROCESS_STEP_ID,
+) -> RequirementOut:
     with get_session() as session:
-        row = Requirement(clause_id=clause_id, description=description, risk_tiers=risk_tiers)
+        row = Requirement(
+            clause_id=clause_id,
+            description=description,
+            risk_tiers=risk_tiers,
+            process_step_id=process_step_id,
+        )
         session.add(row)
         session.flush()
         return RequirementOut(
@@ -154,6 +176,7 @@ def create_requirement(clause_id: str, description: str, risk_tiers: list[str]) 
             clause_id=row.clause_id,
             description=row.description,
             risk_tiers=row.risk_tiers,
+            process_step_id=row.process_step_id,
         )
 
 
@@ -162,10 +185,21 @@ def list_requirements(clause_id: str) -> list[RequirementOut]:
         rows = session.query(Requirement).filter(Requirement.clause_id == clause_id).all()
         return [
             RequirementOut(
-                id=r.id, clause_id=r.clause_id, description=r.description, risk_tiers=r.risk_tiers
+                id=r.id,
+                clause_id=r.clause_id,
+                description=r.description,
+                risk_tiers=r.risk_tiers,
+                process_step_id=r.process_step_id,
             )
             for r in rows
         ]
+
+
+def list_process_steps() -> list[ProcessStepOut]:
+    """The fixed, config-seeded set of PM-workflow phases (Q41)."""
+    with get_session() as session:
+        rows = session.query(ProcessStep).order_by(ProcessStep.ordering).all()
+        return [ProcessStepOut(id=r.id, title=r.title, ordering=r.ordering) for r in rows]
 
 
 def _project_out(project: Project) -> ProjectOut:
@@ -227,6 +261,7 @@ def classify_project(
                 project_id=project.id,
                 requirement_id=requirement.id,
                 status="pending",
+                process_step_id=requirement.process_step_id,
                 approval_state="not_started",
                 approval_authority=DEFAULT_APPROVAL_AUTHORITY,
                 sla_target=datetime.datetime.now(datetime.UTC) + DEFAULT_APPROVAL_SLA,

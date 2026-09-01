@@ -94,6 +94,22 @@ export interface Requirement {
   clause_id: string;
   description: string;
   risk_tiers: RiskTier[];
+  process_step_id: string;
+}
+
+// --- Plan navigator: fixed process-step grouping (Q41, V10) ---
+
+export interface ProcessStep {
+  id: string;
+  title: string;
+  ordering: number;
+}
+
+export function listProcessSteps(
+  apiBase: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProcessStep[]> {
+  return getJson(apiBase, "/process-steps", fetchImpl);
 }
 
 async function postJson<T>(
@@ -158,11 +174,16 @@ export function createRequirement(
   description: string,
   riskTiers: RiskTier[],
   fetchImpl: typeof fetch = fetch,
+  processStepId?: string,
 ): Promise<Requirement> {
   return postJson(
     apiBase,
     `/clauses/${clauseId}/requirements`,
-    { description, risk_tiers: riskTiers },
+    {
+      description,
+      risk_tiers: riskTiers,
+      ...(processStepId ? { process_step_id: processStepId } : {}),
+    },
     fetchImpl,
   );
 }
@@ -208,6 +229,7 @@ export interface TodoItem {
   clause_text: string;
   standard_name: string;
   status: "pending" | "complied";
+  process_step_id: string;
   approval_state: ApprovalState;
   approval_authority: string;
   sla_target: string | null;

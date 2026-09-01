@@ -6,6 +6,7 @@ import {
   fetchHealth,
   getProject,
   listDocuments,
+  listProcessSteps,
   resolveApiBase,
   uploadAor,
   uploadArtifact,
@@ -277,6 +278,25 @@ describe("getProject", () => {
 
     expect(result.project.id).toBe("proj-1");
     expect(fakeFetch).toHaveBeenCalledWith("http://api.internal/projects/proj-1");
+  });
+});
+
+describe("listProcessSteps", () => {
+  it("fetches the fixed, ordered process-step set", async () => {
+    const fakeFetch = vi.fn(async () =>
+      new Response(
+        JSON.stringify([
+          { id: "initiation", title: "Initiation", ordering: 0 },
+          { id: "design", title: "Design", ordering: 1 },
+        ]),
+        { status: 200 },
+      ),
+    );
+
+    const result = await listProcessSteps("http://api.internal", fakeFetch as typeof fetch);
+
+    expect(result.map((s) => s.id)).toEqual(["initiation", "design"]);
+    expect(fakeFetch).toHaveBeenCalledWith("http://api.internal/process-steps");
   });
 });
 
