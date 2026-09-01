@@ -40,10 +40,16 @@ class Settings(BaseSettings):
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "qms_incub_corpus"
 
-    # Retrieval is BM25 sparse-only (see chat/retrieval.py). fastembed
-    # sparse model, shared by ingestion (indexing) and retrieval (query
-    # encoding) — the two MUST match. "Qdrant/bm25" is pure-lexical BM25;
-    # "prithivida/Splade_PP_en_v1" is learned-sparse (heavier).
+    # "bm25" (default): sparse lexical retrieval. "vector": dense embedding
+    # similarity (EMBEDDING_MODEL above). Both query the same collection —
+    # ingestion writes both a dense and a BM25 sparse vector per chunk, so
+    # switching modes needs no re-ingest. A fused hybrid mode is deferred
+    # (issue #53); this only lets you pick one or the other.
+    retrieval_mode: Literal["bm25", "vector"] = "bm25"
+
+    # fastembed sparse model, shared by ingestion (indexing) and retrieval
+    # (query encoding) — the two MUST match. "Qdrant/bm25" is pure-lexical
+    # BM25; "prithivida/Splade_PP_en_v1" is learned-sparse (heavier).
     sparse_embedding_model: str = "Qdrant/bm25"
 
     # Candidates pulled from the retriever before the reranker narrows to

@@ -1,18 +1,19 @@
 """Retrieval over the ingested corpus (S8, ADR-0003).
 
-BM25 sparse lexical retrieval against the Qdrant collection, then an
-optional rerank pass (``chat/rerank.py``) before returning the top-k.
-
-Dense and hybrid retrieval were removed from this path: with the reranker
-on, the candidate set it sees — and therefore the final ranking — came
-out the same whichever way candidates were fetched, so BM25 alone is the
-cheapest option. The collection is still ingested with dense vectors
-present, so restoring a dense/hybrid query mode later needs no re-ingest.
+``RETRIEVAL_MODE`` picks the candidate-fetching strategy — ``"bm25"``
+(sparse lexical, the default) or ``"vector"`` (dense embedding
+similarity) — then an optional rerank pass (``chat/rerank.py``) narrows
+to the requested top-k. Both query the same Qdrant collection: ingestion
+writes a dense vector and a BM25 sparse vector for every chunk, so
+switching modes needs no re-ingest. A fused hybrid mode (both signals
+combined into one ranking, rather than picking one or the other) is
+deferred — issue #53.
 """
 
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -21,7 +22,7 @@ from qdrant_client import models
 
 from qms_incub.chat.rerank import get_reranker
 from qms_incub.config import settings
-from qms_incub.rag_clients import get_vector_store
+from qms_incub.rag_clients import get_embed_model, get_vector_store
 
 
 @dataclass
@@ -38,17 +39,10 @@ class RetrievedChunk:
     chunk_index: int = -1
 
 
-def _candidates(query: str, k: int) -> list[RetrievedChunk]:
-    result = get_vector_store().query(
-        VectorStoreQuery(
-            query_str=query,
-            sparse_top_k=k,
-            mode=VectorStoreQueryMode.SPARSE,
-        )
-    )
-
-    nodes = result.nodes or []
-    similarities = result.similarities or [0.0] * len(nodes)
+def _nodes_to_chunks(
+    nodes: Sequence[Any], similarities: list[float] | None
+) -> list[RetrievedChunk]:
+    similarities = similarities or [0.0] * len(nodes)
     chunks: list[RetrievedChunk] = []
     for node, score in zip(nodes, similarities):
         meta = node.metadata or {}
@@ -68,6 +62,31 @@ def _candidates(query: str, k: int) -> list[RetrievedChunk]:
             )
         )
     return chunks
+
+
+def _bm25_candidates(query: str, k: int) -> list[RetrievedChunk]:
+    result = get_vector_store().query(
+        VectorStoreQuery(
+            query_str=query,
+            sparse_top_k=k,
+            mode=VectorStoreQueryMode.SPARSE,
+        )
+    )
+    return _nodes_to_chunks(result.nodes or [], result.similarities)
+
+
+def _vector_candidates(query: str, k: int) -> list[RetrievedChunk]:
+    query_embedding = get_embed_model().get_query_embedding(query)
+    result = get_vector_store().query(
+        VectorStoreQuery(query_embedding=query_embedding, similarity_top_k=k)
+    )
+    return _nodes_to_chunks(result.nodes or [], result.similarities)
+
+
+def _candidates(query: str, k: int) -> list[RetrievedChunk]:
+    if settings.retrieval_mode == "vector":
+        return _vector_candidates(query, k)
+    return _bm25_candidates(query, k)
 
 
 def fetch_document(document_id: str, *, score: float = 0.0) -> RetrievedChunk | None:
@@ -130,7 +149,8 @@ def retrieve(
     rerank: bool = True,
     candidate_k: int | None = None,
 ) -> list[RetrievedChunk]:
-    """Retrieve the top-k chunks for ``query`` via BM25, optionally reranked.
+    """Retrieve the top-k chunks for ``query`` via ``settings.retrieval_mode``
+    (``"bm25"`` or ``"vector"``), optionally reranked.
 
     When ``rerank`` is true, ``candidate_k`` chunks (default
     ``settings.retrieval_candidate_k``, never fewer than ``k``) are fetched

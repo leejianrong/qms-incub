@@ -8,6 +8,7 @@ from qms_incub.aor_routing.classifier import classify_aor_pdf
 from qms_incub.chat.retrieval import retrieve
 from qms_incub.chat.service import ProjectNotFoundError, answer_question
 from qms_incub.compliance.api import router as compliance_router
+from qms_incub.config import settings
 from qms_incub.content.api import router as content_router
 from qms_incub.ingestion.pipeline import ingest_pdf
 from qms_incub.ingestion.repository import create_pending, list_all, mark_embedded, mark_failed
@@ -157,8 +158,8 @@ class RetrieveResponse(BaseModel):
 
 @app.post("/retrieve")
 def retrieve_chunks(request: RetrieveRequest) -> RetrieveResponse:
-    """Run BM25 retrieval (plus the reranker step unless `rerank` is false)
-    and return the ranked chunks with scores.
+    """Run retrieval (mode per RETRIEVAL_MODE, plus the reranker step
+    unless `rerank` is false) and return the ranked chunks with scores.
 
     Debug / evaluation surface — lets you inspect what /chat is grounded
     on, and diff `rerank: true` vs `false` on the same query. Not used by
@@ -176,7 +177,7 @@ def retrieve_chunks(request: RetrieveRequest) -> RetrieveResponse:
         raise HTTPException(status_code=502, detail=f"Retrieval failed: {exc}") from exc
 
     return RetrieveResponse(
-        mode="bm25",
+        mode=settings.retrieval_mode,
         rerank=request.rerank,
         k=request.k,
         chunks=[
