@@ -24,10 +24,15 @@ export default tseslint.config(
     // shadcn-svelte components are vendored, copied-into-repo source
     // (ADR-0013) — not hand-authored, so custom-element prop inference
     // (irrelevant here; this project compiles no custom elements) is
-    // relaxed rather than reformatted to satisfy it.
+    // relaxed rather than reformatted to satisfy it. Same reasoning for
+    // no-undef: this eslint-plugin-svelte/svelte-eslint-parser version
+    // doesn't resolve Svelte 5 `generics="T = ..."` script-tag type
+    // params (used by tooltip's Root/Trigger), a parser gap svelte-check
+    // (which does understand it, see `npm run check`) already covers.
     files: ["src/lib/components/ui/**/*.svelte"],
     rules: {
       "svelte/valid-compile": "off",
+      "no-undef": "off",
     },
   },
   {
