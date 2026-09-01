@@ -31,6 +31,8 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ["dist/", "node_modules/"],
+    // Throwaway Playwright driver script used to screenshot-verify UI
+    // changes (gitignored, never committed — see frontend/.gitignore).
+    ignores: ["dist/", "node_modules/", "shot.local.mjs"],
   },
 );
