@@ -2,11 +2,22 @@
   import { Button } from "$lib/components/ui/button/index.js";
   import { Input } from "$lib/components/ui/input/index.js";
   import * as Card from "$lib/components/ui/card/index.js";
-  import { resolveApiBase, createProject, uploadAor, classifyProject, type Project } from "$lib/api";
+  import { Badge } from "$lib/components/ui/badge/index.js";
+  import {
+    resolveApiBase,
+    createProject,
+    uploadAor,
+    classifyProject,
+    listProcessSteps,
+    type Project,
+    type ProcessStep,
+    type TodoItem,
+  } from "$lib/api";
+  import { navigate } from "$lib/router.svelte";
 
   const apiBase = resolveApiBase(import.meta.env);
 
-  type Phase = "intake" | "classify";
+  type Phase = "intake" | "classify" | "preview";
   let phase = $state<Phase>("intake");
 
   let projectName = $state("");
@@ -19,6 +30,14 @@
 
   let pending = $state(false);
   let error = $state<string | null>(null);
+
+  // Step 3: the generated plan preview, grouped by process step (Q41).
+  let generatedTodos = $state<TodoItem[]>([]);
+  let processSteps = $state<ProcessStep[]>([]);
+
+  function todosForStep(stepId: string): TodoItem[] {
+    return generatedTodos.filter((todo) => todo.process_step_id === stepId);
+  }
 
   function onAorFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -48,21 +67,40 @@
     pending = true;
     error = null;
     try {
-      const result = await classifyProject(apiBase, project.id, {
-        data_sensitivity_high: dataSensitivityHigh,
-        customer_facing: customerFacing,
-        regulatory_exposure: regulatoryExposure,
-      });
-      window.location.assign(`/project?id=${result.project.id}`);
+      const [result, steps] = await Promise.all([
+        classifyProject(apiBase, project.id, {
+          data_sensitivity_high: dataSensitivityHigh,
+          customer_facing: customerFacing,
+          regulatory_exposure: regulatoryExposure,
+        }),
+        listProcessSteps(apiBase),
+      ]);
+      project = result.project;
+      generatedTodos = result.todos;
+      processSteps = steps;
+      phase = "preview";
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
     } finally {
       pending = false;
     }
   }
+
+  function goToProject() {
+    if (!project) return;
+    navigate(`/project?id=${project.id}`);
+  }
 </script>
 
 <main class="mx-auto max-w-xl space-y-6 p-8">
+  <button
+    type="button"
+    class="text-xs text-muted-foreground hover:text-foreground"
+    onclick={() => navigate("/")}
+  >
+    ← Back to projects
+  </button>
+
   {#if phase === "intake"}
     <header class="space-y-1">
       <h1 class="text-2xl font-medium">Start a new project</h1>
@@ -95,7 +133,7 @@
         </Button>
       </Card.Content>
     </Card.Root>
-  {:else if project}
+  {:else if phase === "classify" && project}
     <header class="space-y-1">
       <h1 class="text-2xl font-medium">Classify {project.name}</h1>
       <p class="text-sm text-muted-foreground">
@@ -146,5 +184,41 @@
         </Button>
       </Card.Content>
     </Card.Root>
+  {:else if phase === "preview" && project}
+    <header class="space-y-1">
+      <h1 class="text-2xl font-medium">{project.name}'s compliance plan</h1>
+      <p class="text-sm text-muted-foreground">
+        Classified as <strong>{project.risk_tier} tier</strong> — {generatedTodos.length} compliance
+        todo{generatedTodos.length === 1 ? "" : "s"} generated, grouped by process step.
+      </p>
+    </header>
+
+    <div class="space-y-3">
+      {#each processSteps as step (step.id)}
+        {@const stepTodos = todosForStep(step.id)}
+        {#if stepTodos.length > 0}
+          <Card.Root>
+            <Card.Header>
+              <Card.Title class="text-base">{step.title}</Card.Title>
+              <Card.Description>{stepTodos.length} todo{stepTodos.length === 1 ? "" : "s"}</Card.Description>
+            </Card.Header>
+            <Card.Content>
+              <ul class="space-y-2 text-sm">
+                {#each stepTodos as todo (todo.id)}
+                  <li class="flex items-start justify-between gap-3 border-t border-border pt-2 first:border-0 first:pt-0">
+                    <span>{todo.requirement_description}</span>
+                    {#if todo.approval_state !== "not_required"}
+                      <Badge variant="outline" class="shrink-0">{todo.approval_authority}</Badge>
+                    {/if}
+                  </li>
+                {/each}
+              </ul>
+            </Card.Content>
+          </Card.Root>
+        {/if}
+      {/each}
+    </div>
+
+    <Button onclick={goToProject}>Go to project</Button>
   {/if}
 </main>

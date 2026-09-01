@@ -3,21 +3,27 @@ import './app.css'
 import App from './App.svelte'
 import Showcase from './lib/components/Showcase.svelte'
 import StandardEditor from './lib/components/StandardEditor.svelte'
-import Wizard from './lib/components/Wizard.svelte'
-import ProjectDashboard from './lib/components/ProjectDashboard.svelte'
+import Console from './lib/components/Console.svelte'
 import BlogFaqEditor from './lib/components/BlogFaqEditor.svelte'
 
-// No router library yet (V2) — a handful of pathname-keyed routes is
-// enough until V13 replaces this with the real console shell.
+// V13: Console.svelte is the real console shell — it owns the core PM
+// workflow (dashboard / wizard / project detail) and does its own
+// client-side routing between those three via lib/router.svelte.ts, so
+// they all mount the same component here and never trigger a full page
+// reload when navigating between them. QA-author tools
+// (showcase/editor/content) and the standalone document-upload utility
+// are separate personas outside this slice's scope, so they keep the
+// simple one-shot pathname-keyed mount this file always used.
 const routes: Record<string, Component> = {
   '/showcase': Showcase,
   '/editor': StandardEditor,
-  '/wizard': Wizard,
-  '/project': ProjectDashboard,
+  '/wizard': Console,
+  '/project': Console,
   '/content': BlogFaqEditor,
+  '/documents': App,
 }
 
-const app = mount(routes[window.location.pathname] ?? App, {
+const app = mount(routes[window.location.pathname] ?? Console, {
   target: document.getElementById('app')!,
 })
 

@@ -68,13 +68,14 @@ All three rounds of the original interview are closed.
 | Q49 | Does org-wide compliance reporting ("which projects are non-compliant," named but not decided in ADR-0003's Consequences) need a role beyond PM/QA-author? | FORK | Not yet decided. This is a different authz shape — organization-wide read — from everything else in the app, which is scoped to the asking user's own state. Deliberately excluded from ADR-0016's first MCP tool set | *(open)* |
 | Q50 | If Q9 (agentic chat) is ever reopened, does an agent acting on a PM's behalf need its own audit trail distinct from self-attestation? | FORK | Not yet decided. ADR-0002's self-attestation model assumes the PM is the one who acted; an agent acting on their behalf blurs that unless every agent action is attributed back to the human who authorized it | *(open)* |
 | Q51 | A route classifier for uploaded AORs (R&T vs. SSD) landed via PR #40, decided in a conversation that wasn't recorded in these docs at the time — does this fold into V9's AOR-intake/wizard flow, or stay separate? | DECIDED (mechanism) / FORK (integration) | The classifier itself (`POST /aor/classify`, embedding-similarity against two labeled reference descriptions) is in scope and documented retroactively, SLICES.md V17. Whether its output should ever feed into V9's wizard/AOR-upload flow, or stay a fully standalone endpoint, is **not yet decided** — recorded as a fork rather than silently picked, per this repo's convention. Current behavior (standalone, no `Project`/wizard linkage) is the default until someone decides otherwise | SLICES.md V17, PR #40 |
+| Q52 | SLICES.md's V13 build plan item 4 names a "comment thread" on the todo detail panel, alongside gist/artifact-upload/approval-route. V13 was scoped as pure frontend integration (all mechanisms it wires — V2/V3/V9/V10/V11 — already existed on the backend); no `Comment` entity, table, or endpoint exists anywhere | DECIDED | Scoped out of V13. A comment thread needs a real backend data model (author, body, timestamp, thread-to-todo linkage) that doesn't exist yet — building it would be new backend surface, not "wiring," and V13 was bounded to frontend-only. Same shape as the already-excluded per-todo "contact the owner" chat: a future slice, not silently faked with client-only state | SLICES.md V13, PR (V13 console shell) |
 
 ## Coverage
 
 | Category | Covered by |
 |----------|-----------|
 | Primary user and actors | Q1 |
-| Scope boundary | Q2, Q3, Q16, Q17, Q18, Q19, Q20, Q21, Q38, Q40, Q43 |
+| Scope boundary | Q2, Q3, Q16, Q17, Q18, Q19, Q20, Q21, Q38, Q40, Q43, Q52 |
 | Data model and identity | Q22, Q30, Q31, Q32, Q33, Q41, Q42 |
 | State and storage | Q23 |
 | Concurrency and conflict | Q13, Q24 |
