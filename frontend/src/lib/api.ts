@@ -170,6 +170,7 @@ export interface TodoItem {
 export interface ProjectWithTodos {
   project: Project;
   todos: TodoItem[];
+  compliance_percentage: number;
 }
 
 export function createProject(
@@ -191,4 +192,35 @@ export function getProject(
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectWithTodos> {
   return getJson(apiBase, `/projects/${projectId}`, fetchImpl);
+}
+
+// --- Artifact upload + self-attestation (S3, ADR-0002) ---
+
+export interface Artifact {
+  id: string;
+  todo_item_id: string;
+  filename: string;
+}
+
+export interface ArtifactUpload {
+  artifact: Artifact;
+  todo: TodoItem;
+}
+
+export async function uploadArtifact(
+  apiBase: string,
+  todoId: string,
+  file: File,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ArtifactUpload> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await fetchImpl(`${apiBase}/todos/${todoId}/artifacts`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!response.ok) {
+    throw new Error(`backend returned ${response.status}`);
+  }
+  return (await response.json()) as ArtifactUpload;
 }

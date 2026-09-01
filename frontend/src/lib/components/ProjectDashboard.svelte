@@ -1,17 +1,38 @@
 <script lang="ts">
   import * as Card from "$lib/components/ui/card/index.js";
   import { Badge } from "$lib/components/ui/badge/index.js";
-  import { resolveApiBase, getProject, type ProjectWithTodos } from "$lib/api";
+  import { Button } from "$lib/components/ui/button/index.js";
+  import { resolveApiBase, getProject, uploadArtifact, type ProjectWithTodos } from "$lib/api";
 
   const apiBase = resolveApiBase(import.meta.env);
   const projectId = new URLSearchParams(window.location.search).get("id") ?? "";
 
   let data = $state<ProjectWithTodos | null>(null);
   let error = $state<string | null>(null);
+  let uploadingTodoId = $state<string | null>(null);
 
-  getProject(apiBase, projectId)
-    .then((result) => (data = result))
-    .catch((err) => (error = err instanceof Error ? err.message : String(err)));
+  function load() {
+    getProject(apiBase, projectId)
+      .then((result) => (data = result))
+      .catch((err) => (error = err instanceof Error ? err.message : String(err)));
+  }
+
+  load();
+
+  async function attest(todoId: string, files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    uploadingTodoId = todoId;
+    error = null;
+    try {
+      await uploadArtifact(apiBase, todoId, file);
+      load();
+    } catch (err) {
+      error = err instanceof Error ? err.message : String(err);
+    } finally {
+      uploadingTodoId = null;
+    }
+  }
 
   const tierVariant: Record<string, "outline" | "secondary" | "destructive"> = {
     low: "outline",
@@ -23,7 +44,9 @@
 <main class="mx-auto max-w-3xl space-y-6 p-8">
   {#if error}
     <p class="text-sm text-destructive">Error: {error}</p>
-  {:else if !data}
+  {/if}
+
+  {#if !data}
     <p class="text-sm text-muted-foreground">Loading project…</p>
   {:else}
     <header class="flex items-center gap-3">
@@ -31,6 +54,7 @@
       <Badge variant={tierVariant[data.project.risk_tier] ?? "outline"}>
         {data.project.risk_tier} tier
       </Badge>
+      <Badge variant="outline">{Math.round(data.compliance_percentage)}% complied</Badge>
     </header>
 
     <Card.Root>
@@ -56,6 +80,26 @@
                 <p class="text-xs text-muted-foreground">
                   {todo.standard_name} &gt; {todo.clause_text}
                 </p>
+                {#if todo.status === "pending"}
+                  <div class="mt-2 flex items-center gap-2">
+                    <input
+                      type="file"
+                      id={`artifact-${todo.id}`}
+                      class="hidden"
+                      disabled={uploadingTodoId === todo.id}
+                      onchange={(e) => attest(todo.id, (e.target as HTMLInputElement).files)}
+                    />
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled={uploadingTodoId === todo.id}
+                      onclick={() =>
+                        document.getElementById(`artifact-${todo.id}`)?.click()}
+                    >
+                      {uploadingTodoId === todo.id ? "Uploading…" : "Upload artifact"}
+                    </Button>
+                  </div>
+                {/if}
               </li>
             {/each}
           </ul>

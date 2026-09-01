@@ -7,7 +7,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from sqlalchemy.orm import Session
+
 from qms_incub.compliance.models import (
+    Artifact,
     Clause,
     ComplianceStandard,
     Project,
@@ -58,6 +61,28 @@ class TodoItemOut:
     clause_text: str
     standard_name: str
     status: str
+
+
+@dataclass
+class ArtifactOut:
+    id: str
+    todo_item_id: str
+    filename: str
+
+
+def _todo_out(session: Session, todo: TodoItem) -> TodoItemOut:
+    requirement = session.get(Requirement, todo.requirement_id)
+    clause = session.get(Clause, requirement.clause_id) if requirement else None
+    standard = session.get(ComplianceStandard, clause.standard_id) if clause else None
+    return TodoItemOut(
+        id=todo.id,
+        project_id=todo.project_id,
+        requirement_id=todo.requirement_id,
+        requirement_description=requirement.description if requirement else "",
+        clause_text=clause.text if clause else "",
+        standard_name=standard.name if standard else "",
+        status=todo.status,
+    )
 
 
 def create_standard(name: str, description: str) -> StandardOut:
@@ -139,22 +164,10 @@ def create_project_with_todos(
 
         todos: list[TodoItemOut] = []
         for requirement in matching_requirements:
-            clause = session.get(Clause, requirement.clause_id)
-            standard = session.get(ComplianceStandard, clause.standard_id) if clause else None
             todo = TodoItem(project_id=project.id, requirement_id=requirement.id, status="pending")
             session.add(todo)
             session.flush()
-            todos.append(
-                TodoItemOut(
-                    id=todo.id,
-                    project_id=todo.project_id,
-                    requirement_id=todo.requirement_id,
-                    requirement_description=requirement.description,
-                    clause_text=clause.text if clause else "",
-                    standard_name=standard.name if standard else "",
-                    status=todo.status,
-                )
-            )
+            todos.append(_todo_out(session, todo))
 
         return ProjectOut(id=project.id, name=project.name, risk_tier=project.risk_tier), todos
 
@@ -176,20 +189,34 @@ def get_project(project_id: str) -> ProjectOut | None:
 def list_todos_for_project(project_id: str) -> list[TodoItemOut]:
     with get_session() as session:
         rows = session.query(TodoItem).filter(TodoItem.project_id == project_id).all()
-        todos = []
-        for todo in rows:
-            requirement = session.get(Requirement, todo.requirement_id)
-            clause = session.get(Clause, requirement.clause_id) if requirement else None
-            standard = session.get(ComplianceStandard, clause.standard_id) if clause else None
-            todos.append(
-                TodoItemOut(
-                    id=todo.id,
-                    project_id=todo.project_id,
-                    requirement_id=todo.requirement_id,
-                    requirement_description=requirement.description if requirement else "",
-                    clause_text=clause.text if clause else "",
-                    standard_name=standard.name if standard else "",
-                    status=todo.status,
-                )
-            )
-        return todos
+        return [_todo_out(session, todo) for todo in rows]
+
+
+def get_todo(todo_item_id: str) -> TodoItemOut | None:
+    with get_session() as session:
+        todo = session.get(TodoItem, todo_item_id)
+        if todo is None:
+            return None
+        return _todo_out(session, todo)
+
+
+def upload_artifact(todo_item_id: str, filename: str) -> tuple[ArtifactOut, TodoItemOut] | None:
+    """Self-attestation (S3, ADR-0002): recording an Artifact against a
+    TodoItem and flipping it to Complied happen in one transaction — no
+    intermediate review state."""
+    with get_session() as session:
+        todo = session.get(TodoItem, todo_item_id)
+        if todo is None:
+            return None
+
+        artifact = Artifact(todo_item_id=todo_item_id, filename=filename)
+        session.add(artifact)
+        todo.status = "complied"
+        session.flush()
+
+        return (
+            ArtifactOut(
+                id=artifact.id, todo_item_id=artifact.todo_item_id, filename=artifact.filename
+            ),
+            _todo_out(session, todo),
+        )
