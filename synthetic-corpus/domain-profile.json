@@ -1,0 +1,57 @@
+{
+  "business_function": "Software Engineering & IT Operations",
+  "roles": [
+    "Software Engineer",
+    "Engineering Manager",
+    "Release Manager",
+    "QA Engineer",
+    "Security Engineer",
+    "Site Reliability Engineer",
+    "Product Manager",
+    "IT Support Analyst",
+    "Data Protection Officer",
+    "Change Advisory Board Member"
+  ],
+  "policy_topics": [
+    "Software Change Management",
+    "Secure Software Development Lifecycle",
+    "Code Review and Quality Gates",
+    "Release and Deployment Management",
+    "Incident Management and Response",
+    "Access Control and Least Privilege",
+    "Data Classification and Handling",
+    "Vendor and Third-Party Risk Management",
+    "Business Continuity and Disaster Recovery",
+    "IT Onboarding and Offboarding"
+  ],
+  "standards_bodies": [
+    {
+      "name": "ISO/IEC 27001:2022",
+      "url": "https://www.iso.org/standard/27001"
+    },
+    {
+      "name": "ISO 9001:2015",
+      "url": "https://www.iso.org/standard/62085.html"
+    },
+    {
+      "name": "NIST SP 800-53 Rev. 5",
+      "url": "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"
+    },
+    {
+      "name": "SOC 2 (AICPA Trust Services Criteria)",
+      "url": "https://www.aicpa-cima.com/topic/audit-assurance/audit-and-assurance-greater-than-soc-2"
+    },
+    {
+      "name": "OWASP Top 10",
+      "url": "https://owasp.org/www-project-top-ten/"
+    },
+    {
+      "name": "ITIL 4",
+      "url": "https://www.axelos.com/certifications/itil-service-management"
+    },
+    {
+      "name": "PCI DSS v4.0",
+      "url": "https://www.pcisecuritystandards.org/document_library/"
+    }
+  ]
+}

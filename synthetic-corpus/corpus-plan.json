@@ -1,0 +1,74 @@
+{
+  "entries": [
+    {
+      "doc_id": "POL-001",
+      "title": "Software Change Management Policy",
+      "topic": "Software Change Management",
+      "owner_role": "Change Advisory Board Member",
+      "cross_references": ["POL-003", "POL-004", "POL-006"]
+    },
+    {
+      "doc_id": "POL-002",
+      "title": "Secure Software Development Lifecycle Policy",
+      "topic": "Secure Software Development Lifecycle",
+      "owner_role": "Security Engineer",
+      "cross_references": ["POL-003", "POL-006", "POL-007"]
+    },
+    {
+      "doc_id": "POL-003",
+      "title": "Code Review and Quality Gate Policy",
+      "topic": "Code Review and Quality Gates",
+      "owner_role": "Engineering Manager",
+      "cross_references": ["POL-001", "POL-002"]
+    },
+    {
+      "doc_id": "POL-004",
+      "title": "Release and Deployment Management Policy",
+      "topic": "Release and Deployment Management",
+      "owner_role": "Release Manager",
+      "cross_references": ["POL-001", "POL-005"]
+    },
+    {
+      "doc_id": "POL-005",
+      "title": "Incident Management and Response Policy",
+      "topic": "Incident Management and Response",
+      "owner_role": "Site Reliability Engineer",
+      "cross_references": ["POL-004", "POL-009"]
+    },
+    {
+      "doc_id": "POL-006",
+      "title": "Access Control and Least Privilege Policy",
+      "topic": "Access Control and Least Privilege",
+      "owner_role": "Security Engineer",
+      "cross_references": ["POL-007", "POL-010"]
+    },
+    {
+      "doc_id": "POL-007",
+      "title": "Data Classification and Handling Policy",
+      "topic": "Data Classification and Handling",
+      "owner_role": "Data Protection Officer",
+      "cross_references": ["POL-006", "POL-008"]
+    },
+    {
+      "doc_id": "POL-008",
+      "title": "Vendor and Third-Party Risk Management Policy",
+      "topic": "Vendor and Third-Party Risk Management",
+      "owner_role": "Data Protection Officer",
+      "cross_references": ["POL-007", "POL-009"]
+    },
+    {
+      "doc_id": "POL-009",
+      "title": "Business Continuity and Disaster Recovery Policy",
+      "topic": "Business Continuity and Disaster Recovery",
+      "owner_role": "Site Reliability Engineer",
+      "cross_references": ["POL-005", "POL-008"]
+    },
+    {
+      "doc_id": "POL-010",
+      "title": "IT Onboarding and Offboarding Policy",
+      "topic": "IT Onboarding and Offboarding",
+      "owner_role": "IT Support Analyst",
+      "cross_references": ["POL-006"]
+    }
+  ]
+}
