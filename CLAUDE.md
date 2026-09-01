@@ -41,10 +41,13 @@ before trusting a stale claim elsewhere that something is "done."
 Python/FastAPI backend, Svelte+Vite frontend, PostgreSQL, Qdrant, LlamaIndex
 + Docling for the RAG pipeline. Decided in ADR-0009 (supersedes ADR-0005's
 original defaults). No PDF rendering library in the backend — it ingests
-PDFs, it doesn't produce them (ADR-0012 supersedes ADR-0010). Embeddings
-are a local HuggingFace model, no API key (Q36). LLM is provider-swappable
-— Ollama for local dev, OpenRouter as ADR-0003's decided default otherwise
-(Q37) — see Secrets below.
+PDFs, it doesn't produce them (ADR-0012 supersedes ADR-0010). Embeddings are
+provider-swappable via `EMBEDDING_PROVIDER` (Q36): `local` (default, a
+HuggingFace model, no API key, no GPU needed) or a hosted OpenAI-compatible
+`/embeddings` endpoint (`openrouter`/`zenmux`) for a machine you'd rather
+not run a local model on. LLM is provider-swappable — Ollama for local dev,
+OpenRouter as ADR-0003's decided default otherwise (Q37) — see Secrets
+below.
 
 **2026-09-01 through 2026-09-05 only (Q39):** prefer `LLM_PROVIDER=zenmux`
 — a ZenMux API key was distributed to the team separately for this

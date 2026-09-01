@@ -1,4 +1,5 @@
 import datetime
+from types import SimpleNamespace
 
 import pytest
 from fastapi import HTTPException
@@ -23,7 +24,10 @@ def test_publish_blog_sends_plain_text_to_ingestion_with_blog_source_type(monkey
         )
         return 2
 
-    monkeypatch.setattr("qms_incub.content.api.ingest_text", fake_ingest)
+    monkeypatch.setattr(
+        "qms_incub.content.api.get_ingestion_port",
+        lambda: SimpleNamespace(ingest_text=fake_ingest),
+    )
     monkeypatch.setattr(
         repository,
         "mark_blog_published",
@@ -63,7 +67,10 @@ def test_publish_faq_sends_question_and_answer_with_faq_source_type(monkeypatch)
         )
         return 1
 
-    monkeypatch.setattr("qms_incub.content.api.ingest_text", fake_ingest)
+    monkeypatch.setattr(
+        "qms_incub.content.api.get_ingestion_port",
+        lambda: SimpleNamespace(ingest_text=fake_ingest),
+    )
     monkeypatch.setattr(
         repository,
         "mark_faq_published",

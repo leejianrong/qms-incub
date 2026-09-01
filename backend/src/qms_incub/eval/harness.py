@@ -23,11 +23,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from qms_incub.chat.retrieval import retrieve
 from qms_incub.eval.dataset import EvalQuery
 from qms_incub.eval.metrics import ndcg_at_k, recall_at_k, reciprocal_rank
+from qms_incub.rag.factory import get_retrieval_port
 
-MODE = "bm25"  # retrieve() is BM25-only; kept as a label for the report
+MODE = "bm25"  # the retrieval port is BM25-only; kept as a label for the report
 DEFAULT_K = 3
 
 
@@ -106,7 +106,7 @@ def evaluate(
     per_query: list[QueryReport] = []
 
     for q in goldset:
-        chunks = retrieve(q.query, k=k, rerank=rerank)
+        chunks = get_retrieval_port().retrieve(q.query, k=k, rerank=rerank)
         ranked_docs = _dedupe([c.document_title for c in chunks])
         ranked_chunks = [f"{c.document_title}::{c.chunk_index}" for c in chunks]
 

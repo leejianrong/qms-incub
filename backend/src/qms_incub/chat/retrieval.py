@@ -1,4 +1,8 @@
-"""Retrieval over the ingested corpus (S8, ADR-0003).
+"""Retrieval over the ingested corpus (S8, ADR-0003) — the concrete,
+Qdrant/LlamaIndex-backed implementation of `rag.ports.RetrievalPort`
+(`LlamaIndexRetrieval`, at the bottom of this module). Callers outside this
+module should go through `rag.factory.get_retrieval_port()` rather than
+importing `retrieve`/`fetch_document` directly.
 
 ``RETRIEVAL_MODE`` picks the candidate-fetching strategy — ``"bm25"``
 (sparse lexical, the default) or ``"vector"`` (dense embedding
@@ -14,7 +18,6 @@ from __future__ import annotations
 
 import json
 from collections.abc import Sequence
-from dataclasses import dataclass
 from typing import Any
 
 from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
@@ -22,21 +25,8 @@ from qdrant_client import models
 
 from qms_incub.chat.rerank import get_reranker
 from qms_incub.config import settings
+from qms_incub.rag.ports import RetrievedChunk as RetrievedChunk
 from qms_incub.rag_clients import get_embed_model, get_vector_store
-
-
-@dataclass
-class RetrievedChunk:
-    text: str
-    document_id: str
-    document_title: str
-    source_type: str
-    score: float
-    chunk_id: str = "unknown"
-    # 0-based position of this chunk within its document. Stable across
-    # re-ingestion of the same PDF (unlike chunk_id / document_id); used by
-    # the retrieval eval harness for chunk-level scoring.
-    chunk_index: int = -1
 
 
 def _nodes_to_chunks(
@@ -162,3 +152,24 @@ def retrieve(
     if rerank:
         candidates = get_reranker().rerank(query, candidates, top_n=k)
     return candidates[:k]
+
+
+class LlamaIndexRetrieval:
+    """`rag.ports.RetrievalPort` implementation backed by this module's
+    functions — the only implementation today. Returned by
+    `rag.factory.get_retrieval_port()`."""
+
+    def retrieve(
+        self,
+        query: str,
+        k: int = 4,
+        *,
+        rerank: bool = True,
+        candidate_k: int | None = None,
+    ) -> list[RetrievedChunk]:
+        return retrieve(query, k, rerank=rerank, candidate_k=candidate_k)
+
+    def fetch_document(
+        self, document_id: str, *, score: float = 0.0
+    ) -> RetrievedChunk | None:
+        return fetch_document(document_id, score=score)
