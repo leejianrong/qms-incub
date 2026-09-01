@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   askChat,
+  classifyProject,
   createProject,
   fetchHealth,
   getProject,
   resolveApiBase,
+  uploadAor,
   uploadArtifact,
 } from "./api";
 
@@ -84,11 +86,87 @@ describe("askChat", () => {
 });
 
 describe("createProject", () => {
-  it("posts the wizard answers and returns the generated project + todos", async () => {
+  it("posts just the name and returns the created (unclassified) project", async () => {
     const fakeFetch = vi.fn(async () =>
       new Response(
         JSON.stringify({
-          project: { id: "proj-1", name: "Customer Portal", risk_tier: "high" },
+          id: "proj-1",
+          name: "Customer Portal",
+          risk_tier: null,
+          aor_filename: null,
+          aor_extracted_fields: null,
+        }),
+        { status: 201 },
+      ),
+    );
+
+    const result = await createProject("http://api.internal", "Customer Portal", fakeFetch as typeof fetch);
+
+    expect(result.risk_tier).toBeNull();
+    expect(fakeFetch).toHaveBeenCalledWith(
+      "http://api.internal/projects",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ name: "Customer Portal" }),
+      }),
+    );
+  });
+});
+
+describe("uploadAor", () => {
+  it("posts the file as multipart form data and returns the project with extracted fields", async () => {
+    const fakeFetch = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          id: "proj-1",
+          name: "Customer Portal",
+          risk_tier: null,
+          aor_filename: "intake.pdf",
+          aor_extracted_fields: {
+            criticality_tier: "high",
+            data_classification: "confidential",
+            external_dependencies: ["Vendor A"],
+            in_house_rationale: "Existing in-house expertise.",
+          },
+        }),
+        { status: 201 },
+      ),
+    );
+
+    const file = new File(["fake pdf bytes"], "intake.pdf", { type: "application/pdf" });
+    const result = await uploadAor("http://api.internal", "proj-1", file, fakeFetch as typeof fetch);
+
+    expect(result.aor_extracted_fields?.criticality_tier).toBe("high");
+    expect(fakeFetch).toHaveBeenCalledWith(
+      "http://api.internal/projects/proj-1/aor",
+      expect.objectContaining({ method: "POST" }),
+    );
+    const init = (fakeFetch.mock.calls[0] as unknown as [string, RequestInit])[1];
+    expect(init.body).toBeInstanceOf(FormData);
+  });
+
+  it("throws when the backend responds with an error status", async () => {
+    const fakeFetch = vi.fn(async () => new Response("", { status: 404 }));
+    const file = new File(["x"], "intake.pdf");
+
+    await expect(
+      uploadAor("http://api.internal", "missing", file, fakeFetch as typeof fetch),
+    ).rejects.toThrow("404");
+  });
+});
+
+describe("classifyProject", () => {
+  it("posts the wizard answers and returns the generated todos", async () => {
+    const fakeFetch = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          project: {
+            id: "proj-1",
+            name: "Customer Portal",
+            risk_tier: "high",
+            aor_filename: null,
+            aor_extracted_fields: null,
+          },
           todos: [
             {
               id: "todo-1",
@@ -100,14 +178,15 @@ describe("createProject", () => {
               status: "pending",
             },
           ],
+          compliance_percentage: 0,
         }),
-        { status: 201 },
+        { status: 200 },
       ),
     );
 
-    const result = await createProject(
+    const result = await classifyProject(
       "http://api.internal",
-      "Customer Portal",
+      "proj-1",
       { data_sensitivity_high: true, customer_facing: true, regulatory_exposure: true },
       fakeFetch as typeof fetch,
     );
@@ -115,11 +194,10 @@ describe("createProject", () => {
     expect(result.project.risk_tier).toBe("high");
     expect(result.todos).toHaveLength(1);
     expect(fakeFetch).toHaveBeenCalledWith(
-      "http://api.internal/projects",
+      "http://api.internal/projects/proj-1/classify",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({
-          name: "Customer Portal",
           answers: {
             data_sensitivity_high: true,
             customer_facing: true,
