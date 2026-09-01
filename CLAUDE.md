@@ -7,17 +7,23 @@ built and how to work in the repo day to day.
 
 ## Build status
 
+The backend is ingestion-and-chat only — it never authors, composes, or
+generates document content, real or synthetic (ADR-0012). Synthetic
+document generation for testing the RAG pipeline lives entirely outside
+this product now, in `synthetic-corpus/` — its own tool, no shared code,
+no HTTP dependency on the backend either.
+
 | Area | Status |
 |------|--------|
-| Backend (FastAPI) | V1 (RAG spike) built and exposed via the API. V5 (synthetic batch generation) built as **local CLI tooling only** — not reachable through the running app (ADR-0011) |
-| V1: document engine (S4) | Block model (text/table/flowchart/image), Jinja2 HTML render, flowchart step-list → SVG (hand-rolled, no Mermaid CLI), WeasyPrint PDF export. One hardcoded seed document (`qms_incub.documents.seed`) — no composer UI yet (V4) |
-| V1: ingestion (S6) | `make seed` renders the seed doc, exports PDF, Docling-parses it, chunks (LlamaIndex `SentenceSplitter`), embeds (local HF `BAAI/bge-small-en-v1.5`), stores in Qdrant. Idempotent per document ID — re-running clears old chunks first (`ingestion/pipeline.py`) |
-| V1: chat (S8) | `POST /chat` — the app's only real endpoint besides `/health`. Vector retrieval + LLM call, citations derived from retrieved chunks (not parsed from model output). LLM provider swappable, see Secrets/Q37 |
-| V5: batch generation (S5, CLI-only — ADR-0011) | `make batch COUNT=N SEED=S` → `qms_incub.batch_v5`. `documents/random_generator.py` produces N randomized documents (seeded, reproducible) from V1's exact block model/render/ingest path, flagged `is_synthetic`; `documents/batch.py` orchestrates render → export → ingest per document, tracking status in `PolicyDocumentRow` (Postgres — the first slice to touch the relational data model) and printing a summary. No HTTP endpoint, no UI — real QMS documents are sensitive and unavailable, so this exists purely to validate the RAG pipeline locally |
-| Frontend (Svelte+Vite) | Chat panel only (V1). No batch-generation UI — see ADR-0011 |
-| Database (PostgreSQL) | `policy_documents` table only (V5) — Alembic-managed, see `backend/migrations/`. Not the full `Project`/`TodoItem`/`Standard`/`Clause`/`Requirement` model yet (V2/ADR-0008) |
+| Backend (FastAPI) | V1 (RAG spike) built and exposed via the API |
+| V1/V4: document upload (S4/S6) | `POST /documents` — multipart PDF upload, ingested synchronously. `GET /documents` lists ingestion status. The only way a document enters the corpus (ADR-0012) |
+| V1: ingestion (S6) | `make seed` uploads a fixture PDF (`backend/tests/fixtures/sample_policy_document.pdf`) through `POST /documents`, which Docling-parses it, chunks (LlamaIndex `SentenceSplitter`), embeds (local HF `BAAI/bge-small-en-v1.5`), and stores in Qdrant. Idempotent per document ID — re-ingesting the same ID clears old chunks first (`ingestion/pipeline.py`) |
+| V1: chat (S8) | `POST /chat` — vector retrieval + LLM call, citations derived from retrieved chunks (not parsed from model output). LLM provider swappable, see Secrets/Q37 |
+| Frontend (Svelte+Vite) | Chat panel only (V1). No upload UI yet (V4) |
+| Database (PostgreSQL) | `policy_documents` table (id, title, status, chunk_count, error) — Alembic-managed, see `backend/migrations/`. Tracks ingestion status of uploaded documents, not document content. Not the full `Project`/`TodoItem`/`Standard`/`Clause`/`Requirement` model yet (V2/ADR-0008) |
 | Vector store (Qdrant) | In real use since V1 — collection `qms_incub_corpus`, see `qms_incub.rag_clients` |
-| Everything else in PLAN.md / SLICES.md (V2–V4, V6–V8) | **Not built yet.** |
+| `synthetic-corpus/` | Independent tool generating realistic QMS-policy-shaped PDFs to manually test the backend's RAG pipeline. No shared code with `backend/`, no HTTP call to it either — its output is PDF files on disk; testing them against the backend is a manual upload-and-ask step. See `docs/shaping/synthetic-doc-realism/` for its own planning |
+| Everything else in PLAN.md / SLICES.md (V2, V3, V6, V8) | **Not built yet.** |
 
 If you're about to implement a slice, check this table (and `git log`)
 before trusting a stale claim elsewhere that something is "done."
@@ -26,10 +32,11 @@ before trusting a stale claim elsewhere that something is "done."
 
 Python/FastAPI backend, Svelte+Vite frontend, PostgreSQL, Qdrant, LlamaIndex
 + Docling for the RAG pipeline. Decided in ADR-0009 (supersedes ADR-0005's
-original defaults). PDF export is WeasyPrint (ADR-0010, resolves Q35).
-Embeddings are a local HuggingFace model, no API key (Q36). LLM is
-provider-swappable — Ollama for local dev, OpenRouter as ADR-0003's
-decided default otherwise (Q37) — see Secrets below.
+original defaults). No PDF rendering library in the backend — it ingests
+PDFs, it doesn't produce them (ADR-0012 supersedes ADR-0010). Embeddings
+are a local HuggingFace model, no API key (Q36). LLM is provider-swappable
+— Ollama for local dev, OpenRouter as ADR-0003's decided default otherwise
+(Q37) — see Secrets below.
 
 ## Secrets
 
@@ -59,15 +66,14 @@ Run from the repo root unless noted.
   container) and `e2e` (needs a live LLM too — local-only) tests are
   excluded by default; run explicitly with `uv run pytest -m integration`
   or `-m e2e` from `backend/`.
-- `make seed` — builds V1's one hardcoded seed policy document, exports it
-  to PDF, and ingests it into Qdrant. Needs `make up` running (Qdrant) —
-  first run also downloads the embedding model.
+- `make seed` — uploads a fixture PDF
+  (`backend/tests/fixtures/sample_policy_document.pdf`) through the real
+  `POST /documents` endpoint, proving local ingestion+chat work. Needs
+  `make up` running (backend + Qdrant) — first run also downloads the
+  embedding model.
 - `make migrate` — applies Alembic migrations against Postgres. `make up`
   runs this automatically once Postgres is healthy, before starting the
   dev servers.
-- `make batch COUNT=20 SEED=1` — generates and ingests N synthetic policy
-  documents locally (ADR-0011). Deliberately **not** part of the running
-  app — no endpoint, no UI. Defaults: `COUNT=5 SEED=0`.
 
 Backend-only, from `backend/`: `uv run alembic revision --autogenerate -m
 "..."` after changing a model in `models.py`, then `uv run alembic upgrade
@@ -105,10 +111,13 @@ Frontend-only, from `frontend/`: `npm run test`, `npm run lint`,
 ## Layout
 
 ```
-backend/    FastAPI app (src/qms_incub/), pytest tests/
-frontend/   Svelte + Vite app (src/), vitest tests colocated as *.test.ts
-docs/adr/   Architecture decision records, numbered sequentially
-scripts/    git-hooks/pre-push — the fast local gate
+backend/          FastAPI app (src/qms_incub/), pytest tests/
+frontend/         Svelte + Vite app (src/), vitest tests colocated as *.test.ts
+synthetic-corpus/ Independent tool generating synthetic QMS-policy-shaped PDFs
+                  to manually test the backend's RAG pipeline (ADR-0012).
+                  Shares no code with backend/, doesn't call it over HTTP either.
+docs/adr/         Architecture decision records, numbered sequentially
+scripts/          git-hooks/pre-push — the fast local gate
 ```
 
 ## Docs map — read these before planning new work

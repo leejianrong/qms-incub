@@ -1,10 +1,14 @@
 # ADR-0007: The document corpus is grown by both generating and importing, sharing one ingestion pipeline
 
-- Status: Accepted
+- Status: Superseded by ADR-0012
 - Date: 2026-08-31
 - Deciders: leejianrong (user), agent (plan-new-project skill, round 4)
 
 ## Context
+
+*Superseded: there's no "generating" side left to switch away from — the
+corpus grows by upload only. See ADR-0012. This record stays as the
+history of what was originally decided and why.*
 
 Synthetic documents (ADR-0001) are good for exercising the ingestion
 pipeline in a controlled, repeatable way, but they aren't real QMS policy

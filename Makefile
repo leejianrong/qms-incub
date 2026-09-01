@@ -1,8 +1,21 @@
-.PHONY: up down migrate seed batch test lint typecheck install install-hooks backend-dev frontend-dev
+.PHONY: help up down migrate seed test lint typecheck install install-hooks backend-dev frontend-dev
 
-# V5 batch defaults — override, e.g. `make batch COUNT=20 SEED=1`.
-COUNT ?= 5
-SEED ?= 0
+# Bare `make` shows available targets instead of running the first one.
+.DEFAULT_GOAL := help
+
+help:
+	@echo "Available targets:"
+	@echo "  up             Start Postgres+Qdrant, then backend and frontend dev servers"
+	@echo "  down           Stop and remove the Postgres/Qdrant containers"
+	@echo "  migrate        Apply Alembic migrations against Postgres"
+	@echo "  seed           Upload the sample fixture PDF, proving local ingestion+chat work"
+	@echo "  install        Install backend and frontend dependencies"
+	@echo "  install-hooks  Symlink the pre-push git hook"
+	@echo "  test           Run backend and frontend fast/no-infra tests"
+	@echo "  lint           Run backend and frontend linters"
+	@echo "  typecheck      Run backend and frontend type checkers"
+	@echo "  backend-dev    Run only the backend dev server"
+	@echo "  frontend-dev   Run only the frontend dev server"
 
 # One-command local bring-up (ADR-0005, ADR-0009): Postgres + Qdrant in
 # Docker, FastAPI backend and Svelte/Vite frontend on the host. Ctrl+C stops
@@ -25,19 +38,12 @@ down:
 migrate:
 	cd backend && uv run alembic upgrade head
 
-# V1 (SLICES.md § V1): builds the one hardcoded seed policy document,
-# exports it to PDF, and ingests it into Qdrant. Requires `make up` running
-# (Qdrant) and, for embeddings, a first-run HuggingFace model download.
+# V1 (SLICES.md § V1): uploads the sample fixture PDF through the real
+# /documents endpoint, the same path any real user's upload takes. Requires
+# `make up` running (backend + Qdrant) and, for embeddings, a first-run
+# HuggingFace model download.
 seed:
-	cd backend && uv run python -m qms_incub.seed_v1
-
-# V5 (SLICES.md § V5): generates COUNT randomized synthetic policy
-# documents and ingests them, for stress-testing the RAG pipeline locally.
-# Deliberately CLI-only — not part of the web app (real policy documents
-# are sensitive; synthetic ones are a local dev/test aid, not a feature
-# of the QMS platform itself). Requires `make up` running.
-batch:
-	cd backend && uv run python -m qms_incub.batch_v5 --count $(COUNT) --seed $(SEED)
+	curl -sf -F "file=@backend/tests/fixtures/sample_policy_document.pdf" http://localhost:8000/documents | tee /dev/stderr | grep -q '"status":"embedded"'
 
 install:
 	cd backend && uv sync

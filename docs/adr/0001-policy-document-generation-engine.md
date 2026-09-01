@@ -1,10 +1,14 @@
 # ADR-0001: One block-based document engine serves both authoring and synthetic batch generation
 
-- Status: Accepted
+- Status: Superseded by ADR-0012
 - Date: 2026-08-31
 - Deciders: leejianrong (user), agent (plan-new-project skill, round-2 fork F6)
 
 ## Context
+
+*Superseded: the backend doesn't author or generate documents at all — see
+ADR-0012. This record stays as the history of what was originally decided
+and why.*
 
 The project needs two things that look different on the surface: a way for
 a QA-author to compose real QMS policy documents (text, tables, flowcharts),

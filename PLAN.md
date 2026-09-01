@@ -12,11 +12,12 @@ compliant so far. Policies live scattered across documents; a PM typically
 doesn't know who the approving authority is for a given practice without
 asking around.
 
-Separately, whoever builds this system's RAG-backed chatbot needs a
-realistic way to generate policy-shaped test documents — ones containing
-tables and flowcharts, the content types that most often break naive RAG
-chunking — to validate that ingestion and retrieval actually work before
-trusting it with real policy content.
+Separately, whoever builds this system's RAG-backed chatbot needs a way to
+prove that ingestion and retrieval actually work — table and flowchart
+content is exactly what tends to break naive RAG chunking — before
+trusting the pipeline with real policy content. That proof comes from a
+tool outside this product entirely (see below), not from anything the QMS
+app itself builds.
 
 ## Solution
 
@@ -26,30 +27,26 @@ follow, and uploads their own artifacts as proof of compliance against each
 item. A persistent chatbot (OpenRouter-backed LLM) answers questions
 grounded in the company's policy corpus *and* the asking PM's own
 compliance state — "who is the approving authority for X" as much as "am I
-compliant yet". A QA-author role composes the canonical policy documents
-(text, tables, flowcharts, images) through a block-based generator that
-exports PDF. The same corpus can also be grown by importing existing
-open-source QMS documents — real PDFs sourced from elsewhere — so the
-QA-author can switch between generating synthetic content and ingesting
-real-world documents as needed. Blog posts and FAQ entries are
+compliant yet". The policy corpus itself grows by one mechanism only: a
+QA-author uploads a PDF. The app never authors, composes, or generates
+document content of any kind (ADR-0012) — it ingests whatever it's handed
+and answers questions about it. Blog posts and FAQ entries are
 lighter-weight content feeding the same knowledge base as the chatbot.
 
-Separately (and not part of the web app itself — ADR-0011), the same
-block engine can batch-produce randomized synthetic documents from a
-local CLI. Real company QMS documents are sensitive and not available
-during this build, so this is how the RAG pipeline gets exercised and
-validated before any real policy content is ingested.
+Real company QMS documents are sensitive and unavailable during this
+build, so a separate local tool (`synthetic-corpus/`, its own product, no
+shared code with this backend) generates realistic QMS-policy-shaped PDFs
+for exercising the pipeline by hand before real content is ever uploaded.
+See `docs/shaping/synthetic-doc-realism/` for that tool's own planning —
+it isn't part of this plan.
 
 ## Users and actors
 
 - **Project Manager (PM)** — primary. Runs the wizard, works the todo list,
   uploads compliance artifacts, asks the chatbot.
-- **QA-author** — secondary. Authors policy documents, blog posts, and FAQ
-  entries.
-- **Developer** — non-product actor. Runs synthetic batch generation
-  locally (CLI, not the web app) to validate the RAG pipeline before real
-  policy documents are available (ADR-0011).
-- **RAG ingestion pipeline** — non-human actor, runs on every publish.
+- **QA-author** — secondary. Uploads policy documents and authors blog
+  posts and FAQ entries.
+- **RAG ingestion pipeline** — non-human actor, runs on every upload.
 - **OpenRouter LLM** — non-human actor, answers chat queries.
 - No reviewer/approver actor exists yet (see Out). Where that would create a
   conflict — PM says compliant, nobody checks — the PM's self-attestation is
@@ -66,15 +63,10 @@ validated before any real policy content is ingested.
 - Artifact upload against a todo item; self-attestation flips the item to
   Complied.
 - PM dashboard: todo list, compliance %, uploaded artifacts.
-- Block-based policy document composer (text / table / flowchart / image
-  blocks) for the QA-author role, with PDF export.
-- Synthetic batch generation: a local CLI (not a web app feature —
-  ADR-0011) produces N variant documents from the same block engine, for
-  the RAG test corpus.
-- Import existing open-source QMS documents (real PDFs) into the same
-  corpus, with a switch between generating and importing (ADR-0007).
-- RAG ingestion pipeline for published policy documents (generated or
-  imported), blog posts, and FAQ entries.
+- Document upload: a QA-author uploads a PDF, which is the only way a
+  policy document enters the corpus (ADR-0012).
+- RAG ingestion pipeline for uploaded policy documents, blog posts, and
+  FAQ entries.
 - RAG chatbot (OpenRouter): grounded answers from the ingested corpus plus
   the asking PM's own project/todo/artifact state, with citations.
 - Blog section and FAQ section, admin-authored.
@@ -94,10 +86,11 @@ validated before any real policy content is ingested.
 - RAG retrieval evaluation/benchmarking tooling (precision/recall metrics).
   This milestone needs ingestion and retrieval to *work and be demoable*,
   not to be rigorously tuned.
-- A freeform diagram/canvas editor. Flowcharts are generated from
-  structured step data, not hand-drawn (ADR-0006) — a reader might expect a
-  drawing tool given "generate flowcharts", so this is called out
-  explicitly.
+- Any form of in-app document authoring or composition — text editors,
+  block composers, diagram tools, PDF export. The app ingests documents;
+  it doesn't make them (ADR-0012). A QA-author who wants a new policy
+  document in the corpus writes or sources the PDF elsewhere and uploads
+  it.
 - Mapping policy content to a real external regulatory standard (ISO,
   FDA, etc.). Policy content is the company's own generic text.
 
@@ -109,9 +102,9 @@ validated before any real policy content is ingested.
 | R1 | Wizard classifies a project into a risk tier from a small fixed question set | Must-have |
 | R2 | Todo list is auto-generated from the risk tier | Must-have |
 | R3 | PM can upload an artifact against a todo item; it self-attests to Complied | Must-have |
-| R4 | QA-author adds a policy document to the corpus either by composing it from text/table/flowchart/image blocks and exporting PDF, or by importing an existing open-source QMS PDF, switching between the two | Must-have |
-| R5 | Synthetic batch generation of N variant documents for the RAG test corpus, run locally via CLI (ADR-0011) — not a QA-author-facing web app feature | Must-have |
-| R6 | Published policy documents (generated or imported), blog posts, and FAQ entries are ingested automatically | Must-have |
+| R4 | QA-author uploads a PDF, which is ingested and added to the corpus — the only way a policy document enters the system (ADR-0012) | Must-have |
+| R5 | *(retired — see ADR-0012)* Synthetic batch generation now lives entirely outside this product, as its own tool (`synthetic-corpus/`) | — |
+| R6 | Uploaded policy documents, blog posts, and FAQ entries are ingested automatically | Must-have |
 | R7 | Chatbot answers grounded questions using the corpus plus the asking PM's own compliance state, with citations | Must-have |
 | R8 | Blog and FAQ sections exist as simple admin-authored content | Must-have |
 
@@ -122,10 +115,10 @@ validated before any real policy content is ingested.
 | S1 | Classification wizard: fixed question set → deterministic scoring function → risk tier | |
 | S2 | Todo generation: risk tier → matching `Requirement` rows (under user-defined Standard → Clause) → TodoItem rows on the Project, each linked back to its Requirement | ADR-0008 |
 | S3 | Artifact compliance: upload → Artifact record linked to TodoItem → status flips to Complied (self-attestation, no gate) | ADR-0002 |
-| S4 | Document generation engine: block model (text/table/flowchart/image) → HTML render → HTML-to-PDF export; flowchart blocks render via a structured DSL to SVG before export | ADR-0001, ADR-0006 |
-| S5 | Synthetic batch mode: parametrized generator reuses S4's block engine to produce N randomized documents, flagged synthetic, auto-published. Local CLI only, not exposed via the web app's UI or API (ADR-0011) | ADR-0001, ADR-0011 |
-| S6 | RAG ingestion: on publish (policy doc / blog post / FAQ entry, generated or imported) → chunk → embed → store with source-type + doc-id metadata | ADR-0003 |
-| S7 | Document import: QA-author uploads an existing PDF + attribution → stored as a `PolicyDocument` with `origin = imported` (no blocks) → S6 ingests its extracted text directly | ADR-0007 |
+| S4 | Document upload: QA-author uploads a PDF → stored as a `PolicyDocumentRow`, status `pending` → S6 ingests its extracted text directly. The only way a document enters the corpus (ADR-0012, folds in what was S7) | ADR-0012 |
+| S5 | *(retired — see ADR-0012)* | |
+| S6 | RAG ingestion: on upload (policy doc, blog post, or FAQ entry) → chunk → embed → store with source-type + doc-id metadata | ADR-0003 |
+| S7 | *(retired — merged into S4, see ADR-0012)* | |
 | S8 | RAG chatbot: query → vector retrieval (top-k) + structured injection of the asking PM's project/todo/artifact state → OpenRouter LLM prompt → grounded answer with citations | ADR-0003 |
 | S9 | Blog/FAQ CMS: simple admin-authored content list; publish triggers S6 | |
 
@@ -139,10 +132,7 @@ validated before any real policy content is ingested.
 | Classification wizard (multi-step form) | New project flow | S1, S2 |
 | Todo list + compliance % | PM dashboard | S2, S3 |
 | Artifact upload control | Todo item row | S3 |
-| Block-based document composer | QA-author document editor | S4 |
-| PDF export button | Document composer | S4 |
-| Import document (upload PDF + attribution) | QA-author tools, same document list as composer | S7 |
-| Generate / Import switch | Document list toolbar | S4, S7 |
+| Upload document | QA-author tools | S4 |
 | Blog list + post view | Blog section | S9 |
 | FAQ list | FAQ section | S9 |
 | Chat panel with citations | Persistent panel on PM dashboard | S8 |
@@ -151,31 +141,30 @@ validated before any real policy content is ingested.
 
 | Affordance | Kind | Wires to |
 |------------|------|----------|
-| Ingestion worker | job, runs on publish | S6 |
+| Ingestion worker | runs synchronously on upload | S6 |
 | Vector store (Qdrant) | store | S6, S8 |
-| Docling parser | service (invoked by LlamaIndex ingestion) | S6, S7 |
+| Docling parser | service (invoked by LlamaIndex ingestion) | S4, S6 |
 | LlamaIndex ingestion/query pipeline | library, orchestrates S6/S8 | S6, S8 |
 | OpenRouter API client | handler | S8 |
-| HTML-to-PDF renderer | service | S4, S5 |
-| Synthetic batch-generation CLI (`make batch`) | local dev tool, not part of the web app (ADR-0011) | S5 |
-| Ingestion status output (CLI, per batch run) | local dev tool, not part of the web app (ADR-0011) | S5, S6 |
-| `make up` / `make seed` (Makefile) | one-command local bring-up | all — ADR-0005 |
+| `make up` / `make seed` (Makefile) | one-command local bring-up; `make seed` uploads a fixture PDF through the real endpoint | all — ADR-0005 |
 
 ## Implementation decisions
 
 - Stack: Python/FastAPI backend, Svelte+Vite frontend, PostgreSQL,
   Qdrant vector store, LlamaIndex + Docling for the RAG pipeline
-  (ADR-0009, supersedes ADR-0005's original stack defaults). PDF rendering
-  engine not yet confirmed by the team (Q35).
+  (ADR-0009, supersedes ADR-0005's original stack defaults). No PDF
+  rendering engine in the backend at all — there's nothing left to render
+  (ADR-0012 supersedes ADR-0010).
 - Core entities: `ComplianceStandard` (name, description), `Clause` (belongs
   to a Standard, ordering, text), `Requirement` (belongs to a Clause,
   description, applicable risk tiers) — user-authored, no hardcoded
   regulatory schema (ADR-0008). `Project` (owner=PM, risk tier), `TodoItem`
   (project, the `Requirement` it traces to, status), `Artifact` (todo item,
-  file, uploader), `PolicyDocument` (id, version, status Draft/Published,
-  `origin`: generated/imported, blocks[] — empty for imported,
-  `is_synthetic`, `source_attribution` — set for imported), `Block` (type:
-  text/table/flowchart/image, content), `BlogPost`, `FAQEntry`,
+  file, uploader), `PolicyDocument` (id, title, ingestion status
+  pending/embedded/failed, chunk count, error) — a record of an uploaded
+  file's progress through ingestion, not document content; the app stores
+  no document content or structure of its own, only what Docling/LlamaIndex
+  derive from the PDF at ingestion time. `BlogPost`, `FAQEntry`,
   `IngestedChunk` (source type, source id, embedding, text). All carry an
   org-scoping column per ADR-0004 even though v1 is single-org.
 - Todo generation (S2) walks `Requirement`s tagged with the project's risk
@@ -183,16 +172,18 @@ validated before any real policy content is ingested.
   `Requirement` — the traceability chain is Standard → Clause →
   Requirement → TodoItem → Artifact, not a flat practice string
   (ADR-0008).
-- Imported documents skip the block model and HTML render entirely (ADR-0007):
-  the uploaded PDF is stored as-is and its extracted text goes straight into
-  S6's ingestion pipeline.
+- Uploaded documents are stored as-is; there's no authoring step to skip
+  (ADR-0012) — the PDF's extracted text goes straight into S6's ingestion
+  pipeline the moment it's uploaded.
 - OpenRouter is a hosted, internet-dependent LLM gateway (Terms of Service
   apply per-model; no self-hosted fallback in v1). If it's unreachable, the
   chat panel shows an explicit error state rather than failing silently or
   retrying indefinitely (per the failure-behaviour default, Q26).
-- `PolicyDocument` lifecycle is Draft → Published only (no approval state) —
-  simpler than a four-state document lifecycle because there is no reviewer
-  actor in this milestone; see ADR-0002.
+- `PolicyDocument` has no Draft/Published lifecycle at all (a simpler
+  outcome than ADR-0002's original "no approval state" call, once there's
+  no authoring step before ingestion) — an upload is ingested immediately,
+  status tracks pipeline progress (`pending`/`embedded`/`failed`), not
+  editorial review.
 - Chat context assembly (S8) builds two distinct sections in the LLM prompt:
   retrieved corpus chunks, and a fixed-shape JSON block of the asking PM's
   own `Project`/`TodoItem`/`Artifact` rows — kept separate so citations can
@@ -204,23 +195,21 @@ validated before any real policy content is ingested.
 
 ## Testing approach
 
-Highest-value seams: the wizard-to-todo mapping (pure function), document
-generation → PDF (does the exported PDF actually contain the table and
-flowchart content), ingestion (does a published document produce chunks),
-and chatbot grounding (does a question with a known answer in the corpus
-get answered correctly, with the right citation). The chatbot's exact
-wording is never asserted — only that the expected fact appears and the
-citation points at the right source. Per-slice test plans live in
-SLICES.md.
+Highest-value seams: the wizard-to-todo mapping (pure function), ingestion
+(does an uploaded document produce chunks that actually cover its table
+and flowchart content, not just its prose), and chatbot grounding (does a
+question with a known answer in the corpus get answered correctly, with
+the right citation). The chatbot's exact wording is never asserted — only
+that the expected fact appears and the citation points at the right
+source. Per-slice test plans live in SLICES.md.
 
 ## Assumed defaults
 
 | ID | Assumed | Cost if wrong |
 |----|---------|---------------|
-| Q7 | Flowcharts are auto-composed from structured step data (Mermaid-style DSL), not hand-drawn | High if wrong — a freeform diagram editor is a different feature with different UI, data model, and PDF-rendering path |
 | Q9 | Chatbot is retrieval-QA only, no agentic actions on the wizard/todos | Low — extending to agentic actions adds tool-calling to S8 without changing S1–S6 |
 | Q11 | *(superseded — see ADR-0009)* | |
-| Q35 | PDF rendering engine given a Python backend (e.g. WeasyPrint, Playwright-Python) — not yet confirmed by the team | Low — swapping the PDF library only touches S4's implementation, not its shape |
+| Q7, Q35 | *(superseded — see ADR-0012; there's no flowchart rendering or PDF export left in the backend to have an engine for)* | |
 | Q15 | Chatbot grounding is hybrid: vector retrieval over the corpus plus direct structured injection of the asking user's own state (not vectorized) | Medium — if user state needs to be searchable/cross-referenced at scale later, S8's context assembly is rebuilt but S6 (ingestion) is unaffected |
 
 ## Open risks
@@ -228,14 +217,12 @@ SLICES.md.
 - **LLM grounding quality.** OpenRouter-backed chat could still hallucinate
   despite retrieval. Slice 1 (the RAG spike) is the earliest point this
   shows up.
-- **PDF-to-ingestion fidelity for tables/flowcharts.** The whole synthetic-
-  corpus premise assumes the ingestion pipeline can meaningfully chunk
-  table and flowchart content, not just prose. Slice 1 confronts this
-  directly.
+- **Uploaded PDFs are structurally unpredictable.** Real-world QMS
+  documents vary wildly in layout, and Docling's text extraction may
+  produce messier chunks for some documents than others — this is true
+  from the very first upload, not a risk that shows up later. The
+  `synthetic-corpus/` tool exists precisely to probe this by hand before
+  real content is ever uploaded.
 - **Self-attestation may read as too weak for a QMS demo.** No reviewer
   contests a PM's claim of compliance in this milestone — explicitly
   deferred (F7), earliest visible in Slice 3.
-- **Imported PDFs are structurally unpredictable.** Unlike generated
-  documents, real-world QMS PDFs vary wildly in layout, and text extraction
-  may produce messier chunks than the app's own generated HTML. Earliest
-  visible in the import slice (V7).

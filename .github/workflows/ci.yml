@@ -25,7 +25,7 @@ jobs:
         image: qdrant/qdrant:latest
         ports:
           - 6333:6333
-      # V5: the batch-ingestion integration test needs a migrated Postgres
+      # V4: the document-upload integration test needs a migrated Postgres
       # to persist PolicyDocumentRow status. Port/credentials match
       # docker-compose.yml and config.py's DATABASE_URL default.
       postgres:

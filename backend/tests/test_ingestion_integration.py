@@ -10,24 +10,17 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import FieldCondition, Filter, MatchValue
 
 from qms_incub.config import settings
-from qms_incub.documents.pdf import html_to_pdf
-from qms_incub.documents.render import render_document_html
-from qms_incub.documents.seed import SEED_DOCUMENT_TITLE, build_seed_document
 from qms_incub.ingestion.pipeline import ingest_pdf
 
 pytestmark = pytest.mark.integration
 
+FIXTURE_PDF = Path(__file__).parent / "fixtures" / "sample_policy_document.pdf"
 
-def test_publishing_a_document_produces_chunks_referencing_its_id(tmp_path: Path) -> None:
-    # Unique per run so this test never collides with, or leaks into, the
-    # real seed document's data in the shared local Qdrant collection.
+
+def test_ingesting_a_document_produces_chunks_referencing_its_id() -> None:
+    # Unique per run so this test never collides with, or leaks into, any
+    # other data in the shared local Qdrant collection.
     document_id = f"test-doc-{uuid.uuid4()}"
-    document = build_seed_document()
-    html = render_document_html(document)
-    pdf_bytes = html_to_pdf(html)
-
-    pdf_path = tmp_path / "doc.pdf"
-    pdf_path.write_bytes(pdf_bytes)
 
     client = QdrantClient(url=settings.qdrant_url)
     id_filter = Filter(
@@ -35,7 +28,7 @@ def test_publishing_a_document_produces_chunks_referencing_its_id(tmp_path: Path
     )
     try:
         chunk_count = ingest_pdf(
-            pdf_path, document_id=document_id, document_title=SEED_DOCUMENT_TITLE
+            FIXTURE_PDF, document_id=document_id, document_title="Software Change Management Policy"
         )
         assert chunk_count >= 1
 

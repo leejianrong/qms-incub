@@ -42,14 +42,15 @@ flowchart LR
     end
 ```
 
-V1 (the RAG spike) is built: a policy document generated, exported to
-PDF, ingested into Qdrant, and queryable through a chat panel with
-citations. Real company QMS documents are sensitive and not available
-yet, so V5 adds a local CLI (`make batch`) that generates synthetic
-policy documents to exercise the same pipeline — deliberately not part
-of the running app (ADR-0011). Everything else in PLAN.md/SLICES.md is
-still ahead — see `CLAUDE.md`'s build-status table for exactly what
-exists.
+V1 (the RAG spike) is built: upload a PDF, it's ingested into Qdrant, and
+it's queryable through a chat panel with citations. The backend only ever
+ingests and answers — it doesn't author or generate document content of
+any kind (ADR-0012). Real company QMS documents are sensitive and not
+available yet, so a fully separate tool, `synthetic-corpus/`, generates
+realistic QMS-shaped PDFs to exercise the same pipeline by hand — it
+shares no code with this backend and doesn't call it over HTTP either.
+Everything else in PLAN.md/SLICES.md is still ahead — see `CLAUDE.md`'s
+build-status table for exactly what exists.
 
 ## Quick start
 
@@ -71,18 +72,13 @@ make seed
 ```
 
 Open http://localhost:5173, ask "Who is the approving authority for this
-policy?", and you should get a grounded answer citing the seeded document.
-`make down` stops the containers; Ctrl+C stops the dev servers.
+policy?", and you should get a grounded answer citing the uploaded
+document. `make down` stops the containers; Ctrl+C stops the dev servers.
 
-To generate more test documents locally and stress-test ingestion
-(without any real, sensitive QMS content — see ADR-0011), run:
-
-```bash
-make batch COUNT=20 SEED=1
-```
-
-This prints a per-document status summary; it's CLI-only, not reachable
-through the app itself.
+To generate more realistic test documents and stress-test ingestion by
+hand (without any real, sensitive QMS content), see `synthetic-corpus/` —
+an independent tool, documented separately, that writes PDFs to a local
+directory for you to upload the same way.
 
 ## Configuration
 
