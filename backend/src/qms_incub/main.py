@@ -5,8 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from qms_incub.aor_routing.classifier import classify_aor_pdf
+from qms_incub.chat.retrieval import retrieve
 from qms_incub.chat.service import ProjectNotFoundError, answer_question
 from qms_incub.compliance.api import router as compliance_router
+from qms_incub.config import settings
 from qms_incub.content.api import router as content_router
 from qms_incub.ingestion.pipeline import ingest_pdf
 from qms_incub.ingestion.repository import create_pending, list_all, mark_embedded, mark_failed
@@ -127,6 +129,69 @@ class CitationOut(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     citations: list[CitationOut]
+
+
+class RetrieveRequest(BaseModel):
+    query: str
+    k: int = 4
+    rerank: bool = True
+    # Candidates fetched before the reranker trims to k; None -> settings
+    # default. Ignored when rerank is false.
+    candidate_k: int | None = None
+
+
+class RetrievedChunkOut(BaseModel):
+    text: str
+    document_id: str
+    document_title: str
+    source_type: str
+    score: float
+    chunk_id: str
+
+
+class RetrieveResponse(BaseModel):
+    mode: str
+    rerank: bool
+    k: int
+    chunks: list[RetrievedChunkOut]
+
+
+@app.post("/retrieve")
+def retrieve_chunks(request: RetrieveRequest) -> RetrieveResponse:
+    """Run retrieval (mode per RETRIEVAL_MODE, plus the reranker step
+    unless `rerank` is false) and return the ranked chunks with scores.
+
+    Debug / evaluation surface — lets you inspect what /chat is grounded
+    on, and diff `rerank: true` vs `false` on the same query. Not used by
+    the chat flow itself."""
+    try:
+        chunks = retrieve(
+            request.query,
+            k=request.k,
+            rerank=request.rerank,
+            candidate_k=request.candidate_k,
+        )
+    except Exception as exc:
+        # Surface a retrieval-layer failure (e.g. the collection has no
+        # sparse vectors to match) as a 502 rather than a bare 500.
+        raise HTTPException(status_code=502, detail=f"Retrieval failed: {exc}") from exc
+
+    return RetrieveResponse(
+        mode=settings.retrieval_mode,
+        rerank=request.rerank,
+        k=request.k,
+        chunks=[
+            RetrievedChunkOut(
+                text=c.text,
+                document_id=c.document_id,
+                document_title=c.document_title,
+                source_type=c.source_type,
+                score=c.score,
+                chunk_id=c.chunk_id,
+            )
+            for c in chunks
+        ],
+    )
 
 
 @app.post("/chat")

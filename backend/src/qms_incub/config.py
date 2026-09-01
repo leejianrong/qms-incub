@@ -40,6 +40,36 @@ class Settings(BaseSettings):
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "qms_incub_corpus"
 
+    # "bm25" (default): sparse lexical retrieval. "vector": dense embedding
+    # similarity (EMBEDDING_MODEL above). Both query the same collection —
+    # ingestion writes both a dense and a BM25 sparse vector per chunk, so
+    # switching modes needs no re-ingest. A fused hybrid mode is deferred
+    # (issue #53); this only lets you pick one or the other.
+    retrieval_mode: Literal["bm25", "vector"] = "bm25"
+
+    # fastembed sparse model, shared by ingestion (indexing) and retrieval
+    # (query encoding) — the two MUST match. "Qdrant/bm25" is pure-lexical
+    # BM25; "prithivida/Splade_PP_en_v1" is learned-sparse (heavier).
+    sparse_embedding_model: str = "Qdrant/bm25"
+
+    # Candidates pulled from the retriever before the reranker narrows to
+    # the caller's top_k. Ignored when reranking is disabled.
+    retrieval_candidate_k: int = 20
+
+    # --- Reranker ---
+    # "none": passthrough, keep the retriever's own order (default — no
+    #   provider should be assumed configured).
+    # "zenmux": ZenMux's hosted cross-encoder /rerank endpoint (cheap, no
+    #   LLM tokens spent) — needs ZENMUX_API_KEY.
+    # "llm": prompt whichever provider LLM_PROVIDER is already set to
+    #   (ollama/openrouter/zenmux) to rank the candidates — reuses
+    #   chat/llm.py's get_llm_client(), so it works with any of the three
+    #   without a dedicated rerank API.
+    reranker_provider: Literal["none", "zenmux", "llm"] = "none"
+    reranker_model: str = "qwen/qwen3-rerank"  # zenmux-only; llm mode uses LLM_PROVIDER's own model
+    zenmux_rerank_url: str = "https://zenmux.ai/api/v1/rerank"
+    reranker_timeout_s: float = 30.0
+
     # Matches docker-compose.yml's postgres service (ADR-0005/ADR-0009).
     database_url: str = "postgresql+psycopg://qms_incub:qms_incub@localhost:5433/qms_incub"
 

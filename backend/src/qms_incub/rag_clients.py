@@ -1,5 +1,11 @@
 """Shared, lazily-initialized clients for the embedding model and vector
-store (ADR-0009), used by both ingestion (S6) and retrieval (S8)."""
+store (ADR-0009), used by both ingestion (S6) and retrieval (S8).
+
+Dense embeddings run through a local HuggingFace model (Q36). The vector
+store is hybrid: LlamaIndex also writes (on ingest) and queries a sparse
+BM25 vector per chunk via a local fastembed model, so no API key and no
+separate sparse client is needed here.
+"""
 
 from __future__ import annotations
 
@@ -21,11 +27,19 @@ def get_embed_model() -> HuggingFaceEmbedding:
 
 
 def get_vector_store() -> QdrantVectorStore:
+    """Hybrid Qdrant store shared by ingestion and retrieval.
+
+    `enable_hybrid=True` makes `.add()` store a fastembed sparse vector
+    alongside each dense vector, and lets `.query()` run SPARSE / HYBRID
+    modes. The collection must be (re)ingested under this setting — points
+    written dense-only have no sparse vector to match.
+    """
     global _vector_store
     if _vector_store is None:
-        client = QdrantClient(url=settings.qdrant_url)
         _vector_store = QdrantVectorStore(
-            client=client,
+            client=QdrantClient(url=settings.qdrant_url),
             collection_name=settings.qdrant_collection,
+            enable_hybrid=True,
+            fastembed_sparse_model=settings.sparse_embedding_model,
         )
     return _vector_store
