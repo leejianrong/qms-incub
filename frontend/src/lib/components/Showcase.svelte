@@ -7,6 +7,11 @@
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
   import * as Tabs from "$lib/components/ui/tabs/index.js";
   import { Badge } from "$lib/components/ui/badge/index.js";
+  import { Progress } from "$lib/components/ui/progress/index.js";
+  import * as Avatar from "$lib/components/ui/avatar/index.js";
+  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
+  import * as Sheet from "$lib/components/ui/sheet/index.js";
+  import * as Popover from "$lib/components/ui/popover/index.js";
 
   const riskTiers = ["Low", "Medium", "High"];
   let selectedTier = $state("Medium");
@@ -120,6 +125,80 @@
           </Dialog.Header>
         </Dialog.Content>
       </Dialog.Root>
+    </div>
+  </section>
+
+  <section class="space-y-3">
+    <h2 class="text-lg font-medium">Progress</h2>
+    <div class="max-w-sm space-y-3">
+      <Progress value={30} />
+      <Progress value={65} />
+      <Progress value={100} />
+    </div>
+  </section>
+
+  <section class="space-y-3">
+    <h2 class="text-lg font-medium">Avatar</h2>
+    <div class="flex flex-wrap items-center gap-3">
+      <Avatar.Root size="sm">
+        <Avatar.Fallback>PM</Avatar.Fallback>
+      </Avatar.Root>
+      <Avatar.Root>
+        <Avatar.Fallback>KA</Avatar.Fallback>
+      </Avatar.Root>
+      <Avatar.Root size="lg">
+        <Avatar.Fallback>QA</Avatar.Fallback>
+      </Avatar.Root>
+    </div>
+  </section>
+
+  <section class="space-y-3">
+    <h2 class="text-lg font-medium">Tooltip</h2>
+    <Tooltip.Provider>
+      <Tooltip.Root>
+        <Tooltip.Trigger>
+          {#snippet child({ props })}
+            <Button variant="outline" {...props}>Hover for detail</Button>
+          {/snippet}
+        </Tooltip.Trigger>
+        <Tooltip.Content>Retrieval mode: BM25 (sparse lexical)</Tooltip.Content>
+      </Tooltip.Root>
+    </Tooltip.Provider>
+  </section>
+
+  <section class="space-y-3">
+    <h2 class="text-lg font-medium">Sheet &amp; popover</h2>
+    <div class="flex flex-wrap gap-3">
+      <Sheet.Root>
+        <Sheet.Trigger>
+          {#snippet child({ props })}
+            <Button variant="outline" {...props}>Open sheet</Button>
+          {/snippet}
+        </Sheet.Trigger>
+        <Sheet.Content>
+          <Sheet.Header>
+            <Sheet.Title>Discussion thread</Sheet.Title>
+            <Sheet.Description>
+              Slide-in panel reference for a floating chat widget or a
+              todo-detail comment thread.
+            </Sheet.Description>
+          </Sheet.Header>
+        </Sheet.Content>
+      </Sheet.Root>
+
+      <Popover.Root>
+        <Popover.Trigger>
+          {#snippet child({ props })}
+            <Button variant="outline" {...props}>Open popover</Button>
+          {/snippet}
+        </Popover.Trigger>
+        <Popover.Content>
+          <p class="text-sm text-muted-foreground">
+            Small anchored overlay, e.g. for a chat launcher or a quick
+            reference card.
+          </p>
+        </Popover.Content>
+      </Popover.Root>
     </div>
   </section>
 </main>
