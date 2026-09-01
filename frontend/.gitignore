@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Throwaway Playwright driver script used to screenshot-verify UI changes
+# (per project memory: always visually check frontend work this way).
+shot.local.mjs
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
