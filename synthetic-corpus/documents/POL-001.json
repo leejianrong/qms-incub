@@ -34,6 +34,16 @@
     },
     {
       "type": "text",
+      "style": "body",
+      "content": "This policy is deliberately calibrated rather than maximally strict: a control that every team routes around informally when it is inconvenient provides less real protection than a lighter control that is actually followed. Where a specific requirement in this policy proves impractical for a given team's context, the correct response is to raise it with the Change Advisory Board for a documented exception or a policy amendment, not to quietly bypass it."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "The organization tracks two outcome metrics tied to this policy: the change failure rate (the share of changes that require a rollback or produce a customer-visible incident) and the mean time to restore service after a change-related incident. Both are reported to engineering leadership quarterly, and a sustained deterioration in either triggers a review of whether this policy's controls are being followed as written, rather than an assumption that the controls themselves are inadequate."
+    },
+    {
+      "type": "text",
       "style": "h2",
       "content": "2. Scope"
     },
@@ -56,6 +66,16 @@
       "type": "text",
       "style": "body",
       "content": "Where a system spans multiple regulatory regions, the Requester must additionally confirm that the change does not move data across a jurisdictional boundary in a way that would violate a data-residency commitment; this check is recorded on the change request itself rather than tracked separately."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A change delivered behind a feature flag that defaults to off is still subject to this policy at the point the flag is flipped on for any production traffic, not merely at the point the underlying code is deployed; deploying dormant code and later enabling it without a change record is treated as an unapproved change regardless of when the code itself reached production."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Changes to this policy itself, and to the risk-classification criteria in §4.2, are approved by the Change Advisory Board acting as a body rather than by any individual member, and are announced to all engineering teams at least two weeks before taking effect."
     },
     {
       "type": "text",
@@ -107,6 +127,16 @@
       "type": "text",
       "style": "body",
       "content": "The CAB itself is a standing committee of at least three members drawn from engineering, security, and operations, with a rotating chair; a quorum of two members, including the chair or their delegate, is required to approve a medium- or high-risk change."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "CAB membership rotates on a six-month cycle so that risk-classification judgment stays distributed across the organization rather than concentrated in a small permanent group; an outgoing member shadows their successor for the first month of the new term to preserve continuity on in-flight change patterns and known-risky systems."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A Release Manager who also acts as Implementer for the same change is permitted, provided the Requester and CAB approver remain distinct from both; this reflects the practical reality that small teams often have fewer people available to fill every role separately."
     },
     {
       "type": "text",
@@ -211,6 +241,21 @@
       "content": "The CAB classifies the request as low, medium, or high risk based on the systems affected, the size of the customer base impacted, and whether the change touches an access-controlled production system. A change that provisions or modifies production credentials additionally requires sign-off from a Security Engineer under the Access Control and Least Privilege Policy (POL-006), §4.2, before the CAB may approve it."
     },
     {
+      "type": "table",
+      "headers": ["Risk Level", "Typical Example", "Approval"],
+      "rows": [
+        ["Low", "Config-only change to a single non-critical service", "One CAB member"],
+        ["Medium", "Application code change to a customer-facing service", "CAB quorum (two members)"],
+        ["High", "Schema migration or change to an access-controlled system", "CAB quorum plus rollback rehearsal"]
+      ],
+      "caption": "Table 2. Risk classification examples and approval requirements."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "These examples are illustrative rather than exhaustive; the CAB retains discretion to classify a change more conservatively than the table suggests when a specific factor — such as an unusually large customer segment, or a system with a recent history of change-related incidents — warrants it. The CAB does not have discretion to classify a change less conservatively than these examples suggest."
+    },
+    {
       "type": "text",
       "style": "body",
       "content": "High-risk changes require a rollback rehearsal in a staging environment before approval; medium- and low-risk changes may proceed directly to scheduling once approved."
@@ -269,6 +314,166 @@
       "type": "text",
       "style": "body",
       "content": "Blackout periods are published at least four weeks in advance so that teams can plan their own release schedules around them rather than discovering a conflict at submission time."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "An exception granted during a blackout period is logged with the same rigor as any other CAB decision, including the specific business justification weighed against the deferral cost, so that a pattern of frequent exceptions is visible to whoever reviews blackout-period effectiveness after the fact rather than only to the CAB chair who granted each one individually."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A blackout period does not suspend the emergency-bypass path in §2; an active incident is handled the same way regardless of whether it happens to fall inside a blackout window, since the purpose of a blackout period is to reduce discretionary risk-taking, not to slow down the response to risk that has already materialized."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.6 Standard (Pre-Approved) Changes"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A recurring, well-understood change with a documented history of low risk — for example, a routine certificate rotation or a scheduled dependency bump on a well-tested pipeline — may be designated a Standard Change by the CAB. A Standard Change follows a lightweight path: the Requester logs the change against its pre-approved template and proceeds directly to scheduling, without a fresh CAB risk classification for each occurrence."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A Standard Change designation is reviewed annually, or immediately after any incident traced back to a change of that type; an incident is sufficient grounds for the CAB to revoke the designation and return the change type to the standard classification path in §4.2."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "The list of currently designated Standard Changes is maintained on the same change calendar referenced in §4.5, so that a Requester can check whether their change qualifies before drafting a full request."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.7 Multi-Service and Cross-Team Changes"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A change that spans services owned by more than one team is submitted as a single change request naming a lead Requester, with each affected team's Implementer listed separately; the CAB's risk classification considers the highest-risk system touched, not an average across the systems involved."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "The lead Requester is responsible for sequencing sign-off across teams before the request reaches the CAB; a cross-team change missing sign-off from any listed Implementer is returned rather than partially approved, since a partially-approved multi-service change creates ambiguity about which teams may proceed."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Where the affected teams disagree on risk classification or deployment sequencing, the disagreement is escalated to the CAB chair for a binding decision rather than left for the teams to resolve informally, since an unresolved disagreement discovered mid-deployment is far more costly to untangle than one surfaced before scheduling."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.8 Metrics, Audit, and Continuous Improvement"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "In addition to the change failure rate and mean-time-to-restore metrics described in §1, the CAB reviews a monthly count of emergency bypasses, standard-change designations, and blackout exceptions granted, looking for any pattern that suggests a category of change should be reclassified in either direction."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Internal audit samples a set of closed change records each quarter to confirm that the change record actually reflects what was deployed — the systems named, the approver of record, and the verification evidence — and reports any discrepancy directly to the CAB chair rather than only to the team involved, since a systemic record-keeping gap is a finding about the process, not about one team."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.9 Change Documentation Standards"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A change request's rollback plan must describe concrete steps, not merely state that a rollback is possible: which artifact or configuration reverts, who executes each step, and how success is verified. A rollback plan that names no owner or no verification step is treated as incomplete and returned to the Requester before CAB review, regardless of how detailed the rest of the request is."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Where a change is part of a larger, multi-step initiative, the request should state which step this particular change represents and link to the initiative's overall plan, so that a reviewer encountering the request in isolation can understand its context without needing a separate conversation with the Requester."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.10 Onboarding New CAB Members"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A new CAB member shadows at least four review sessions before casting an independent approval vote, covering at minimum one low-risk, one medium-risk, and one high-risk request, so that their first independent decision is informed by direct exposure to the full range of classifications they will be asked to judge."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "The outgoing member responsible for shadowing under §3 is expected to walk the incoming member through at least one past incident whose post-implementation review traced back to a change decision, so the new member understands not just the mechanics of classification but the real cost of getting it wrong."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.11 Tooling and Automation"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Change requests are submitted and tracked through the change management system rather than through ad hoc channels such as chat messages or email, so that every request is discoverable by anyone auditing the change calendar or investigating an incident. A request submitted outside the system is not considered filed and carries no approval standing, even if a CAB member informally agreed to it."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Where the deployment platform supports it, the system automatically links a merged pull request to its change record, and blocks a deployment pipeline from running against production until a linked, approved change record exists; this removes the possibility of a deployment proceeding without a record purely through human oversight."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.12 Relationship to Incident Management"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A change that itself causes a production incident is handled under the Incident Management and Response Policy (POL-005), §4, for the duration of the incident; the emergency-bypass path in §2 exists specifically to let the responding team act without waiting for a fresh CAB cycle while the incident is active."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Once the incident is resolved, the change record for the original change and any emergency changes made during the response are linked together, so that the post-implementation review in §4.4 and the incident's own post-incident review can be read side by side rather than reconstructed independently from two separate systems."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.13 Vendor-Initiated and Third-Party Changes"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A change to a production system initiated by a vendor or managed-service provider rather than by an internal engineer — for example, a scheduled maintenance window on a managed database — is still subject to this policy if it affects a production system in scope under §2. The internal team responsible for that vendor relationship files the change record on the vendor's behalf, informed by the notice period and change details the Vendor and Third-Party Risk Management Policy (POL-008), §4, requires vendors to provide."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Where a vendor's own change window does not allow enough lead time for a normal CAB cycle, the responsible internal team requests an expedited classification from the CAB chair rather than waiting for the next scheduled session, so that the change still receives a documented risk assessment even under a compressed timeline."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A vendor that repeatedly provides insufficient notice for its own changes is flagged to the team managing that vendor relationship as an input to the vendor's next periodic risk review, since a pattern of short-notice changes is itself a risk signal independent of any single change's technical content."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.14 Handling Disputed or Ambiguous Classifications"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A Requester who disagrees with the CAB's risk classification may request reconsideration once, with additional context, before the request proceeds to scheduling or is returned; the CAB is not obligated to change its classification, but is obligated to record its reasoning when a reconsideration request is denied."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A change that plausibly fits more than one system's classification criteria — for example, a shared library change that could be low-risk for most consumers but high-risk for one particular downstream service — is classified at the higher of the plausible levels rather than an average, consistent with the same principle applied to multi-service changes in §4.7."
     },
     {
       "type": "text",

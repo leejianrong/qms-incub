@@ -289,6 +289,11 @@
       "type": "text",
       "style": "body",
       "content": "Pull request history, including review comments and approval records, is retained indefinitely in the source control system itself and is not subject to a separate retention schedule."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "This policy is reviewed by the Engineering Manager group at least annually, informed by the turnaround and defect-rate metrics described in §1 and by the quarterly review sample described in §4.5. A revision to the reviewer-count table in §3 is announced to all engineering teams before taking effect, consistent with the notice practice used for change-classification revisions under the Software Change Management Policy (POL-001), §2."
     }
   ]
 }
