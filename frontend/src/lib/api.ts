@@ -32,6 +32,22 @@ export interface PolicyDocument {
   error: string | null;
 }
 
+export interface BlogPost {
+  id: string;
+  title: string;
+  body: string;
+  published_at: string | null;
+  chunk_count: number | null;
+}
+
+export interface FAQEntry {
+  id: string;
+  question: string;
+  answer: string;
+  published_at: string | null;
+  chunk_count: number | null;
+}
+
 export async function askChat(
   apiBase: string,
   question: string,
@@ -71,6 +87,60 @@ export async function listDocuments(
   fetchImpl: typeof fetch = fetch,
 ): Promise<PolicyDocument[]> {
   return getJson(apiBase, "/documents", fetchImpl);
+}
+
+// --- Admin-authored blog and FAQ corpus content (V6) ---
+
+export function listBlogPosts(apiBase: string, fetchImpl: typeof fetch = fetch): Promise<BlogPost[]> {
+  return getJson(apiBase, "/blog-posts", fetchImpl);
+}
+
+export function getBlogPost(apiBase: string, id: string, fetchImpl: typeof fetch = fetch): Promise<BlogPost> {
+  return getJson(apiBase, `/blog-posts/${id}`, fetchImpl);
+}
+
+export function createBlogPost(
+  apiBase: string, title: string, body: string, fetchImpl: typeof fetch = fetch,
+): Promise<BlogPost> {
+  return postJson(apiBase, "/blog-posts", { title, body }, fetchImpl);
+}
+
+export async function updateBlogPost(
+  apiBase: string, id: string, title: string, body: string, fetchImpl: typeof fetch = fetch,
+): Promise<BlogPost> {
+  const response = await fetchImpl(`${apiBase}/blog-posts/${id}`, {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title, body }),
+  });
+  if (!response.ok) throw new Error(`backend returned ${response.status}`);
+  return (await response.json()) as BlogPost;
+}
+
+export function publishBlogPost(apiBase: string, id: string, fetchImpl: typeof fetch = fetch): Promise<BlogPost> {
+  return postJson(apiBase, `/blog-posts/${id}/publish`, {}, fetchImpl);
+}
+
+export function listFAQEntries(apiBase: string, fetchImpl: typeof fetch = fetch): Promise<FAQEntry[]> {
+  return getJson(apiBase, "/faq-entries", fetchImpl);
+}
+
+export function createFAQEntry(
+  apiBase: string, question: string, answer: string, fetchImpl: typeof fetch = fetch,
+): Promise<FAQEntry> {
+  return postJson(apiBase, "/faq-entries", { question, answer }, fetchImpl);
+}
+
+export async function updateFAQEntry(
+  apiBase: string, id: string, question: string, answer: string, fetchImpl: typeof fetch = fetch,
+): Promise<FAQEntry> {
+  const response = await fetchImpl(`${apiBase}/faq-entries/${id}`, {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question, answer }),
+  });
+  if (!response.ok) throw new Error(`backend returned ${response.status}`);
+  return (await response.json()) as FAQEntry;
+}
+
+export function publishFAQEntry(apiBase: string, id: string, fetchImpl: typeof fetch = fetch): Promise<FAQEntry> {
+  return postJson(apiBase, `/faq-entries/${id}/publish`, {}, fetchImpl);
 }
 
 // --- Compliance hierarchy (QA-author editor, ADR-0008) ---
