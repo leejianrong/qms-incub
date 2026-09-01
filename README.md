@@ -54,6 +54,10 @@ build-status table for exactly what exists. For how the generate → ingest →
 retrieve pipeline actually works under the hood, see
 [`docs/rag-pipeline-walkthrough.md`](docs/rag-pipeline-walkthrough.md).
 
+AOR PDFs can also be classified as R&T or SSD independently of the chat
+corpus. See [`docs/aor-routing.md`](docs/aor-routing.md) for file placement
+and pre-UI CLI/API testing.
+
 ## Quick start
 
 Requires Docker, [`uv`](https://docs.astral.sh/uv/), and Node 22+.

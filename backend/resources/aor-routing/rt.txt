@@ -1,0 +1,15 @@
+QMS Type: R&T — Research and Technology
+
+R&T applies to projects involving research and technology activities, including research studies, technology investigations, experimentation, evaluation of emerging technologies, and collaboration with research or academic institutions.
+
+R&T projects may involve working with institutes of higher learning, universities, research institutions, or other research partners to define and conduct a research scope of work. Project managers work with these research partners to establish the research objectives, scope, activities, expected outcomes, and deliverables.
+
+Following project initiation and creation, the project is planned and managed through the appropriate online project planning and management system. Front-end project support may be responsible for project staffing and supporting the establishment and administration of the research project.
+
+R&T activities may require integration or connectivity with the organisation's intranet, information systems, or other internal digital infrastructure. Where such integration or connectivity is required, relevant cybersecurity requirements must be considered.
+
+A Cyber Threat Risk Assessment (TRA) may be required to identify and assess cybersecurity threats and risks associated with the project, system, technology, connectivity, or integration with the intranet.
+
+The required assessments, research scope, project arrangements, and associated documentation may require review, endorsement, or approval from the appropriate approving authority before the project proceeds.
+
+Relevant R&T concepts include research, technology, research and technology, experimentation, technology investigation, technology evaluation, emerging technology, research project, research scope, scope of work, research objectives, research outcomes, research deliverables, institutes of higher learning, universities, academic institutions, research institutions, research collaboration, project initiation, project planning, project management, project staffing, front-end project support, intranet integration, system connectivity, cybersecurity, cyber threat, risk assessment, TRA, endorsement, approving authority, and approval.
