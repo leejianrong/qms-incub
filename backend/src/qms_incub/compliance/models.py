@@ -51,6 +51,21 @@ class Clause(Base):
     )
 
 
+DEFAULT_PROCESS_STEP_ID = "initiation"
+
+
+class ProcessStep(Base):
+    """Fixed, config-seeded PM-workflow phase (Q41) — an organizing label
+    for the UI's plan navigator, not a regulatory concept. Same six rows
+    for every org, seeded once by migration; never user-authored."""
+
+    __tablename__ = "process_steps"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    ordering: Mapped[int] = mapped_column(nullable=False, default=0)
+
+
 class Requirement(Base):
     __tablename__ = "requirements"
 
@@ -60,6 +75,14 @@ class Requirement(Base):
     # e.g. ["medium", "high"] — which wizard-derived risk tiers this
     # Requirement generates a TodoItem for (ADR-0008).
     risk_tiers: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False)
+    # Which fixed ProcessStep (Q41) this Requirement's generated TodoItems
+    # are grouped under. The QA-author picks from the fixed set at
+    # authoring time (an enum-like choice, same shape as risk_tiers) — the
+    # set of possible steps stays fixed and non-regulatory, so this
+    # doesn't reopen ADR-0008.
+    process_step_id: Mapped[str] = mapped_column(
+        String, ForeignKey("process_steps.id"), nullable=False, default=DEFAULT_PROCESS_STEP_ID
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -100,6 +123,11 @@ class TodoItem(Base):
         String, ForeignKey("requirements.id"), nullable=False
     )
     status: Mapped[str] = mapped_column(String, nullable=False, default="pending")
+    # Copied from the generating Requirement's process_step_id at
+    # creation time (S2/V10) — fixed at generation, not re-derived later.
+    process_step_id: Mapped[str] = mapped_column(
+        String, ForeignKey("process_steps.id"), nullable=False, default=DEFAULT_PROCESS_STEP_ID
+    )
     approval_state: Mapped[str] = mapped_column(String, nullable=False, default="not_started")
     approval_authority: Mapped[str] = mapped_column(String, nullable=False, default="QA Office")
     sla_target: Mapped[datetime.datetime | None] = mapped_column(

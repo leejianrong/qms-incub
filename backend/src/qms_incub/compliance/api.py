@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from qms_incub.aor.service import extract_aor_fields_from_document
 from qms_incub.compliance import repository
 from qms_incub.compliance.metrics import compliance_percentage
+from qms_incub.compliance.models import DEFAULT_PROCESS_STEP_ID
 from qms_incub.compliance.scoring import score_risk_tier
 from qms_incub.paths import UPLOADED_AOR_DIR, UPLOADED_ARTIFACTS_DIR
 
@@ -78,6 +79,7 @@ def list_clauses(standard_id: str) -> list[ClauseOut]:
 class RequirementIn(BaseModel):
     description: str
     risk_tiers: list[str]
+    process_step_id: str = DEFAULT_PROCESS_STEP_ID
 
 
 class RequirementOut(BaseModel):
@@ -85,26 +87,45 @@ class RequirementOut(BaseModel):
     clause_id: str
     description: str
     risk_tiers: list[str]
+    process_step_id: str
+
+
+class ProcessStepOut(BaseModel):
+    id: str
+    title: str
+    ordering: int
+
+
+def _requirement_out(r: repository.RequirementOut) -> RequirementOut:
+    return RequirementOut(
+        id=r.id,
+        clause_id=r.clause_id,
+        description=r.description,
+        risk_tiers=r.risk_tiers,
+        process_step_id=r.process_step_id,
+    )
 
 
 @router.post("/clauses/{clause_id}/requirements", status_code=201)
 def create_requirement(clause_id: str, body: RequirementIn) -> RequirementOut:
-    result = repository.create_requirement(clause_id, body.description, body.risk_tiers)
-    return RequirementOut(
-        id=result.id,
-        clause_id=result.clause_id,
-        description=result.description,
-        risk_tiers=result.risk_tiers,
+    result = repository.create_requirement(
+        clause_id, body.description, body.risk_tiers, body.process_step_id
     )
+    return _requirement_out(result)
 
 
 @router.get("/clauses/{clause_id}/requirements")
 def list_requirements(clause_id: str) -> list[RequirementOut]:
+    return [_requirement_out(r) for r in repository.list_requirements(clause_id)]
+
+
+@router.get("/process-steps")
+def list_process_steps() -> list[ProcessStepOut]:
+    """The fixed, config-seeded set of PM-workflow phases (Q41), used to
+    group a project's todos in the plan navigator (V10)."""
     return [
-        RequirementOut(
-            id=r.id, clause_id=r.clause_id, description=r.description, risk_tiers=r.risk_tiers
-        )
-        for r in repository.list_requirements(clause_id)
+        ProcessStepOut(id=s.id, title=s.title, ordering=s.ordering)
+        for s in repository.list_process_steps()
     ]
 
 
@@ -133,6 +154,7 @@ class TodoItemOut(BaseModel):
     clause_text: str
     standard_name: str
     status: str
+    process_step_id: str
     approval_state: str
     approval_authority: str
     sla_target: datetime.datetime | None
@@ -162,6 +184,7 @@ def _todo_out(t: repository.TodoItemOut) -> TodoItemOut:
         clause_text=t.clause_text,
         standard_name=t.standard_name,
         status=t.status,
+        process_step_id=t.process_step_id,
         approval_state=t.approval_state,
         approval_authority=t.approval_authority,
         sla_target=t.sla_target,
