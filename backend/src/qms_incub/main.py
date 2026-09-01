@@ -5,11 +5,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from qms_incub.chat.service import answer_question
+from qms_incub.compliance.api import router as compliance_router
 from qms_incub.ingestion.pipeline import ingest_pdf
 from qms_incub.ingestion.repository import create_pending, list_all, mark_embedded, mark_failed
 from qms_incub.paths import UPLOADED_DOCUMENTS_DIR
 
 app = FastAPI(title="QMS Incub API")
+app.include_router(compliance_router)
 
 # Local dev only: the Svelte/Vite dev server (default port 5173) is a
 # different origin than the API (port 8000), so the browser needs an
