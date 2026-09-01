@@ -19,11 +19,12 @@ no HTTP dependency on the backend either.
 | V1/V4: document upload (S4/S6) | `POST /documents` — multipart PDF upload, ingested synchronously. `GET /documents` lists ingestion status. The only way a document enters the corpus (ADR-0012) |
 | V1: ingestion (S6) | `make seed` uploads a fixture PDF (`backend/tests/fixtures/sample_policy_document.pdf`) through `POST /documents`, which Docling-parses it, chunks (LlamaIndex `SentenceSplitter`), embeds (local HF `BAAI/bge-small-en-v1.5`), and stores in Qdrant. Idempotent per document ID — re-ingesting the same ID clears old chunks first (`ingestion/pipeline.py`) |
 | V1: chat (S8) | `POST /chat` — vector retrieval + LLM call, citations derived from retrieved chunks (not parsed from model output). LLM provider swappable, see Secrets/Q37 |
-| Frontend (Svelte+Vite) | Chat panel only (V1). No upload UI yet (V4) |
-| Database (PostgreSQL) | `policy_documents` table (id, title, status, chunk_count, error) — Alembic-managed, see `backend/migrations/`. Tracks ingestion status of uploaded documents, not document content. Not the full `Project`/`TodoItem`/`Standard`/`Clause`/`Requirement` model yet (V2/ADR-0008) |
+| V2: compliance wizard + todos (S1/S2) | `POST /standards` / `/clauses` / `/requirements` (QA-author editor, ADR-0008). `POST /projects` scores a 3-boolean-question wizard (Q8, `compliance/scoring.py`) into a Low/Medium/High tier and generates one `TodoItem` per matching `Requirement` in one transaction. `GET /projects/{id}` for the dashboard |
+| Frontend (Svelte+Vite) | V1's chat panel, plus Tailwind + shadcn-svelte (V12, ADR-0013) and V2's routes: `/editor` (Standard/Clause/Requirement), `/wizard` (3-question classification), `/project?id=` (todo dashboard). No unified console shell yet — that's V13 |
+| Database (PostgreSQL) | `policy_documents` (V1/V4) plus V2's `compliance_standards`/`clauses`/`requirements`/`projects`/`todo_items` — Alembic-managed, see `backend/migrations/`. No `Artifact`, `ProcessStep`, or approval-state columns yet (V3/V10/V11) |
 | Vector store (Qdrant) | In real use since V1 — collection `qms_incub_corpus`, see `qms_incub.rag_clients` |
 | `synthetic-corpus/` | Independent tool generating realistic QMS-policy-shaped PDFs to manually test the backend's RAG pipeline. No shared code with `backend/`, no HTTP call to it either — its output is PDF files on disk; testing them against the backend is a manual upload-and-ask step. See `docs/shaping/synthetic-doc-realism/` for its own planning |
-| Everything else in PLAN.md / SLICES.md (V2, V3, V6, V8, V9-V13) | **Not built yet.** |
+| Everything else in PLAN.md / SLICES.md (V3, V6, V8, V9-V11, V13) | **Not built yet.** |
 
 If you're about to implement a slice, check this table (and `git log`)
 before trusting a stale claim elsewhere that something is "done."

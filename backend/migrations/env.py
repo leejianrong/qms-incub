@@ -4,6 +4,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from qms_incub import models  # noqa: F401 — registers PolicyDocumentRow on Base.metadata
+from qms_incub.compliance import models as compliance_models  # noqa: F401 — registers V2's tables
 from qms_incub.config import settings
 
 # Import the app's own models/config rather than duplicating the DB URL
