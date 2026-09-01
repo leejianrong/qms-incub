@@ -50,7 +50,9 @@ available yet, so a fully separate tool, `synthetic-corpus/`, generates
 realistic QMS-shaped PDFs to exercise the same pipeline by hand — it
 shares no code with this backend and doesn't call it over HTTP either.
 Everything else in PLAN.md/SLICES.md is still ahead — see `CLAUDE.md`'s
-build-status table for exactly what exists.
+build-status table for exactly what exists. For how the generate → ingest →
+retrieve pipeline actually works under the hood, see
+[`docs/rag-pipeline-walkthrough.md`](docs/rag-pipeline-walkthrough.md).
 
 ## Quick start
 

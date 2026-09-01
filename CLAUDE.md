@@ -62,8 +62,11 @@ variable and is safe to read.
 Run from the repo root unless noted.
 
 - `make up` — start Postgres + Qdrant (Docker), then the FastAPI backend
-  (`:8000`) and the Vite dev server (`:5173`) in the foreground. Ctrl+C
-  stops both dev servers; containers stay running.
+  (`:8000`, falling back to `:8001`, `:8002`, ... if that port's already
+  taken — watch the output for which port it picked, and the Vite dev
+  server's `VITE_API_BASE` is wired to match automatically) and the Vite
+  dev server (`:5173`) in the foreground. Ctrl+C stops both dev servers;
+  containers stay running.
 - `make down` — stop and remove the Postgres/Qdrant containers.
 - `make install` — `uv sync` (backend) + `npm install` (frontend).
 - `make install-hooks` — symlinks `scripts/git-hooks/pre-push` into
