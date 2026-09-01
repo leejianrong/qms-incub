@@ -14,9 +14,15 @@
     type ChatAnswer,
   } from "$lib/api";
   import { approvalRouteViewModel } from "$lib/approvalRoute";
+  import { navigate, routeParam } from "$lib/router.svelte";
 
   const apiBase = resolveApiBase(import.meta.env);
-  const projectId = new URLSearchParams(window.location.search).get("id") ?? "";
+
+  // Reactive rather than captured once at mount — the console shell keeps
+  // this component mounted while the router changes which project's id is
+  // in the URL (e.g. browser back/forward after opening a project from the
+  // dashboard), so the id has to track the route, not freeze at first load.
+  const projectId = $derived(routeParam("id") ?? "");
 
   let data = $state<ProjectWithTodos | null>(null);
   let steps = $state<ProcessStep[]>([]);
@@ -30,7 +36,17 @@
   let chatResult = $state<ChatAnswer | null>(null);
   let chatError = $state<string | null>(null);
 
+  // Refetches this project's data without disturbing the user's current
+  // selection — used both for the initial load and to refresh after an
+  // artifact upload, where clearing the selected todo would hide the very
+  // approval-route update self-attestation just produced.
   function load() {
+    if (!projectId) {
+      data = null;
+      error = "No project selected.";
+      return;
+    }
+    error = null;
     Promise.all([getProject(apiBase, projectId), listProcessSteps(apiBase)])
       .then(([project, processSteps]) => {
         data = project;
@@ -42,7 +58,18 @@
       .catch((err) => (error = err instanceof Error ? err.message : String(err)));
   }
 
-  load();
+  $effect(() => {
+    // Runs on mount and whenever the route's project id changes (e.g.
+    // browser back/forward after opening a different project from the
+    // dashboard) — resets the view before loading the new project's data.
+    void projectId;
+    data = null;
+    selectedTodoId = null;
+    expandedStepId = null;
+    chatResult = null;
+    chatError = null;
+    load();
+  });
 
   async function attest(todoId: string, files: FileList | null) {
     const file = files?.[0];
@@ -101,15 +128,26 @@
   {/if}
 
   {#if !data}
-    <p class="text-sm text-muted-foreground">Loading project…</p>
+    {#if !error}
+      <p class="text-sm text-muted-foreground">Loading project…</p>
+    {/if}
   {:else}
-    <header class="flex items-center gap-3">
-      <h1 class="text-2xl font-medium">{data.project.name}</h1>
-      <Badge variant={tierVariant[data.project.risk_tier ?? ""] ?? "outline"}>
-        {data.project.risk_tier ?? "unclassified"}{data.project.risk_tier ? " tier" : ""}
-      </Badge>
-      <Badge variant="outline">{Math.round(data.compliance_percentage)}% complied</Badge>
-    </header>
+    <div>
+      <button
+        type="button"
+        class="text-xs text-muted-foreground hover:text-foreground"
+        onclick={() => navigate("/")}
+      >
+        ← Back to projects
+      </button>
+      <header class="mt-1 flex items-center gap-3">
+        <h1 class="text-2xl font-medium">{data.project.name}</h1>
+        <Badge variant={tierVariant[data.project.risk_tier ?? ""] ?? "outline"}>
+          {data.project.risk_tier ?? "unclassified"}{data.project.risk_tier ? " tier" : ""}
+        </Badge>
+        <Badge variant="outline">{Math.round(data.compliance_percentage)}% complied</Badge>
+      </header>
+    </div>
 
     <div class="flex gap-6">
       <!-- Left: collapsible plan navigator -->
