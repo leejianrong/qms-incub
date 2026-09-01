@@ -1,0 +1,29 @@
+QMS Type: SSD — Software/System Development
+
+SSD applies to projects involving in-house software and system development tasks and activities. It covers the development, implementation, integration, testing, verification, validation, and acceptance of software and software-based systems.
+
+Software and system development may follow exploratory, waterfall, or agile development approaches depending on the maturity of the project, clarity of user requirements, and expected changes during development.
+
+Exploratory Software Development (ESD)
+
+Exploratory development is suitable when a project is investigating new operational concepts, technologies, software capabilities, or technical approaches where requirements or feasibility may not yet be fully established.
+
+Exploratory development may involve prototyping, experimentation, proof-of-concept development, technology evaluation, testing, and validation. Successful exploratory development validates operational concepts or new technologies and increases confidence before proceeding to full-scale software or system implementation.
+
+Waterfall Software/System Development (SSD)
+
+Waterfall development follows a structured and sequential software or system development process. Development progresses step by step through defined stages such as requirements definition, system design, software implementation, integration, testing, verification, validation, and acceptance.
+
+Waterfall SSD is suitable when users are able to define clear, stable, explicit, and well-understood requirements at the beginning of the project. The expected scope and deliverables can therefore be established before development begins.
+
+Agile Software/System Development (SSD)
+
+Agile development is suitable for software and system development where users can define their needs and desired capabilities in general terms, but detailed requirements may evolve throughout the project.
+
+Agile SSD uses iterative and incremental development. Software is developed through multiple iterations involving continuous user feedback, testing, verification, validation, and refinement.
+
+The project may begin with broad or high-level requirements rather than a completely defined final scope. Requirements, functionality, and deliverables may change or become clearer as development progresses.
+
+Where the AOR cannot fully define the final scope or deliverables at the start of the project, users and developers progressively establish and refine deliverables through development iterations and feedback. The final software or system capability is constrained by the available project budget and schedule.
+
+Relevant SSD concepts include software development, system development, in-house development, software engineering, system engineering, requirements, design, implementation, coding, integration, testing, verification, validation, prototyping, iterative development, incremental development, user feedback, acceptance, waterfall, agile, exploratory development, ESD, and SSD.

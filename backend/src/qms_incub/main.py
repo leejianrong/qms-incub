@@ -4,10 +4,11 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from qms_incub.aor_routing.classifier import classify_aor_pdf
 from qms_incub.chat.service import answer_question
 from qms_incub.ingestion.pipeline import ingest_pdf
 from qms_incub.ingestion.repository import create_pending, list_all, mark_embedded, mark_failed
-from qms_incub.paths import UPLOADED_DOCUMENTS_DIR
+from qms_incub.paths import AOR_UPLOADS_DIR, UPLOADED_DOCUMENTS_DIR
 
 app = FastAPI(title="QMS Incub API")
 
@@ -72,6 +73,41 @@ def list_documents() -> list[DocumentStatusOut]:
         )
         for d in list_all()
     ]
+
+
+class AorClassificationOut(BaseModel):
+    route: str
+    label: str
+    scores: dict[str, float]
+    confidence: float
+    needs_review: bool
+    evidence_excerpt: str
+
+
+@app.post("/aor/classify")
+async def classify_aor(file: UploadFile = File(...)) -> AorClassificationOut:
+    """Classify an AOR without adding it to the policy/chat corpus."""
+    if not (file.filename or "").lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF uploads are supported.")
+
+    AOR_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+    pdf_path = AOR_UPLOADS_DIR / f"{uuid.uuid4()}.pdf"
+    pdf_path.write_bytes(await file.read())
+    try:
+        result = classify_aor_pdf(pdf_path)
+    except (FileNotFoundError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"AOR classification failed: {exc}") from exc
+
+    return AorClassificationOut(
+        route=result.route,
+        label={"rt": "R&T", "ssd": "SSD"}[result.route],
+        scores=result.scores,
+        confidence=result.confidence,
+        needs_review=result.needs_review,
+        evidence_excerpt=result.evidence_excerpt,
+    )
 
 
 class ChatRequest(BaseModel):
