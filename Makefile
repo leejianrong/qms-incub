@@ -33,6 +33,7 @@ up:
 	 if [ "$$port" != 8000 ]; then \
 	   echo "Backend will run on port $$port (8000 was busy)"; \
 	 fi; \
+	 echo $$port > .backend-port.local; \
 	 trap 'kill 0' EXIT INT TERM; \
 	 (cd backend && uv run uvicorn qms_incub.main:app --reload --port $$port) & \
 	 (cd frontend && VITE_API_BASE="http://localhost:$$port" npm run dev) & \
@@ -49,9 +50,12 @@ migrate:
 # V1 (SLICES.md § V1): uploads the sample fixture PDF through the real
 # /documents endpoint, the same path any real user's upload takes. Requires
 # `make up` running (backend + Qdrant) and, for embeddings, a first-run
-# HuggingFace model download.
+# HuggingFace model download. Targets whichever port `make up` actually
+# picked (.backend-port.local, written by `up` — falls back to 8000 if
+# that file doesn't exist, e.g. `backend-dev` was used instead of `up`).
 seed:
-	curl -sf -F "file=@backend/tests/fixtures/sample_policy_document.pdf" http://localhost:8000/documents | tee /dev/stderr | grep -q '"status":"embedded"'
+	@port=$$(cat .backend-port.local 2>/dev/null || echo 8000); \
+	 curl -sf -F "file=@backend/tests/fixtures/sample_policy_document.pdf" "http://localhost:$$port/documents" | tee /dev/stderr | grep -q '"status":"embedded"'
 
 install:
 	cd backend && uv sync
