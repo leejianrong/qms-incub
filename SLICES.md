@@ -2,23 +2,27 @@
 
 Vertical increments. Each ends in something you can demonstrate. Slice 1
 confronts the riskiest unknown: whether the RAG pipeline can meaningfully
-ingest and answer from a document containing tables and flowcharts — the
-premise the whole "synthetic PDFs test RAG ingestion" idea rests on.
+ingest and answer from a document containing structured content like
+tables, given that the backend only ever sees a PDF someone handed it
+(ADR-0012) — it never gets to control how that PDF was made. Table and
+flowchart content is exactly what tends to break naive RAG chunking; the
+`synthetic-corpus/` tool exists to probe that further with richer documents
+than V1's one fixture.
 
-## V1: RAG Spike — Generate, Ingest, Ask
+## V1: RAG Spike — Upload, Ingest, Ask
 
-**Delivers:** R4 (partial — one hardcoded document, not the composer), R6
-(partial — policy documents only), R7 (partial — corpus grounding only, no
-per-user state yet)
+**Delivers:** R4 (partial — a static fixture PDF, uploaded through the real
+endpoint), R6 (partial — policy documents only), R7 (partial — corpus
+grounding only, no per-user state yet)
 
 **Build plan**
 
-1. Minimal block model: `text`, `table`, `flowchart` block types; seed one
-   policy document combining all three, with a fact (e.g. an approving
-   authority's name) placed inside the table.
-2. HTML-to-PDF export of that document (engine per Q35, not yet
-   confirmed); the flowchart block renders via a Mermaid-style DSL to SVG,
-   embedded before export (ADR-0006).
+1. A fixture PDF (`backend/tests/fixtures/sample_policy_document.pdf`) with
+   prose and a table, with a fact (an approving authority's name) placed
+   inside the table. Baked once outside the app — the backend doesn't
+   render or compose this, it just receives it (ADR-0012).
+2. `POST /documents`: accepts a PDF upload, stores it, and ingests it
+   immediately.
 3. Ingestion pipeline: Docling parses the document, LlamaIndex chunks and
    embeds it, stored in Qdrant with source-type/doc-id metadata (ADR-0003,
    ADR-0009).
@@ -28,34 +32,32 @@ per-user state yet)
 5. Minimal chat UI (Svelte): single input box, answer, citation — no auth
    or wizard yet.
 
-**Demo:** Ask the chatbot "who is the approving authority for this
-policy?" and see a correct answer citing the seeded document, where the
-answer's fact lives inside a table cell.
+**Demo:** Upload the fixture PDF via `make seed`, then ask the chatbot "who
+is the approving authority for this policy?" and see a correct answer
+citing the uploaded document, where the answer's fact lives inside a table
+cell.
 
-**Rests on assumptions:** Q7 (flowcharts auto-render via a structured DSL)
-— if wrong, this slice's PDF-generation step needs a different rendering
-approach. Q35 (PDF engine, unconfirmed) — this slice can't finish until
-that's picked.
+**Rests on assumptions:** none — ADR-0012 already settled how a document
+gets into the backend.
 
 ### Test plan
 
 #### End-to-end
 
-- Seeded document with a fact inside a table → asking "who is the
-  approving authority?" returns an answer containing the correct name and
-  a citation to that document.
+- Uploading the fixture document with a fact inside a table, then asking
+  "who is the approving authority?", returns an answer containing the
+  correct name and a citation to that document.
 
 #### Integration
 
-- Publishing a document triggers ingestion and produces at least one chunk
-  row referencing that document's ID.
-- Exporting a document with one table block and one flowchart block
-  produces a PDF whose extracted text includes both blocks' content.
+- Uploading a document through `POST /documents` triggers ingestion and
+  produces at least one chunk row referencing that document's ID; `GET
+  /documents` shows it as `embedded`.
+- The fixture PDF's extracted text includes its table content, proving the
+  ingestion pipeline can chunk more than plain prose.
 
 #### Unit
 
-- Flowchart-DSL-to-Mermaid render function returns valid SVG for a 3-step
-  process definition.
 - Chunking function splits document text into chunks under the target
   token size.
 
@@ -139,89 +141,55 @@ reviewer surface, which is explicitly out of scope for this milestone.
 
 - Compliance % calculation given a set of todo statuses.
 
-## V4: Policy Document Composer
+## V4: Document Upload
 
-**Delivers:** R4 (partial — generation path only; import path closes it in V7)
+**Delivers:** R4 (closes)
 
 **Build plan**
 
-1. Block-based document editor UI: add/reorder text, table, flowchart, and
-   image blocks (ADR-0001).
-2. Flowchart block editor: structured step-list input with a live Mermaid
-   preview (ADR-0006), not a drawing canvas.
-3. Draft → Published lifecycle, no approval step (ADR-0002).
-4. Publish triggers V1's ingestion pipeline.
-5. PDF export button reusing V1's export mechanism.
+1. `POST /documents`: multipart PDF upload, generates a document ID,
+   stores the file, and ingests it synchronously (ADR-0012). This is the
+   real version of what V1's `make seed` already exercises against a
+   fixture.
+2. `PolicyDocumentRow` (Postgres, Alembic-managed — the first slice to
+   touch the relational data model) tracks status (`pending`/`embedded`/
+   `failed`), chunk count, and error per document.
+3. `GET /documents`: lists every uploaded document's status.
+4. Frontend: an upload control wired to `POST /documents`, replacing V1's
+   fixture-only path with a real one a QA-author can use.
 
-**Demo:** Author a new 3-block document in the composer, publish it, then
-ask the chatbot a question only answerable from that new document.
+**Demo:** Upload a real QMS PDF through the UI, then ask the chatbot a
+question only answerable from that new document.
 
-**Rests on assumptions:** none new — this generalizes V1's hardcoded
-document into the real authoring surface.
+**Rests on assumptions:** none new — this generalizes V1's fixture upload
+into the real authoring surface a QA-author actually uses.
 
 ### Test plan
 
 #### End-to-end
 
-- Authoring and publishing a document, then asking the chatbot a fact only
+- Uploading a document through the UI, then asking the chatbot a fact only
   present in it, returns a grounded, correctly-cited answer.
 
 #### Integration
 
-- Publishing a document from the composer produces the same ingestion
-  result shape as V1's seeded document.
+- `POST /documents` produces the same ingestion result shape as V1's
+  fixture upload; `GET /documents` reflects the new document's status.
 
 #### Unit
 
-- Block reordering preserves block content and bumps the document version.
+- Upload handler rejects a non-PDF file with a clear error before any
+  ingestion is attempted.
 
-## V5: Synthetic Batch Generation
+## V5: *(retired)*
 
-**Delivers:** R5, R6 (breadth)
-
-**Not part of the web app** (ADR-0011): real company QMS documents exist
-but are sensitive and unavailable during this build, so this slice is
-local developer tooling — a CLI, not a QA-author-facing panel — that
-exercises the RAG pipeline (S6) with realistic-shaped test data until real
-documents can be imported (V7).
-
-**Build plan**
-
-1. `documents/random_generator.py`: a seeded, reproducible random
-   generator reuses V1/V4's exact block model — a count N and a complexity
-   range (table row count, flowchart step count) (ADR-0001).
-2. `documents/batch.py`: reuses V1's exact render → PDF export → ingest
-   path per document, flagged `is_synthetic = true`. `PolicyDocumentRow`
-   (Postgres, Alembic-managed — the first slice to touch the relational
-   data model) tracks per-document status (pending/embedded/failed, chunk
-   count, error) so a run can report whether any synthetic document broke
-   the pipeline.
-3. `qms_incub.batch_v5` CLI (`make batch COUNT=20 SEED=1`): runs a batch
-   and prints a per-document status summary to the terminal.
-
-**Demo:** `make batch COUNT=20 SEED=1` generates 20 synthetic variants
-with tables/flowcharts; the CLI's summary output confirms 20/20 processed
-(or flags the ones that didn't).
-
-**Rests on assumptions:** Q7 carried forward — batch generation needs the
-same programmatic block model V1/V4 already assume.
-
-### Test plan
-
-#### End-to-end
-
-- Running `make batch COUNT=20` prints a summary showing 20/20 processed
-  with no unexplained failures.
-
-#### Integration
-
-- A generated synthetic document with a randomly-sized table still
-  produces at least one chunk covering that table's content.
-
-#### Unit
-
-- Random block-composition generator respects the requested complexity
-  range.
+Synthetic batch generation used to live here as local CLI tooling
+(ADR-0011). It's been moved out of this product entirely — see ADR-0012.
+It's now `synthetic-corpus/`, an independent tool with its own planning
+docs under `docs/shaping/synthetic-doc-realism/`; it shares no code with
+this backend and doesn't call it over HTTP. What it produces (PDF files on
+disk) gets tested against this backend the same way any real document
+would: by hand, through V4's upload endpoint.
 
 ## V6: Blog + FAQ
 
@@ -229,8 +197,7 @@ same programmatic block model V1/V4 already assume.
 
 **Build plan**
 
-1. Blog post list + detail view, admin-authored (plain text editor — no
-   block/table/flowchart composer needed here).
+1. Blog post list + detail view, admin-authored (plain text editor).
 2. FAQ list, admin-authored Q&A pairs.
 3. Publish action for both triggers V1's ingestion pipeline, tagged
    `source_type = blog` / `faq`.
@@ -257,45 +224,12 @@ cited source.
 
 - Blog/FAQ publish validation (required fields).
 
-## V7: Import Existing QMS Documents
+## V7: *(merged into V4)*
 
-**Delivers:** R4 (closes), R6 (breadth)
-
-**Build plan**
-
-1. "Import document" flow alongside the composer: upload a PDF, provide a
-   `source_attribution` (URL or license note) (ADR-0007).
-2. Store as a `PolicyDocument` with `origin = imported`, no blocks, PDF
-   stored as-is (no HTML render step, unlike generated documents).
-3. Publish triggers V1's ingestion pipeline directly on the uploaded PDF's
-   extracted text.
-4. Document-list toolbar toggle: Generate vs. Import, both landing in the
-   same list built in V4.
-
-**Demo:** Upload a real open-source QMS PDF, publish it, and ask the
-chatbot a question answerable only from that imported document, alongside
-one answerable from a generated document — both cited correctly.
-
-**Rests on assumptions:** the open risk noted in PLAN.md — imported PDFs
-are structurally unpredictable, so ingestion quality may vary more than it
-does for the app's own generated documents.
-
-### Test plan
-
-#### End-to-end
-
-- Uploading and publishing a real QMS PDF, then asking the chatbot a
-  question answerable only from it, returns a correctly-cited answer.
-
-#### Integration
-
-- Publishing an imported document triggers ingestion on its extracted PDF
-  text and produces chunks tagged `origin = imported`.
-
-#### Unit
-
-- Attribution field is required before an imported document can be
-  published.
+This slice used to add an "import a real PDF" path alongside a composer —
+a "Generate / Import" toggle (ADR-0007). Once there's no composer left to
+switch away from (ADR-0012), uploading a PDF *is* the only path; there's
+nothing left here that V4 doesn't already cover.
 
 ## V8: Compliance-Aware Chat
 

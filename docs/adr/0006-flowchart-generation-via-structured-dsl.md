@@ -1,10 +1,14 @@
 # ADR-0006: Flowcharts are generated from structured step data, not drawn freehand
 
-- Status: Accepted
+- Status: Superseded by ADR-0012
 - Date: 2026-08-31
 - Deciders: agent (plan-new-project skill, assumed default Q7)
 
 ## Context
+
+*Superseded: there's no flowchart rendering left in the backend to have an
+engine for — see ADR-0012. This record stays as the history of what was
+originally decided and why.*
 
 The idea asks for policy documents that "include tables, flowcharts, text"
 and can be "generated" — including, in the synthetic batch mode (ADR-0001),

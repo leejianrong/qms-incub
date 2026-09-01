@@ -1,10 +1,15 @@
 # ADR-0010: PDF export renders via WeasyPrint (resolves Q35)
 
-- Status: Accepted
+- Status: Superseded by ADR-0012
 - Date: 2026-08-31
 - Deciders: agent (V1 RAG spike slice), leejianrong (owns this slice)
 
 ## Context
+
+*Superseded: the backend exports nothing — it only ingests PDFs handed to
+it. WeasyPrint and Jinja2 are gone from `backend/pyproject.toml` entirely.
+See ADR-0012. This record stays as the history of what was originally
+decided and why.*
 
 ADR-0005 originally picked Puppeteer for HTML-to-PDF export; ADR-0009
 dropped Puppeteer as Node-only once the backend became Python, and left
