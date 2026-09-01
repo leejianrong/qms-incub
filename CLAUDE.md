@@ -16,7 +16,7 @@ no HTTP dependency on the backend either.
 | Area | Status |
 |------|--------|
 | Backend (FastAPI) | V1 (RAG spike) built and exposed via the API |
-| V1/V4: document upload (S4/S6) | `POST /documents` — multipart PDF upload, ingested synchronously. `GET /documents` lists ingestion status. The only way a document enters the corpus (ADR-0012) |
+| V1/V4: document upload (S4/S6) | QA-author upload/status control plus `POST /documents` — multipart PDF upload, ingested synchronously; `GET /documents` lists ingestion status. The only way a document enters the corpus (ADR-0012) |
 | V1: ingestion (S6) | `make seed` uploads a fixture PDF (`backend/tests/fixtures/sample_policy_document.pdf`) through `POST /documents`, which Docling-parses it, chunks (LlamaIndex `SentenceSplitter`), embeds (local HF `BAAI/bge-small-en-v1.5`), and stores in Qdrant. Idempotent per document ID — re-ingesting the same ID clears old chunks first (`ingestion/pipeline.py`) |
 | V1: chat (S8) | `POST /chat` — vector retrieval + LLM call, citations derived from retrieved chunks (not parsed from model output). LLM provider swappable, see Secrets/Q37 |
 | V2: compliance wizard + todos (S1/S2) | `POST /standards` / `/clauses` / `/requirements` (QA-author editor, ADR-0008). Project creation and classification are two separate steps (see V9 row below) — classification scores a 3-boolean-question wizard (Q8, `compliance/scoring.py`) into a Low/Medium/High tier and generates one `TodoItem` per matching `Requirement` in one transaction. `GET /projects/{id}` for the dashboard |
