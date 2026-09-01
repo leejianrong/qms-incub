@@ -11,7 +11,7 @@ import datetime
 import uuid
 from typing import Literal
 
-from sqlalchemy import DateTime, ForeignKey, String, func
+from sqlalchemy import JSON, DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -65,11 +65,20 @@ class Requirement(Base):
 
 
 class Project(Base):
+    """`risk_tier` starts null: a Project is created from just a name
+    (wizard step 1, alongside an optional AOR upload, S10), then
+    classified — which sets `risk_tier` and generates TodoItems — once
+    the 3-question wizard (S1/S2) is submitted (wizard step 2)."""
+
     __tablename__ = "projects"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
     name: Mapped[str] = mapped_column(String, nullable=False)
-    risk_tier: Mapped[str] = mapped_column(String, nullable=False)
+    risk_tier: Mapped[str | None] = mapped_column(String, nullable=True)
+    # AOR intake (S10, Q40): extraction of an uploaded document's own
+    # content, never entered into the Qdrant corpus (ADR-0012).
+    aor_filename: Mapped[str | None] = mapped_column(String, nullable=True)
+    aor_extracted_fields: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
