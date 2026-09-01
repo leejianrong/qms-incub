@@ -12,7 +12,17 @@
   import { routePath } from "$lib/router.svelte";
 
   const view = $derived(
-    routePath() === "/wizard" ? "wizard" : routePath() === "/project" ? "project" : "dashboard",
+    routePath() === "/wizard"
+      ? "wizard"
+      : routePath() === "/project"
+        ? "project"
+        : routePath() === "/blog"
+          ? "blog"
+          : routePath() === "/faq"
+            ? "faq"
+            : routePath() === "/favourites"
+              ? "favourites"
+              : "dashboard",
   );
 </script>
 
@@ -21,6 +31,22 @@
     <Wizard />
   {:else if view === "project"}
     <ProjectDetail />
+  {:else if view === "blog" || view === "faq" || view === "favourites"}
+    <!-- V18 build plan steps 5/6 land the real Blog/FAQ reader and
+         favourites list; the Shell slice only needs these routes to
+         exist so the header's nav/favourites are clickable. -->
+    <main class="mx-auto max-w-3xl p-8">
+      <p class="text-sm text-muted-foreground">
+        {#if view === "blog"}
+          The Blog reader lands in a follow-up slice (V18 step 5).
+        {:else if view === "faq"}
+          The FAQ view lands in a follow-up slice (V18 step 6).
+        {:else}
+          Nothing favourited yet — favouriting projects and posts lands alongside their
+          respective slices (V18 steps 2 and 5).
+        {/if}
+      </p>
+    </main>
   {:else}
     <ProjectsDashboard />
   {/if}
