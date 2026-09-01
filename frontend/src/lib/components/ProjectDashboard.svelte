@@ -3,6 +3,7 @@
   import { Badge } from "$lib/components/ui/badge/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
   import { resolveApiBase, getProject, uploadArtifact, type ProjectWithTodos } from "$lib/api";
+  import { approvalRouteViewModel } from "$lib/approvalRoute";
 
   const apiBase = resolveApiBase(import.meta.env);
   const projectId = new URLSearchParams(window.location.search).get("id") ?? "";
@@ -80,6 +81,18 @@
                 <p class="text-xs text-muted-foreground">
                   {todo.standard_name} &gt; {todo.clause_text}
                 </p>
+                {#if todo.approval_state !== "not_required"}
+                  {@const route = approvalRouteViewModel(todo)}
+                  <div class="mt-2 flex items-center gap-2 text-xs">
+                    {#each route.nodes as node, i (node.key)}
+                      {#if i > 0}<span class="text-muted-foreground">→</span>{/if}
+                      <Badge variant={node.highlighted ? "default" : "outline"}>{node.label}</Badge>
+                    {/each}
+                  </div>
+                  <p class="mt-1 text-xs text-muted-foreground">
+                    {route.statusText} · {route.authority}{route.slaText ? ` · ${route.slaText}` : ""}
+                  </p>
+                {/if}
                 {#if todo.status === "pending"}
                   <div class="mt-2 flex items-center gap-2">
                     <input

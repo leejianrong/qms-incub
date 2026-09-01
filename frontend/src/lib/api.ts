@@ -198,6 +198,8 @@ export interface Project {
   aor_extracted_fields: AorExtractedFields | null;
 }
 
+export type ApprovalState = "not_required" | "not_started" | "submitted" | "approved" | "returned";
+
 export interface TodoItem {
   id: string;
   project_id: string;
@@ -206,6 +208,10 @@ export interface TodoItem {
   clause_text: string;
   standard_name: string;
   status: "pending" | "complied";
+  approval_state: ApprovalState;
+  approval_authority: string;
+  sla_target: string | null;
+  decided_at: string | null;
 }
 
 export interface ProjectWithTodos {
