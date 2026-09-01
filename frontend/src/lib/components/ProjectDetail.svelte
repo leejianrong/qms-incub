@@ -2,6 +2,16 @@
   import * as Card from "$lib/components/ui/card/index.js";
   import { Badge } from "$lib/components/ui/badge/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
+  import ChevronsLeftIcon from "@lucide/svelte/icons/chevrons-left";
+  import ChevronsRightIcon from "@lucide/svelte/icons/chevrons-right";
+  import MessageSquareIcon from "@lucide/svelte/icons/message-square";
+  import FlagIcon from "@lucide/svelte/icons/flag";
+  import PenToolIcon from "@lucide/svelte/icons/pen-tool";
+  import HammerIcon from "@lucide/svelte/icons/hammer";
+  import FlaskConicalIcon from "@lucide/svelte/icons/flask-conical";
+  import RocketIcon from "@lucide/svelte/icons/rocket";
+  import CheckCircle2Icon from "@lucide/svelte/icons/check-circle-2";
+  import CircleIcon from "@lucide/svelte/icons/circle";
   import {
     askChat,
     resolveApiBase,
@@ -14,6 +24,8 @@
     type ChatAnswer,
   } from "$lib/api";
   import { approvalRouteViewModel } from "$lib/approvalRoute";
+  import { projectCode } from "$lib/projectCards";
+  import { getComments, postComment } from "$lib/discussionState.svelte";
   import { navigate, routeParam } from "$lib/router.svelte";
 
   const apiBase = resolveApiBase(import.meta.env);
@@ -35,6 +47,7 @@
   let asking = $state(false);
   let chatResult = $state<ChatAnswer | null>(null);
   let chatError = $state<string | null>(null);
+  let commentDraft = $state("");
 
   // Refetches this project's data without disturbing the user's current
   // selection — used both for the initial load and to refresh after an
@@ -114,11 +127,35 @@
     return { done: todos.filter((t) => t.status === "complied").length, total: todos.length };
   }
 
+  function stepNeedsAttention(stepId: string): boolean {
+    return todosForStep(stepId).some((t) => t.approval_state === "returned");
+  }
+
   const selectedTodo = $derived(data?.todos.find((t) => t.id === selectedTodoId) ?? null);
 
   function selectTodo(todo: TodoItem) {
     selectedTodoId = todo.id;
     expandedStepId = todo.process_step_id;
+  }
+
+  const STEP_ICONS = [FlagIcon, PenToolIcon, HammerIcon, FlaskConicalIcon, RocketIcon, CheckCircle2Icon];
+  function stepIcon(index: number) {
+    return STEP_ICONS[index % STEP_ICONS.length] ?? CircleIcon;
+  }
+
+  function todoBadge(todo: TodoItem): { label: string; class: string } {
+    if (todo.status === "complied") return { label: "Done", class: "text-primary" };
+    if (todo.approval_state === "returned") return { label: "Returned", class: "text-destructive" };
+    if (todo.approval_state === "submitted") return { label: "In review", class: "text-muted-foreground" };
+    return { label: "Open", class: "text-muted-foreground" };
+  }
+
+  const comments = $derived(selectedTodo ? getComments(selectedTodo.id) : []);
+
+  function submitComment() {
+    if (!selectedTodo || !commentDraft.trim()) return;
+    postComment(selectedTodo.id, "Kim Alvarez", "Project manager", commentDraft);
+    commentDraft = "";
   }
 </script>
 
@@ -132,98 +169,163 @@
       <p class="text-sm text-muted-foreground">Loading project…</p>
     {/if}
   {:else}
-    <div>
-      <button
-        type="button"
-        class="text-xs text-muted-foreground hover:text-foreground"
-        onclick={() => navigate("/")}
-      >
-        ← Back to projects
-      </button>
-      <header class="mt-1 flex items-center gap-3">
-        <h1 class="text-2xl font-medium">{data.project.name}</h1>
-        <Badge variant={tierVariant[data.project.risk_tier ?? ""] ?? "outline"}>
-          {data.project.risk_tier ?? "unclassified"}{data.project.risk_tier ? " tier" : ""}
-        </Badge>
-        <Badge variant="outline">{Math.round(data.compliance_percentage)}% complied</Badge>
-      </header>
-    </div>
+    <header class="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <div class="flex items-start gap-5">
+        <div class="min-w-0">
+          <div class="text-[11px] text-muted-foreground">
+            <button type="button" class="hover:text-foreground hover:underline" onclick={() => navigate("/")}>
+              Projects
+            </button>
+            <span> / {projectCode(data.project.id)}</span>
+          </div>
+          <h1 class="mt-1 text-[32px] leading-tight font-medium">{data.project.name}</h1>
+          <div class="mt-2.5 flex flex-wrap gap-2">
+            <Badge variant={tierVariant[data.project.risk_tier ?? ""] ?? "outline"}>
+              {data.project.risk_tier ?? "unclassified"}{data.project.risk_tier ? " tier" : ""}
+            </Badge>
+            {#if data.project.aor_extracted_fields}
+              <Badge variant="outline">{data.project.aor_extracted_fields.data_classification}</Badge>
+            {/if}
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="h-2.5 flex-1 rounded-full bg-muted">
+          <div
+            class="h-2.5 rounded-full bg-gradient-to-r from-[var(--color-accent-500)] to-primary"
+            style={`width: ${Math.round(data.compliance_percentage)}%`}
+          ></div>
+        </div>
+        <div class="font-heading text-xs font-medium whitespace-nowrap">
+          {Math.round(data.compliance_percentage)}% · {data.todos.filter((t) => t.status === "complied").length}/{data
+            .todos.length} sub-steps
+        </div>
+      </div>
+    </header>
 
-    <div class="flex gap-6">
+    <div class="flex gap-5">
       <!-- Left: collapsible plan navigator -->
       <nav
-        class="shrink-0 rounded-md border border-border bg-card transition-all"
-        class:w-14={navigatorCollapsed}
-        class:w-72={!navigatorCollapsed}
+        class="shrink-0 overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all"
+        class:w-16={navigatorCollapsed}
+        class:w-80={!navigatorCollapsed}
         aria-label="Plan navigator"
       >
-        <div class="flex items-center justify-between border-b border-border p-2">
+        <div class="flex items-center gap-2 border-b border-border p-3">
           {#if !navigatorCollapsed}
-            <span class="px-1 text-xs font-medium text-muted-foreground">Plan navigator</span>
+            <div class="min-w-0 flex-1">
+              <div class="text-[9.5px] tracking-widest text-primary uppercase">QMS plan</div>
+              <div class="mt-0.5 text-[11px] text-muted-foreground">
+                {data.todos.filter((t) => t.status === "complied").length}/{data.todos.length} sub-steps done
+              </div>
+            </div>
           {/if}
           <Button
-            size="sm"
+            size="icon-sm"
             variant="ghost"
+            class={navigatorCollapsed ? "mx-auto" : ""}
             aria-label={navigatorCollapsed ? "Expand navigator" : "Collapse navigator"}
             onclick={() => (navigatorCollapsed = !navigatorCollapsed)}
           >
-            {navigatorCollapsed ? "»" : "«"}
+            {#if navigatorCollapsed}
+              <ChevronsRightIcon class="size-4" />
+            {:else}
+              <ChevronsLeftIcon class="size-4" />
+            {/if}
           </Button>
         </div>
 
-        <ul class="space-y-1 p-2">
-          {#each steps as step (step.id)}
-            {@const progress = stepProgress(step.id)}
-            {@const pct = progress.total === 0 ? 0 : Math.round((progress.done / progress.total) * 100)}
-            <li>
+        {#if navigatorCollapsed}
+          <div class="flex flex-col items-center gap-1 py-3">
+            {#each steps as step, i (step.id)}
+              {@const Icon = stepIcon(i)}
+              {@const attention = stepNeedsAttention(step.id)}
               <button
                 type="button"
-                class="flex w-full items-center gap-2 rounded-md p-2 text-left text-sm hover:bg-accent"
                 title={step.title}
-                onclick={() => (expandedStepId = expandedStepId === step.id ? null : step.id)}
+                onclick={() => {
+                  navigatorCollapsed = false;
+                  expandedStepId = step.id;
+                }}
+                class={[
+                  "relative flex size-11 items-center justify-center rounded-xl transition-colors hover:bg-accent",
+                  expandedStepId === step.id ? "bg-accent text-primary" : "text-muted-foreground",
+                ]}
               >
-                <span
-                  class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border text-[10px] font-medium"
-                >
-                  {step.title.slice(0, 1)}
-                </span>
-                {#if !navigatorCollapsed}
-                  <span class="flex-1 truncate">{step.title}</span>
-                  <span class="text-xs text-muted-foreground">{progress.done}/{progress.total}</span>
+                <Icon class="size-[19px]" />
+                {#if attention}
+                  <span class="absolute top-2 right-2 size-[7px] rounded-full bg-destructive"></span>
                 {/if}
               </button>
+            {/each}
+          </div>
+        {:else}
+          <ul>
+            {#each steps as step, i (step.id)}
+              {@const progress = stepProgress(step.id)}
+              {@const pct = progress.total === 0 ? 0 : Math.round((progress.done / progress.total) * 100)}
+              {@const attention = stepNeedsAttention(step.id)}
+              {@const complete = progress.total > 0 && progress.done === progress.total}
+              <li class="border-t border-border first:border-t-0">
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-2.5 p-3 text-left transition-colors hover:bg-accent/60"
+                  onclick={() => (expandedStepId = expandedStepId === step.id ? null : step.id)}
+                >
+                  <span
+                    class={[
+                      "flex size-7 flex-none items-center justify-center rounded-full font-heading text-[11px] font-medium",
+                      complete ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                    ]}
+                  >
+                    {complete ? "✓" : i + 1}
+                  </span>
+                  <span class="min-w-0 flex-1">
+                    <span class="flex items-center gap-1.5">
+                      <span class="block truncate font-heading text-sm font-medium">{step.title}</span>
+                      {#if attention}
+                        <span class="size-[7px] flex-none rounded-full bg-destructive"></span>
+                      {/if}
+                    </span>
+                    <span class="block text-[11px] text-muted-foreground">{progress.done}/{progress.total}</span>
+                  </span>
+                  <span class="h-1 w-11 flex-none overflow-hidden rounded-full bg-muted">
+                    <span class="block h-full bg-primary" style={`width: ${pct}%`}></span>
+                  </span>
+                </button>
 
-              {#if !navigatorCollapsed}
-                <div class="mx-2 h-1 overflow-hidden rounded-full bg-muted">
-                  <div class="h-full rounded-full bg-primary" style={`width: ${pct}%`}></div>
-                </div>
-              {/if}
-
-              {#if !navigatorCollapsed && expandedStepId === step.id}
-                <ul class="ml-6 mt-1 space-y-1 border-l border-border pl-2">
-                  {#each todosForStep(step.id) as todo (todo.id)}
-                    <li>
-                      <button
-                        type="button"
-                        class="block w-full truncate rounded-md p-1.5 text-left text-xs hover:bg-accent"
-                        class:bg-accent={selectedTodoId === todo.id}
-                        onclick={() => selectTodo(todo)}
-                      >
-                        {todo.status === "complied" ? "✓ " : ""}{todo.requirement_description}
-                      </button>
-                    </li>
-                  {:else}
-                    <li class="p-1.5 text-xs text-muted-foreground">No todos in this step.</li>
-                  {/each}
-                </ul>
-              {/if}
-            </li>
-          {/each}
-        </ul>
+                {#if expandedStepId === step.id}
+                  <ul class="space-y-0.5 pb-2">
+                    {#each todosForStep(step.id) as todo (todo.id)}
+                      {@const badge = todoBadge(todo)}
+                      <li>
+                        <button
+                          type="button"
+                          class={[
+                            "ml-10 flex w-[calc(100%-2.5rem-0.75rem)] items-center gap-2 rounded-lg p-2 text-left transition-colors hover:bg-accent",
+                            selectedTodoId === todo.id && "bg-accent",
+                          ]}
+                          onclick={() => selectTodo(todo)}
+                        >
+                          <span class="min-w-0 flex-1 truncate text-[13px]">{todo.requirement_description}</span>
+                          <span class="flex-none font-heading text-[9px] font-medium tracking-wide uppercase {badge.class}">
+                            {badge.label}
+                          </span>
+                        </button>
+                      </li>
+                    {:else}
+                      <li class="ml-10 p-2 text-xs text-muted-foreground">No todos in this step.</li>
+                    {/each}
+                  </ul>
+                {/if}
+              </li>
+            {/each}
+          </ul>
+        {/if}
       </nav>
 
       <!-- Right: selected todo detail -->
-      <div class="min-w-0 flex-1">
+      <div class="min-w-0 flex-1 space-y-5">
         {#if !selectedTodo}
           <Card.Root>
             <Card.Content class="py-10 text-center text-sm text-muted-foreground">
@@ -277,6 +379,49 @@
                   Self-attested — an artifact has been uploaded against this todo.
                 </p>
               {/if}
+            </Card.Content>
+          </Card.Root>
+
+          <Card.Root>
+            <Card.Header>
+              <div class="flex items-center gap-2.5">
+                <span
+                  class="flex size-[34px] flex-none items-center justify-center rounded-[10px] bg-accent text-primary"
+                >
+                  <MessageSquareIcon class="size-[18px]" />
+                </span>
+                <Card.Title class="text-base">Discussion</Card.Title>
+                <span class="text-xs text-muted-foreground">
+                  Non-persistent for now — clears on reload (issue #57)
+                </span>
+              </div>
+            </Card.Header>
+            <Card.Content class="space-y-1">
+              {#each comments as comment (comment.postedAt)}
+                <div class="border-t border-border py-3 first:border-t-0 first:pt-0">
+                  <div class="flex items-baseline gap-2">
+                    <span class="font-heading text-[13px] font-medium">{comment.who}</span>
+                    <span class="text-[11px] text-muted-foreground">{comment.role}</span>
+                  </div>
+                  <p class="mt-1.5 text-[13.5px] leading-relaxed">{comment.text}</p>
+                </div>
+              {:else}
+                <p class="py-3 text-[12.5px] text-muted-foreground">No comments yet. Be the first to add one.</p>
+              {/each}
+              <form
+                class="mt-2 flex items-start gap-2.5"
+                onsubmit={(event) => {
+                  event.preventDefault();
+                  submitComment();
+                }}
+              >
+                <textarea
+                  class="min-h-[74px] flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                  bind:value={commentDraft}
+                  placeholder="Add a comment…"
+                ></textarea>
+                <Button type="submit" class="flex-none" disabled={!commentDraft.trim()}>Post comment</Button>
+              </form>
             </Card.Content>
           </Card.Root>
         {/if}
