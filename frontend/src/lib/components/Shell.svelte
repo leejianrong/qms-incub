@@ -27,6 +27,7 @@
   } from "$lib/wizardGuard.svelte";
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Dialog from "$lib/components/ui/dialog/index.js";
+  import ChatWidget from "$lib/components/ChatWidget.svelte";
 
   let { children }: { children?: Snippet } = $props();
 
@@ -243,4 +244,6 @@
       </Dialog.Footer>
     </Dialog.Content>
   </Dialog.Root>
+
+  <ChatWidget />
 </div>
