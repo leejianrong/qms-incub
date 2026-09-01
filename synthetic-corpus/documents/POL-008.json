@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "doc_id": "POL-008",
+    "title": "Vendor and Third-Party Risk Management Policy",
+    "version": "1.0",
+    "effective_date": "2026-09-01",
+    "owner": "Data Protection Officer"
+  },
+  "blocks": [
+    {"type": "text", "style": "h1", "content": "Vendor and Third-Party Risk Management Policy"},
+
+    {"type": "text", "style": "h2", "content": "1. Purpose"},
+    {"type": "text", "style": "body", "content": "The company relies on a growing set of external vendors and service providers across cloud infrastructure, software delivery tooling, payment processing, and customer support operations. This policy establishes a consistent process for assessing, approving, monitoring, and offboarding vendors and other third parties that store, process, transmit, or have logical or physical access to company or customer data, so that engaging a vendor never becomes the weakest link in the company's security and compliance posture."},
+    {"type": "text", "style": "body", "content": "This policy exists to satisfy the vendor management control objectives of ISO/IEC 27001:2022 Annex A.15 and to give every business unit a single, predictable path to bring on a new vendor without having to invent a risk process from scratch each time. It also gives Legal, Security, and the Data Protection Officer a documented basis for the representations the company makes to customers and auditors about how third-party risk is managed."},
+    {"type": "text", "style": "body", "content": "The company currently maintains active engagements with several hundred vendors ranging from single-purpose SaaS tools used by one team to infrastructure providers embedded in every production request the company serves. A one-size-fits-all due diligence process would either under-scrutinize the infrastructure providers or bury every small SaaS purchase in weeks of paperwork; the risk-tiering approach in §4 exists specifically to avoid both failure modes."},
+
+    {"type": "text", "style": "h2", "content": "2. Scope"},
+    {"type": "text", "style": "body", "content": "This policy applies to any vendor, subcontractor, managed-service provider, or contractor organization that (a) stores, processes, or transmits company or customer data, (b) is integrated into a production system or pipeline, or (c) is granted logical or physical access to a company facility or system. It covers the full vendor lifecycle: intake and risk tiering, security due diligence, contracting, onboarding, ongoing monitoring and reassessment, incident handling, and offboarding."},
+    {"type": "text", "style": "body", "content": "Vendors engaged solely for general facilities services, catering, or office supplies, with no data access and no connection to a company system, are out of scope and are handled under standard procurement terms. Any vendor providing an AI or machine-learning-based service that ingests customer data is always in scope regardless of contract size, given the elevated scrutiny such engagements receive from customers and regulators alike."},
+    {"type": "text", "style": "body", "content": "A vendor that is itself later acquired, or that white-labels a subprocessor the company was not told about at onboarding, remains in scope and must be re-assessed as though it were a new engagement; the risk registry entry is updated to reflect the new corporate structure or subprocessor chain rather than left describing a vendor relationship that no longer exists in the form it was originally approved."},
+
+    {"type": "text", "style": "h2", "content": "3. Roles & Responsibilities"},
+    {"type": "text", "style": "body", "content": "Vendor risk management is a shared responsibility between the business owner requesting the engagement, Security, and the Data Protection Officer. No single role can both request and approve a vendor engagement above the Low risk tier, which keeps the tiering decision independent of the commercial pressure to close a deal quickly."},
+    {
+      "type": "table",
+      "headers": ["Role", "Responsibility"],
+      "rows": [
+        ["Product Manager (Procurement Sponsor)", "Initiates the vendor engagement request and documents the business justification and data flows involved"],
+        ["Security Engineer", "Performs security due diligence, assigns the vendor's risk tier, and reviews evidence such as SOC 2 reports or penetration test summaries"],
+        ["Data Protection Officer", "Reviews and approves the data processing terms and confirms the engagement's data classification is handled correctly"],
+        ["Vendor", "Completes the security questionnaire, supplies evidence of controls, and notifies the company of any security incident affecting company data"],
+        ["Change Advisory Board Member", "Approves onboarding of any vendor assigned a Critical or High risk tier before the engagement goes live"]
+      ],
+      "caption": "Table 1. Vendor risk management roles and responsibilities."
+    },
+
+    {"type": "text", "style": "h2", "content": "4. Procedure"},
+    {"type": "text", "style": "body", "content": "Every prospective vendor is assigned one of four risk tiers — Critical, High, Medium, or Low — based on the sensitivity of the data it will handle and the depth of its system access. The tier determines how much due diligence is required before onboarding and how often the vendor is reassessed afterward."},
+
+    {"type": "text", "style": "h3", "content": "4.1 Intake and Risk Tiering"},
+    {"type": "text", "style": "body", "content": "A vendor engagement begins with an intake request from the sponsoring Product Manager, describing the service, the data it will touch, and whether it will connect to any production system. Security Engineering uses the data classification of anything the vendor will handle (see §5) to propose an initial tier, then asks the vendor to complete a standard security questionnaire covering encryption, access controls, incident history, and subprocessor use."},
+    {"type": "text", "style": "body", "content": "Critical and High tier vendors must additionally supply a current SOC 2 Type II report or equivalent independent audit, and any known material findings from it must be reviewed and either remediated or formally risk-accepted by the Data Protection Officer before onboarding proceeds."},
+    {
+      "type": "swimlane",
+      "caption": "Figure 1. Vendor onboarding workflow.",
+      "lanes": ["Procurement", "Vendor", "Security"],
+      "steps": [
+        {"id": "s1", "label": "Submit vendor onboarding request", "lane": "Procurement"},
+        {"id": "s2", "label": "Complete security questionnaire", "lane": "Vendor"},
+        {"id": "s3", "label": "Assign risk tier", "lane": "Security"},
+        {"id": "s4", "label": "Provide SOC 2 / audit evidence", "lane": "Vendor"},
+        {"id": "s5", "label": "Approve or reject engagement", "lane": "Security"},
+        {"id": "s6", "label": "Execute data processing agreement", "lane": "Procurement"},
+        {"id": "s7", "label": "Add vendor to risk registry", "lane": "Security"}
+      ],
+      "transitions": [["s1", "s2"], ["s2", "s3"], ["s3", "s4"], ["s4", "s5"], ["s5", "s6"], ["s6", "s7"]]
+    },
+
+    {"type": "text", "style": "h3", "content": "4.2 Ongoing Monitoring and Reassessment"},
+    {"type": "text", "style": "body", "content": "Every onboarded vendor is entered into the vendor risk registry with its tier, renewal date, and next reassessment date. Critical tier vendors are reassessed quarterly, High tier semi-annually, Medium tier annually, and Low tier only at contract renewal. Reassessment repeats the questionnaire and audit-evidence review at a scope proportional to the tier."},
+    {"type": "text", "style": "body", "content": "A vendor that misses two consecutive reassessment windows is automatically flagged to the Data Protection Officer, who decides whether to suspend new data flows to that vendor until the reassessment is complete. This prevents risk tiering from silently going stale as a vendor relationship ages."},
+
+    {"type": "text", "style": "h3", "content": "4.3 Incident and Breach Notification"},
+    {"type": "text", "style": "body", "content": "The vendor security questionnaire and the resulting contract require the vendor to notify the company within 24 hours of discovering any incident that may have affected company or customer data, regardless of whether the vendor has confirmed a breach. Security Engineering triages the notification the same way it would an internally reported incident."},
+    {"type": "text", "style": "body", "content": "If the affected vendor supports a system classified as critical to service availability, the notification also triggers an assessment under the Business Continuity and Disaster Recovery Policy (POL-009), §4, to determine whether a failover or manual workaround is warranted while the vendor's own incident is contained."},
+
+    {"type": "text", "style": "h3", "content": "4.4 Offboarding"},
+    {"type": "text", "style": "body", "content": "When a vendor engagement ends, Security Engineering revokes the vendor's system access within one business day and confirms, in writing, that the vendor has returned or securely destroyed any company data in its possession, consistent with the retention and disposal requirements of the Data Classification and Handling Policy (POL-007), §4."},
+    {"type": "text", "style": "body", "content": "The vendor risk registry entry is marked offboarded rather than deleted, so that a future re-engagement with the same vendor can reference its prior risk history instead of starting the assessment from zero."},
+
+    {"type": "text", "style": "h3", "content": "4.5 Contractual Requirements and Right to Audit"},
+    {"type": "text", "style": "body", "content": "Every contract with a Critical or High tier vendor includes a right-to-audit clause allowing the company, or an independent auditor acting on its behalf, to request evidence of the vendor's security controls beyond what is volunteered during the standard reassessment cycle. This clause is negotiated by Legal but its inclusion is a hard requirement of this policy, not an optional negotiating point Procurement can trade away to close a deal faster."},
+    {"type": "text", "style": "body", "content": "Contracts also require the vendor to flow down equivalent data-handling and breach-notification obligations to any of its own subprocessors that will touch company data, so that the company's risk exposure does not silently extend one layer further down the supply chain than what was actually assessed at onboarding."},
+
+    {"type": "text", "style": "h2", "content": "5. References"},
+    {"type": "text", "style": "body", "content": "Data Classification and Handling Policy (POL-007), §4 — determines the data sensitivity tier that drives a vendor's risk tier and its data return/destruction obligations on offboarding."},
+    {"type": "text", "style": "body", "content": "Business Continuity and Disaster Recovery Policy (POL-009), §4 — governs the response when a critical vendor's incident threatens service availability."},
+    {"type": "text", "style": "body", "content": "External standards: ISO/IEC 27001:2022 (https://www.iso.org/standard/27001), Annex A.15 supplier relationships controls; SOC 2 (AICPA Trust Services Criteria) (https://www.aicpa-cima.com/topic/audit-assurance/audit-and-assurance-greater-than-soc-2), the audit framework this policy accepts as evidence of a vendor's control environment."}
+  ]
+}

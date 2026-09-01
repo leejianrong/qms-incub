@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "doc_id": "POL-009",
+    "title": "Business Continuity and Disaster Recovery Policy",
+    "version": "1.0",
+    "effective_date": "2026-09-01",
+    "owner": "Site Reliability Engineer"
+  },
+  "blocks": [
+    {"type": "text", "style": "h1", "content": "Business Continuity and Disaster Recovery Policy"},
+
+    {"type": "text", "style": "h2", "content": "1. Purpose"},
+    {"type": "text", "style": "body", "content": "This policy defines how the company prepares for, responds to, and recovers from events that disrupt its ability to deliver its core products and services — including regional cloud provider outages, data center loss, large-scale infrastructure failure, and events affecting critical vendors. It exists so that a disruption is met with a rehearsed plan rather than an improvised one, and so recovery time and recovery point commitments made to customers are backed by a tested capability rather than an assumption."},
+    {"type": "text", "style": "body", "content": "It also defines the company's obligations around annually testing its continuity plans, a control expected under ISO/IEC 27001:2022's business continuity domain and routinely requested by enterprise customers during security review."},
+    {"type": "text", "style": "body", "content": "A disruption large enough to trigger this policy is, by definition, rare, which is exactly why it must be governed by a written, rehearsed plan rather than improvised expertise: the engineers who best remember how a manual failover works are the ones who last exercised it, and without a mandated annual test that memory decays well before it is next needed for real."},
+
+    {"type": "text", "style": "h2", "content": "2. Scope"},
+    {"type": "text", "style": "body", "content": "This policy applies to every production system classified as Tier 1 or Tier 2 in the service criticality register, and to the teams that own them. Tier 1 systems are those whose unavailability directly stops customers from using the product; Tier 2 systems materially degrade the product but leave a usable, if limited, experience. Tier 3 internal tooling is out of scope for a full disaster recovery plan, though it must still have a documented restore-from-backup procedure."},
+    {"type": "text", "style": "body", "content": "The policy covers both technical recovery — restoring systems, data, and connectivity — and organizational continuity, such as maintaining customer communications and support coverage during an extended incident. It does not cover physical safety and evacuation procedures for office locations, which are governed separately by Facilities."},
+    {"type": "text", "style": "body", "content": "The service criticality register itself is reviewed at least twice a year by Site Reliability Engineering together with each system's owning team, since a system's tier can change as the product evolves — a background batch job that was once Tier 3 can become Tier 1 the moment a customer-facing feature starts depending on its output in real time."},
+
+    {"type": "text", "style": "h2", "content": "3. Roles & Responsibilities"},
+    {"type": "text", "style": "body", "content": "Each Tier 1 or Tier 2 system has a named owning team responsible for authoring and testing its recovery plan, but the Incident Commander role coordinates the response the moment a disruption is declared, regardless of which team's system is affected."},
+    {
+      "type": "table",
+      "headers": ["Role", "Responsibility"],
+      "rows": [
+        ["Site Reliability Engineer", "Owns this policy, maintains the continuity plan template, and schedules the annual recovery test calendar"],
+        ["Incident Commander (rotating, drawn from SRE and Engineering)", "Declares a disaster recovery event, coordinates the response, and authorizes failover"],
+        ["Engineering Manager", "Ensures their team's Tier 1/Tier 2 systems have a current, tested recovery plan and named on-call owners"],
+        ["Product Manager", "Approves customer-facing communications during an extended disruption"],
+        ["Change Advisory Board Member", "Reviews and signs off on the annual recovery test results and any resulting plan changes"]
+      ],
+      "caption": "Table 1. Roles in a business continuity or disaster recovery event."
+    },
+
+    {"type": "text", "style": "h2", "content": "4. Procedure"},
+    {"type": "text", "style": "body", "content": "A disruption moves through five stages: detection, plan activation, failover or workaround, recovery, and a post-incident review. Each Tier 1 system's recovery plan documents its specific recovery time objective (RTO) and recovery point objective (RPO); the default company-wide targets, absent a system-specific override, are a four-hour RTO and a fifteen-minute RPO for Tier 1 systems."},
+
+    {"type": "text", "style": "h3", "content": "4.1 Detection and Declaration"},
+    {"type": "text", "style": "body", "content": "A disruption is typically first detected through the same monitoring and alerting that governs day-to-day incidents under the Incident Management and Response Policy (POL-005), §4. What distinguishes a disaster recovery event from a routine incident is scope and expected duration: if the on-call responder assesses that a Tier 1 system will be unavailable for longer than the incident policy's standard escalation window, or that its home region is affected rather than a single component, they escalate to the Incident Commander to consider formal DR activation."},
+    {"type": "text", "style": "body", "content": "The same escalation path applies when a Critical-tier vendor reports an incident under the Vendor and Third-Party Risk Management Policy (POL-008), §4, and that vendor supports a Tier 1 system. The Incident Commander evaluates whether the vendor's own recovery timeline is acceptable or whether the company should activate its own workaround."},
+
+    {"type": "text", "style": "h3", "content": "4.2 Plan Activation and Failover"},
+    {"type": "text", "style": "body", "content": "Once the Incident Commander declares a DR event, the owning team executes that system's documented recovery plan, which specifies the failover target (a secondary region, a standby replica, or a degraded-mode configuration), the steps to redirect traffic, and the verification checks to run before declaring the failover complete."},
+    {"type": "text", "style": "body", "content": "Customer-facing status communications during an active DR event are approved by the responsible Product Manager before publishing, to keep messaging accurate without disclosing operational detail that could complicate the response."},
+
+    {"type": "text", "style": "h3", "content": "4.3 Recovery and Stand-Down"},
+    {
+      "type": "flowchart",
+      "caption": "Figure 1. Disaster recovery response lifecycle.",
+      "steps": [
+        {"id": "d1", "label": "Detect disruption"},
+        {"id": "d2", "label": "Declare DR event"},
+        {"id": "d3", "label": "Activate recovery plan"},
+        {"id": "d4", "label": "Fail over / apply workaround"},
+        {"id": "d5", "label": "Verify recovery targets met"},
+        {"id": "d6", "label": "Stand down and restore primary"},
+        {"id": "d7", "label": "Post-incident review"}
+      ],
+      "transitions": [["d1", "d2"], ["d2", "d3"], ["d3", "d4"], ["d4", "d5"], ["d5", "d6"], ["d6", "d7"]]
+    },
+    {"type": "text", "style": "body", "content": "Recovery is considered complete once the affected system is verified against its RTO/RPO targets and normal traffic has been restored to the primary environment, or a decision has been made to remain on the failover target longer term. Only then does the Incident Commander stand down the DR event."},
+
+    {"type": "text", "style": "h3", "content": "4.4 Post-Incident Review and Annual Testing"},
+    {"type": "text", "style": "body", "content": "Every DR event, whether a real disruption or a scheduled test, is followed by a post-incident review documenting what worked, what did not, and any gaps between the plan and what the response actually required. Findings are tracked to closure and reviewed by the Change Advisory Board."},
+    {"type": "text", "style": "body", "content": "Independent of any real event, every Tier 1 system's recovery plan is tested at least once per calendar year through a scheduled failover exercise, and the results are logged in the same registry used for real DR events."},
+
+    {"type": "text", "style": "h3", "content": "4.5 Plan Maintenance"},
+    {"type": "text", "style": "body", "content": "A recovery plan that has not been reviewed since the system it describes was last significantly re-architected is not a plan the company can rely on. Every Tier 1 and Tier 2 system's recovery plan must be reviewed by its owning team whenever that system undergoes a material architecture change, and at minimum once per year even absent such a change, with the review date logged alongside the annual test date in the same registry."},
+    {"type": "text", "style": "body", "content": "Plans are written to be executable by whoever is on call, not only by the engineer who wrote them; a plan that only one specific person can follow is treated as a finding at the next annual test and is prioritized for rewriting in plain, step-by-step language."},
+
+    {"type": "text", "style": "h2", "content": "5. References"},
+    {"type": "text", "style": "body", "content": "Incident Management and Response Policy (POL-005), §4 — the standard incident escalation path that determines when a disruption is escalated toward formal DR activation."},
+    {"type": "text", "style": "body", "content": "Vendor and Third-Party Risk Management Policy (POL-008), §4 — governs vendor incident notification, which can itself trigger this policy's response when a Critical-tier vendor supports a Tier 1 system."},
+    {"type": "text", "style": "body", "content": "External standards: ISO/IEC 27001:2022 (https://www.iso.org/standard/27001), business continuity management controls; ITIL 4 (https://www.axelos.com/certifications/itil-service-management), whose service continuity management practice this policy's five-stage lifecycle is modeled on."}
+  ]
+}

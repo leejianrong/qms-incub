@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "doc_id": "POL-006",
+    "title": "Access Control and Least Privilege Policy",
+    "version": "1.0",
+    "effective_date": "2026-09-01",
+    "owner": "Security Engineer"
+  },
+  "blocks": [
+    { "type": "text", "style": "h1", "content": "Access Control and Least Privilege Policy" },
+
+    { "type": "text", "style": "h2", "content": "1. Purpose" },
+    { "type": "text", "style": "body", "content": "This policy defines how access to company systems, production infrastructure, and customer or company data is requested, approved, granted, reviewed, and removed. Its underlying principle is least privilege: every person and every service account should hold the minimum set of permissions required to do their job, for the minimum amount of time required, and no longer." },
+    { "type": "text", "style": "body", "content": "Access control failures are among the most common root causes behind both security incidents and compliance findings, and unlike many other risks they are almost entirely preventable through disciplined process. This policy exists to make that discipline the default rather than something each team reinvents on its own." },
+    { "type": "text", "style": "body", "content": "Least privilege is easiest to state and hardest to sustain: permissions accumulate naturally as people change teams, take on temporary projects, or are granted broad access as a shortcut during an emergency. This policy is as much about the ongoing review and revocation half of the lifecycle as it is about the initial grant, because an access model that only governs how permissions are added will drift toward over-permissioning within a year regardless of how careful the original grants were." },
+
+    { "type": "text", "style": "h2", "content": "2. Scope" },
+    { "type": "text", "style": "body", "content": "This policy covers access to source code repositories, production and staging infrastructure, internal administrative tools, customer support tooling, and any data store classified above Public under the Data Classification and Handling Policy (POL-007), §2. It applies equally to human accounts and to service accounts and automation credentials used by CI/CD pipelines, integrations, and internal services." },
+    { "type": "text", "style": "body", "content": "Access granted as part of onboarding a new employee or contractor, and access removed as part of their offboarding, is governed jointly by this policy and by the IT Onboarding and Offboarding Policy (POL-010); this document defines what access looks like and how it is reviewed, while POL-010 defines the trigger events (start date, role change, termination) that create or remove it." },
+    { "type": "text", "style": "body", "content": "This policy does not cover physical access to office buildings or data centers, which is managed by Facilities under a separate physical security program, nor does it cover access granted to customers within the company's own product surface, which is governed by that product's own authorization model rather than the company's internal identity system." },
+
+    { "type": "text", "style": "h2", "content": "3. Roles & Responsibilities" },
+    {
+      "type": "table",
+      "headers": ["Role", "Responsibility"],
+      "rows": [
+        ["Security Engineer", "Owns this policy, defines the standard permission sets ('access profiles') available per role, and audits granted access on a quarterly cycle"],
+        ["Engineering Manager", "Approves access requests for their direct reports and is accountable for access their team holds remaining appropriate to current responsibilities"],
+        ["IT Support Analyst", "Executes approved provisioning and revocation requests in the identity system and confirms completion back to the requester"],
+        ["Data Protection Officer", "Approves any request for access to data classified Confidential or Restricted, in addition to the requester's manager"]
+      ],
+      "caption": "Table 1. Access control roles and responsibilities."
+    },
+    { "type": "text", "style": "body", "content": "Access profiles are the standard unit this policy operates on: a named bundle of permissions (for example, \"read-only production database access\" or \"deploy approver\") that the Security Engineer maintains centrally, rather than ad hoc individual permission grants assembled per request. Requesting a named profile, rather than a list of raw permissions, is what makes the quarterly review in §4.3 tractable at company scale." },
+    {
+      "type": "table",
+      "headers": ["Profile Tier", "Typical Grant", "Approval Required"],
+      "rows": [
+        ["Standard", "Read access to non-production systems and internal tools", "Manager only"],
+        ["Elevated", "Write access to production systems or Confidential data", "Manager + Security Engineer"],
+        ["Restricted-data", "Any access to data classified Restricted under POL-007", "Manager + Data Protection Officer"],
+        ["Break-glass", "Temporary emergency production access, time-boxed", "Manager (may be retroactive during a live incident)"]
+      ],
+      "caption": "Table 2. Access profile tiers and their approval chains."
+    },
+
+    { "type": "text", "style": "h2", "content": "4. Procedure" },
+
+    { "type": "text", "style": "h3", "content": "4.1 Requesting Access" },
+    { "type": "text", "style": "body", "content": "All access requests are submitted through the identity and access management system, never granted informally through a direct message or a verbal request to whoever happens to hold administrative rights. A request names the specific system or data store, the access profile being requested, and a business justification; standing access to anything touching production requires a justification tied to an actual job responsibility, not general convenience." },
+    { "type": "text", "style": "body", "content": "Temporary elevated access — for example, break-glass production access to debug an active incident — is requested and granted the same way, but is time-boxed by default and automatically expires; it is never issued as standing access under the pretext of an incident." },
+    { "type": "text", "style": "body", "content": "Requests for a new engineer joining an existing team typically ask for whatever standard profile the rest of that team already holds, which the identity system can pre-populate from the team's current membership; requests that deviate from the team's norm — asking for a broader profile than peers in the same role hold — are flagged for the Security Engineer to take a second look at, even after the manager has approved." },
+
+    { "type": "text", "style": "h3", "content": "4.2 Approval and Provisioning" },
+    { "type": "text", "style": "body", "content": "Every request requires approval from the requester's manager. Requests touching a data store classified Confidential or Restricted under the Data Classification and Handling Policy (POL-007), §2 additionally require sign-off from the Data Protection Officer or their delegate. Nobody may approve their own access request, even where they hold sufficient administrative rights to do so technically." },
+    { "type": "text", "style": "body", "content": "Once approved, the IT Support Analyst — or an automated provisioning workflow performing the same function — grants exactly the access profile that was approved, no more and no less, and confirms completion back to the requester and their manager within one business day for standard requests, or within the incident's active window for break-glass requests." },
+    { "type": "text", "style": "body", "content": "Provisioning is always performed through the identity system's own automation where a system supports it; direct, manual grants made outside that automation are permitted only for systems that genuinely have no programmatic provisioning interface, and even then must be logged in the identity system afterward so the grant shows up in the next periodic review rather than existing only in that system's own local user list." },
+
+    { "type": "text", "style": "h3", "content": "4.3 Periodic Review" },
+    { "type": "text", "style": "body", "content": "Every access grant is reviewed at least once per quarter by the Security Engineer, in partnership with the relevant Engineering Manager, who confirms each person still needs what they hold. Access that is no longer justified — because a project ended, a role changed, or the grant was simply never used — is flagged for revocation rather than left in place on the assumption it might be needed again." },
+    { "type": "text", "style": "body", "content": "Service account credentials are reviewed on the same quarterly cycle and are additionally required to be rotated on a schedule appropriate to their risk level; a service account with standing write access to a production data store is rotated no less frequently than every ninety days." },
+    { "type": "text", "style": "body", "content": "The review itself is not a rubber stamp: the Security Engineer pulls actual usage data where a system supports it, so a grant that has simply never been exercised in the review period is visible as a candidate for revocation even if the Engineering Manager would otherwise have approved it on paper. Where usage data isn't available, the Engineering Manager's attestation is accepted, but the Security Engineer's audit trail records that the review relied on attestation rather than observed usage." },
+
+    { "type": "text", "style": "h3", "content": "4.4 Revocation" },
+    { "type": "text", "style": "body", "content": "Access is revoked immediately whenever a periodic review flags it as no longer justified, whenever a role change makes it inappropriate, or whenever an employee or contractor's engagement ends under the IT Onboarding and Offboarding Policy (POL-010), §4. Revocation is executed by the IT Support Analyst and confirmed complete the same business day it is triggered; for a termination, same-day means before the end of that business day regardless of when during the day the termination was processed." },
+
+    { "type": "text", "style": "h3", "content": "4.5 Auditing and Evidence" },
+    { "type": "text", "style": "body", "content": "Every request, approval, provisioning action, review outcome, and revocation is logged in the identity system with a timestamp and the identity of whoever performed it. These logs are the evidence relied on for internal audits and for any external compliance assessment, and they are retained for at least three years — long enough to cover a typical audit lookback window." },
+    { "type": "text", "style": "body", "content": "The Security Engineer produces a quarterly access-control summary for leadership covering the number of grants, revocations, and any exceptions handled that quarter (see §4.6), and this summary is the primary artifact reviewed during the company's annual ISO/IEC 27001 surveillance audit." },
+
+    { "type": "text", "style": "h3", "content": "4.6 Exceptions" },
+    { "type": "text", "style": "body", "content": "An exception to this policy — for example, a legacy system that cannot support the standard approval workflow — must be documented by the Security Engineer, time-boxed, and reviewed at least as often as the standard quarterly cycle. An undocumented deviation from this policy is not an exception; it is a finding, and is tracked and remediated the same way any other audit finding would be." },
+    { "type": "text", "style": "body", "content": "In practice, most exceptions the Security Engineer approves fall into a handful of recurring categories — an acquired company's legacy identity system not yet migrated, a vendor-supplied appliance with its own closed administrative console, or a build tool that predates the current identity platform. Each of these is expected to eventually be retired or migrated rather than treated as a permanent carve-out, and the exception record tracks an expected resolution date accordingly." },
+
+    {
+      "type": "flowchart",
+      "caption": "Figure 1. Access lifecycle from request to revocation.",
+      "steps": [
+        { "id": "request", "label": "Access requested" },
+        { "id": "approve", "label": "Approved by manager (+ DPO if required)" },
+        { "id": "provision", "label": "Provisioned" },
+        { "id": "review", "label": "Periodic review" },
+        { "id": "revoke", "label": "Revoked when no longer justified" }
+      ],
+      "transitions": [
+        ["request", "approve"],
+        ["approve", "provision"],
+        ["provision", "review"],
+        ["review", "revoke"]
+      ]
+    },
+
+    { "type": "text", "style": "h2", "content": "5. References" },
+    { "type": "text", "style": "body", "content": "Related internal policies: Data Classification and Handling Policy (POL-007); IT Onboarding and Offboarding Policy (POL-010)." },
+    { "type": "text", "style": "body", "content": "External standards: this policy implements least-privilege and access-review controls consistent with ISO/IEC 27001:2022 (https://www.iso.org/standard/27001) Annex A access control objectives, and with the access-control control family in NIST SP 800-53 Rev. 5 (https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final). Where the company processes payment card data, the relevant access grants also satisfy the access-restriction requirements of PCI DSS v4.0 (https://www.pcisecuritystandards.org/document_library/)." }
+  ]
+}
