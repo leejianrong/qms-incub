@@ -1,5 +1,6 @@
-"""HTTP surface for the compliance hierarchy (QA-author editor, ADR-0008)
-and the classification wizard / todo list (S1, S2)."""
+"""HTTP surface for the compliance hierarchy (QA-author editor, ADR-0008),
+project creation + AOR intake + the classification wizard (S1, S2, S10),
+and self-attestation (S3)."""
 
 from __future__ import annotations
 
@@ -8,10 +9,11 @@ import uuid
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
+from qms_incub.aor.service import extract_aor_fields_from_document
 from qms_incub.compliance import repository
 from qms_incub.compliance.metrics import compliance_percentage
 from qms_incub.compliance.scoring import score_risk_tier
-from qms_incub.paths import UPLOADED_ARTIFACTS_DIR
+from qms_incub.paths import UPLOADED_AOR_DIR, UPLOADED_ARTIFACTS_DIR
 
 router = APIRouter()
 
@@ -105,7 +107,7 @@ def list_requirements(clause_id: str) -> list[RequirementOut]:
     ]
 
 
-# --- Classification wizard + todo list (S1, S2) ---
+# --- Project creation, AOR intake, and the classification wizard (S1, S2, S10) ---
 
 
 class WizardAnswers(BaseModel):
@@ -116,6 +118,9 @@ class WizardAnswers(BaseModel):
 
 class ProjectIn(BaseModel):
     name: str
+
+
+class ClassifyIn(BaseModel):
     answers: WizardAnswers
 
 
@@ -132,7 +137,9 @@ class TodoItemOut(BaseModel):
 class ProjectOut(BaseModel):
     id: str
     name: str
-    risk_tier: str
+    risk_tier: str | None
+    aor_filename: str | None
+    aor_extracted_fields: dict[str, object] | None
 
 
 class ProjectWithTodosOut(BaseModel):
@@ -153,32 +160,37 @@ def _todo_out(t: repository.TodoItemOut) -> TodoItemOut:
     )
 
 
+def _project_out(project: repository.ProjectOut) -> ProjectOut:
+    return ProjectOut(
+        id=project.id,
+        name=project.name,
+        risk_tier=project.risk_tier,
+        aor_filename=project.aor_filename,
+        aor_extracted_fields=project.aor_extracted_fields,
+    )
+
+
 def _project_with_todos_out(
     project: repository.ProjectOut, todos: list[repository.TodoItemOut]
 ) -> ProjectWithTodosOut:
     return ProjectWithTodosOut(
-        project=ProjectOut(id=project.id, name=project.name, risk_tier=project.risk_tier),
+        project=_project_out(project),
         todos=[_todo_out(t) for t in todos],
         compliance_percentage=compliance_percentage([t.status for t in todos]),
     )
 
 
 @router.post("/projects", status_code=201)
-def create_project(body: ProjectIn) -> ProjectWithTodosOut:
-    tier = score_risk_tier(
-        data_sensitivity_high=body.answers.data_sensitivity_high,
-        customer_facing=body.answers.customer_facing,
-        regulatory_exposure=body.answers.regulatory_exposure,
-    )
-    project, todos = repository.create_project_with_todos(body.name, tier)
-    return _project_with_todos_out(project, todos)
+def create_project(body: ProjectIn) -> ProjectOut:
+    """Wizard step 1: create the Project from just a name. `risk_tier`
+    starts null — an AOR can be attached (`POST /projects/{id}/aor`)
+    before classification (`POST /projects/{id}/classify`, wizard step 2)."""
+    return _project_out(repository.create_project(body.name))
 
 
 @router.get("/projects")
 def list_projects() -> list[ProjectOut]:
-    return [
-        ProjectOut(id=p.id, name=p.name, risk_tier=p.risk_tier) for p in repository.list_projects()
-    ]
+    return [_project_out(p) for p in repository.list_projects()]
 
 
 @router.get("/projects/{project_id}")
@@ -187,6 +199,43 @@ def get_project(project_id: str) -> ProjectWithTodosOut:
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
     todos = repository.list_todos_for_project(project_id)
+    return _project_with_todos_out(project, todos)
+
+
+@router.post("/projects/{project_id}/aor", status_code=201)
+async def upload_aor(project_id: str, file: UploadFile = File(...)) -> ProjectOut:
+    """S10: Docling-parse + LLM-extract the project's own intake document
+    into a fixed set of structured fields. Extraction only, never enters
+    the Qdrant corpus or `GET /documents` (ADR-0012, Q40)."""
+    if repository.get_project(project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    filename = file.filename or f"{project_id}-aor"
+    UPLOADED_AOR_DIR.mkdir(parents=True, exist_ok=True)
+    stored_path = UPLOADED_AOR_DIR / f"{uuid.uuid4()}-{filename}"
+    stored_path.write_bytes(await file.read())
+
+    fields = extract_aor_fields_from_document(stored_path)
+
+    result = repository.attach_aor(project_id, filename, fields.to_dict())
+    if result is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return _project_out(result)
+
+
+@router.post("/projects/{project_id}/classify")
+def classify_project(project_id: str, body: ClassifyIn) -> ProjectWithTodosOut:
+    """Wizard step 2 (S1+S2): score the risk tier from the 3 fixed
+    questions, then generate one TodoItem per matching Requirement."""
+    tier = score_risk_tier(
+        data_sensitivity_high=body.answers.data_sensitivity_high,
+        customer_facing=body.answers.customer_facing,
+        regulatory_exposure=body.answers.regulatory_exposure,
+    )
+    result = repository.classify_project(project_id, tier)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    project, todos = result
     return _project_with_todos_out(project, todos)
 
 

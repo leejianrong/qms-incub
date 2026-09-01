@@ -51,8 +51,8 @@
   {:else}
     <header class="flex items-center gap-3">
       <h1 class="text-2xl font-medium">{data.project.name}</h1>
-      <Badge variant={tierVariant[data.project.risk_tier] ?? "outline"}>
-        {data.project.risk_tier} tier
+      <Badge variant={tierVariant[data.project.risk_tier ?? ""] ?? "outline"}>
+        {data.project.risk_tier ?? "unclassified"}{data.project.risk_tier ? " tier" : ""}
       </Badge>
       <Badge variant="outline">{Math.round(data.compliance_percentage)}% complied</Badge>
     </header>

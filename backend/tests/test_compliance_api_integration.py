@@ -78,8 +78,9 @@ def seeded_hierarchy() -> Iterator[dict[str, str]]:
 
 
 def _submit(name: str, **answers: bool) -> dict:
-    response = client.post("/projects", json={"name": name, "answers": answers})
-    assert response.status_code == 201
+    project = client.post("/projects", json={"name": name}).json()
+    response = client.post(f"/projects/{project['id']}/classify", json={"answers": answers})
+    assert response.status_code == 200
     return response.json()
 
 

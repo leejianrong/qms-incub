@@ -19,6 +19,8 @@ def _get_converter() -> DocumentConverter:
 
 
 def extract_pdf_text(pdf_path: Path) -> str:
-    """Parse a PDF with Docling, preserving table structure, as Markdown."""
+    """Parse a document with Docling, preserving table structure, as
+    Markdown. Despite the name, Docling's converter isn't PDF-only — AOR
+    intake (S10) reuses this for DOCX/XLSX uploads too."""
     result = _get_converter().convert(str(pdf_path))
     return result.document.export_to_markdown()

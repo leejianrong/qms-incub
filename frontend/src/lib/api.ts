@@ -151,10 +151,19 @@ export interface WizardAnswers {
   regulatory_exposure: boolean;
 }
 
+export interface AorExtractedFields {
+  criticality_tier: string;
+  data_classification: string;
+  external_dependencies: string[];
+  in_house_rationale: string;
+}
+
 export interface Project {
   id: string;
   name: string;
-  risk_tier: RiskTier;
+  risk_tier: RiskTier | null;
+  aor_filename: string | null;
+  aor_extracted_fields: AorExtractedFields | null;
 }
 
 export interface TodoItem {
@@ -176,10 +185,36 @@ export interface ProjectWithTodos {
 export function createProject(
   apiBase: string,
   name: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<Project> {
+  return postJson(apiBase, "/projects", { name }, fetchImpl);
+}
+
+export async function uploadAor(
+  apiBase: string,
+  projectId: string,
+  file: File,
+  fetchImpl: typeof fetch = fetch,
+): Promise<Project> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await fetchImpl(`${apiBase}/projects/${projectId}/aor`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!response.ok) {
+    throw new Error(`backend returned ${response.status}`);
+  }
+  return (await response.json()) as Project;
+}
+
+export function classifyProject(
+  apiBase: string,
+  projectId: string,
   answers: WizardAnswers,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectWithTodos> {
-  return postJson(apiBase, "/projects", { name, answers }, fetchImpl);
+  return postJson(apiBase, `/projects/${projectId}/classify`, { answers }, fetchImpl);
 }
 
 export function listProjects(apiBase: string, fetchImpl: typeof fetch = fetch): Promise<Project[]> {

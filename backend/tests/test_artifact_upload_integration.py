@@ -37,10 +37,10 @@ def seeded_project() -> Iterator[dict[str, str]]:
         f"/clauses/{clause['id']}/requirements",
         json={"description": "Upload proof of testing", "risk_tiers": ["low", "medium", "high"]},
     ).json()
+    project = client.post("/projects", json={"name": "Artifact Test Project"}).json()
     project_body = client.post(
-        "/projects",
+        f"/projects/{project['id']}/classify",
         json={
-            "name": "Artifact Test Project",
             "answers": {
                 "data_sensitivity_high": False,
                 "customer_facing": False,

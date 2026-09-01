@@ -1,7 +1,10 @@
 """CRUD for the compliance hierarchy (Standard -> Clause -> Requirement,
-ADR-0008) and for Project/TodoItem creation (S2). Todo generation happens
-in `create_project_with_todos`, in one transaction with the Project
-insert, per SLICES.md V2's integration test plan."""
+ADR-0008) and for Project/TodoItem creation (S1, S2, S10). A Project is
+created from just a name (`create_project`, `risk_tier` starts null);
+classification (`classify_project`) sets `risk_tier` and generates one
+TodoItem per matching Requirement in a single transaction. Splitting them
+lets an AOR (S10) be attached to a Project in between the two steps —
+see `Project`'s docstring in `models.py`."""
 
 from __future__ import annotations
 
@@ -49,7 +52,9 @@ class RequirementOut:
 class ProjectOut:
     id: str
     name: str
-    risk_tier: str
+    risk_tier: str | None
+    aor_filename: str | None
+    aor_extracted_fields: dict[str, object] | None
 
 
 @dataclass
@@ -147,14 +152,52 @@ def list_requirements(clause_id: str) -> list[RequirementOut]:
         ]
 
 
-def create_project_with_todos(
-    name: str, risk_tier: RiskTier
-) -> tuple[ProjectOut, list[TodoItemOut]]:
-    """Wizard submit (S1+S2): create the Project, then one TodoItem per
-    Requirement tagged for `risk_tier`, in a single transaction."""
+def _project_out(project: Project) -> ProjectOut:
+    return ProjectOut(
+        id=project.id,
+        name=project.name,
+        risk_tier=project.risk_tier,
+        aor_filename=project.aor_filename,
+        aor_extracted_fields=project.aor_extracted_fields,
+    )
+
+
+def create_project(name: str) -> ProjectOut:
+    """Wizard step 1 (S1): create the Project from just a name.
+    `risk_tier` starts null — classification (`classify_project`) is a
+    separate step, so an AOR (S10) can be attached in between."""
     with get_session() as session:
-        project = Project(name=name, risk_tier=risk_tier)
+        project = Project(name=name)
         session.add(project)
+        session.flush()
+        return _project_out(project)
+
+
+def attach_aor(
+    project_id: str, filename: str, extracted_fields: dict[str, object]
+) -> ProjectOut | None:
+    """S10: persist an AOR's extracted fields onto its Project. Never
+    touches `PolicyDocumentRow`/the Qdrant corpus (ADR-0012)."""
+    with get_session() as session:
+        project = session.get(Project, project_id)
+        if project is None:
+            return None
+        project.aor_filename = filename
+        project.aor_extracted_fields = extracted_fields
+        session.flush()
+        return _project_out(project)
+
+
+def classify_project(
+    project_id: str, risk_tier: RiskTier
+) -> tuple[ProjectOut, list[TodoItemOut]] | None:
+    """Wizard step 2 (S1+S2): set `risk_tier`, then one TodoItem per
+    Requirement tagged for it, in a single transaction."""
+    with get_session() as session:
+        project = session.get(Project, project_id)
+        if project is None:
+            return None
+        project.risk_tier = risk_tier
         session.flush()
 
         all_requirements = session.query(Requirement).all()
@@ -169,13 +212,13 @@ def create_project_with_todos(
             session.flush()
             todos.append(_todo_out(session, todo))
 
-        return ProjectOut(id=project.id, name=project.name, risk_tier=project.risk_tier), todos
+        return _project_out(project), todos
 
 
 def list_projects() -> list[ProjectOut]:
     with get_session() as session:
         rows = session.query(Project).order_by(Project.created_at.desc()).all()
-        return [ProjectOut(id=r.id, name=r.name, risk_tier=r.risk_tier) for r in rows]
+        return [_project_out(r) for r in rows]
 
 
 def get_project(project_id: str) -> ProjectOut | None:
@@ -183,7 +226,7 @@ def get_project(project_id: str) -> ProjectOut | None:
         row = session.get(Project, project_id)
         if row is None:
             return None
-        return ProjectOut(id=row.id, name=row.name, risk_tier=row.risk_tier)
+        return _project_out(row)
 
 
 def list_todos_for_project(project_id: str) -> list[TodoItemOut]:
