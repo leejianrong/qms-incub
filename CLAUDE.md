@@ -23,7 +23,7 @@ no HTTP dependency on the backend either.
 | Database (PostgreSQL) | `policy_documents` table (id, title, status, chunk_count, error) — Alembic-managed, see `backend/migrations/`. Tracks ingestion status of uploaded documents, not document content. Not the full `Project`/`TodoItem`/`Standard`/`Clause`/`Requirement` model yet (V2/ADR-0008) |
 | Vector store (Qdrant) | In real use since V1 — collection `qms_incub_corpus`, see `qms_incub.rag_clients` |
 | `synthetic-corpus/` | Independent tool generating realistic QMS-policy-shaped PDFs to manually test the backend's RAG pipeline. No shared code with `backend/`, no HTTP call to it either — its output is PDF files on disk; testing them against the backend is a manual upload-and-ask step. See `docs/shaping/synthetic-doc-realism/` for its own planning |
-| Everything else in PLAN.md / SLICES.md (V2, V3, V6, V8) | **Not built yet.** |
+| Everything else in PLAN.md / SLICES.md (V2, V3, V6, V8, V9-V13) | **Not built yet.** |
 
 If you're about to implement a slice, check this table (and `git log`)
 before trusting a stale claim elsewhere that something is "done."
@@ -140,6 +140,9 @@ synthetic-corpus/ Independent tool generating synthetic QMS-policy-shaped PDFs
                   to manually test the backend's RAG pipeline (ADR-0012).
                   Shares no code with backend/, doesn't call it over HTTP either.
 docs/adr/         Architecture decision records, numbered sequentially
+ui-reference/     Static design mock (QMS Console.dc.html) from the UI/UX
+                  engineer — look-and-feel + workflow reference for the
+                  console frontend (SLICES.md V9-V13). Not shipped code.
 scripts/          git-hooks/pre-push — the fast local gate
 ```
 
