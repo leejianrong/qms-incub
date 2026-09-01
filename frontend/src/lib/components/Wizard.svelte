@@ -14,6 +14,7 @@
     type TodoItem,
   } from "$lib/api";
   import { navigate } from "$lib/router.svelte";
+  import { guardedNavigate, setWizardDirty } from "$lib/wizardGuard.svelte";
 
   const apiBase = resolveApiBase(import.meta.env);
 
@@ -34,6 +35,37 @@
   // Step 3: the generated plan preview, grouped by process step (Q41).
   let generatedTodos = $state<TodoItem[]>([]);
   let processSteps = $state<ProcessStep[]>([]);
+
+  // V18 step 3: guards navigation away from the wizard (via Shell's nav,
+  // not just this component's own back link) while there's unsaved setup
+  // — mirrors ui-reference/'s setupDirty. Nothing left to lose once the
+  // plan is generated, so "preview" is never dirty.
+  const dirty = $derived(
+    phase === "classify" || (phase === "intake" && (projectName.trim() !== "" || aorFile !== null)),
+  );
+  $effect(() => {
+    setWizardDirty(dirty);
+    return () => setWizardDirty(false);
+  });
+
+  const STEP_LABELS = ["Project details", "Clarification", "QMS plan"] as const;
+  const PHASE_INDEX: Record<Phase, number> = { intake: 0, classify: 1, preview: 2 };
+  const stepperIndex = $derived(PHASE_INDEX[phase]);
+  const answeredCount = $derived(
+    [dataSensitivityHigh, customerFacing, regulatoryExposure].filter(Boolean).length,
+  );
+  const stepCaptions = $derived([
+    aorFile
+      ? projectName.trim()
+        ? "Name and AOR in"
+        : "AOR in · name missing"
+      : projectName.trim()
+        ? "Name in · AOR optional"
+        : "Project name needed",
+    `${answeredCount} of 3 answered`,
+    "Tailored control set",
+  ]);
+  const heading = $derived((phase === "intake" ? projectName : (project?.name ?? "")).trim() || "New project");
 
   function todosForStep(stepId: string): TodoItem[] {
     return generatedTodos.filter((todo) => todo.process_step_id === stepId);
@@ -92,23 +124,56 @@
   }
 </script>
 
-<main class="mx-auto max-w-xl space-y-6 p-8">
-  <button
-    type="button"
-    class="text-xs text-muted-foreground hover:text-foreground"
-    onclick={() => navigate("/")}
-  >
-    ← Back to projects
-  </button>
+<main class="mx-auto max-w-2xl space-y-6 p-8">
+  <div class="text-[11px] text-muted-foreground">
+    <button type="button" class="hover:text-foreground hover:underline" onclick={() => guardedNavigate("/")}>
+      Projects
+    </button>
+    <span> / New project</span>
+  </div>
+
+  <header class="space-y-1.5">
+    <h1 class="text-[32px] leading-tight font-medium">{heading}</h1>
+    <p class="text-[13px] text-muted-foreground">
+      Step {stepperIndex + 1} of 3 · {STEP_LABELS[stepperIndex]}
+    </p>
+  </header>
+
+  <div class="flex items-start rounded-2xl border border-border bg-card px-2 py-4 shadow-sm">
+    {#each STEP_LABELS as label, i (label)}
+      <div class="flex min-w-0 flex-1 items-start gap-2.5 px-2">
+        {#if i > 0}
+          <span class="mt-[15px] h-px w-7 min-w-2.5 flex-none" class:bg-primary={i <= stepperIndex} class:bg-border={i > stepperIndex}></span>
+        {/if}
+        <span
+          class={[
+            "flex size-[30px] flex-none items-center justify-center rounded-full font-heading text-xs font-medium text-white",
+            i <= stepperIndex ? "bg-primary" : "bg-muted-foreground",
+            i === stepperIndex && "ring-4 ring-primary/15",
+          ]}
+        >
+          {i < stepperIndex ? "✓" : i + 1}
+        </span>
+        <span class="min-w-0">
+          <span
+            class="block font-heading text-xs leading-tight"
+            class:font-medium={i === stepperIndex}
+            class:text-foreground={i <= stepperIndex}
+            class:text-muted-foreground={i > stepperIndex}
+          >
+            {label}
+          </span>
+          <span class="mt-0.5 block text-[11px] text-muted-foreground">{stepCaptions[i]}</span>
+        </span>
+      </div>
+    {/each}
+  </div>
 
   {#if phase === "intake"}
-    <header class="space-y-1">
-      <h1 class="text-2xl font-medium">Start a new project</h1>
-      <p class="text-sm text-muted-foreground">
-        Name your project and, optionally, upload its intake document (AOR) — we'll
-        read what we can from it before you answer the classification questions.
-      </p>
-    </header>
+    <p class="text-sm text-muted-foreground">
+      Name your project and, optionally, upload its intake document (AOR) — we'll read what we can from it
+      before you answer the classification questions.
+    </p>
 
     <Card.Root>
       <Card.Content class="space-y-4 pt-6">
@@ -134,13 +199,9 @@
       </Card.Content>
     </Card.Root>
   {:else if phase === "classify" && project}
-    <header class="space-y-1">
-      <h1 class="text-2xl font-medium">Classify {project.name}</h1>
-      <p class="text-sm text-muted-foreground">
-        3 fixed questions (Q8) determine your project's risk tier and generate its
-        compliance todo list.
-      </p>
-    </header>
+    <p class="text-sm text-muted-foreground">
+      3 fixed questions (Q8) determine your project's risk tier and generate its compliance todo list.
+    </p>
 
     {#if project.aor_extracted_fields}
       <Card.Root>
@@ -185,13 +246,10 @@
       </Card.Content>
     </Card.Root>
   {:else if phase === "preview" && project}
-    <header class="space-y-1">
-      <h1 class="text-2xl font-medium">{project.name}'s compliance plan</h1>
-      <p class="text-sm text-muted-foreground">
-        Classified as <strong>{project.risk_tier} tier</strong> — {generatedTodos.length} compliance
-        todo{generatedTodos.length === 1 ? "" : "s"} generated, grouped by process step.
-      </p>
-    </header>
+    <p class="text-sm text-muted-foreground">
+      Classified as <strong>{project.risk_tier} tier</strong> — {generatedTodos.length} compliance
+      todo{generatedTodos.length === 1 ? "" : "s"} generated, grouped by process step.
+    </p>
 
     <div class="space-y-3">
       {#each processSteps as step (step.id)}

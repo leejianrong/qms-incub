@@ -7,6 +7,7 @@
   import type { Snippet } from "svelte";
   import BellIcon from "@lucide/svelte/icons/bell";
   import StarIcon from "@lucide/svelte/icons/star";
+  import TriangleAlertIcon from "@lucide/svelte/icons/triangle-alert";
   import { navigate, routePath } from "$lib/router.svelte";
   import { resolveApiBase, listProjects, listBlogPosts, listFAQEntries, type Project } from "$lib/api";
   import {
@@ -16,6 +17,14 @@
     markAllProjectsSeen,
     favoriteCount,
   } from "$lib/consoleState.svelte";
+  import {
+    guardedNavigate,
+    getPendingNavigation,
+    cancelPendingNavigation,
+    confirmPendingNavigation,
+  } from "$lib/wizardGuard.svelte";
+  import { Button } from "$lib/components/ui/button/index.js";
+  import * as Dialog from "$lib/components/ui/dialog/index.js";
 
   let { children }: { children?: Snippet } = $props();
 
@@ -59,7 +68,7 @@
 
   function go(path: string) {
     notifOpen = false;
-    navigate(path);
+    guardedNavigate(path);
   }
 
   function openNotification(id: string) {
@@ -202,4 +211,30 @@
   <div>
     {@render children?.()}
   </div>
+
+  <Dialog.Root
+    open={getPendingNavigation() !== null}
+    onOpenChange={(open) => {
+      if (!open) cancelPendingNavigation();
+    }}
+  >
+    <Dialog.Content>
+      <Dialog.Header>
+        <div class="flex items-center gap-3">
+          <span class="flex size-[34px] flex-none items-center justify-center rounded-[10px] bg-destructive/10 text-destructive">
+            <TriangleAlertIcon class="size-[18px]" />
+          </span>
+          <Dialog.Title>Discard project setup?</Dialog.Title>
+        </div>
+        <Dialog.Description>
+          You have not generated the QMS plan yet. Leaving now discards the AOR upload and the clarification
+          answers for this project.
+        </Dialog.Description>
+      </Dialog.Header>
+      <Dialog.Footer>
+        <Button variant="secondary" onclick={() => cancelPendingNavigation()}>Keep editing</Button>
+        <Button onclick={() => confirmPendingNavigation(navigate)}>Discard and leave</Button>
+      </Dialog.Footer>
+    </Dialog.Content>
+  </Dialog.Root>
 </div>
