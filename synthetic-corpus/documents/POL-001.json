@@ -1,0 +1,294 @@
+{
+  "meta": {
+    "doc_id": "POL-001",
+    "title": "Software Change Management Policy",
+    "version": "1.0",
+    "effective_date": "2026-09-01",
+    "owner": "Change Advisory Board Member"
+  },
+  "blocks": [
+    {
+      "type": "text",
+      "style": "h1",
+      "content": "Software Change Management Policy"
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "1. Purpose"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "This policy establishes the controls that govern how changes to production software systems are proposed, reviewed, approved, and implemented across the engineering organization. Its intent is to reduce the frequency and impact of change-related incidents by ensuring that every production change is traceable to an approved request, has been assessed for risk, and has a designated owner accountable for its outcome."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Change management is deliberately separated from the technical review of the change itself: this policy governs the administrative record and approval workflow, while the technical correctness of a change is addressed by the engineering practices referenced in §4."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Poorly controlled change is one of the most common root causes of production incidents industry-wide, and this organization is no exception: post-incident reviews conducted over the past several years have repeatedly identified missing or informal change approval as a contributing factor. This policy exists to close that gap without imposing unnecessary process overhead on low-risk work."
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "2. Scope"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "This policy applies to all changes deployed to production environments that serve external customers or internal business operations, including application code, infrastructure-as-code definitions, database schema migrations, and configuration changes to managed services."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "It does not apply to read-only diagnostic actions (e.g. querying logs or metrics), to changes made entirely within a developer's local or sandbox environment, or to content-only updates to static marketing pages, which are governed by a separate content publishing process outside this policy's scope."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Emergency changes made to restore service during an active incident are permitted to bypass the standard approval sequence in §4, but must be logged retroactively within one business day and reviewed by the Change Advisory Board at its next scheduled session."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Where a system spans multiple regulatory regions, the Requester must additionally confirm that the change does not move data across a jurisdictional boundary in a way that would violate a data-residency commitment; this check is recorded on the change request itself rather than tracked separately."
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "3. Roles & Responsibilities"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Four roles participate in every standard change: the Requester who identifies the need for the change, the Change Advisory Board (CAB) which assesses risk and grants approval, the Implementer who carries out the technical work, and the Release Manager who coordinates the deployment window."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Every decision made under this policy — approval, rejection, or an emergency bypass — is recorded in the change management system with the identity of the decision-maker and a timestamp, forming the audit trail that both internal audit and external assessors rely on when evaluating this control."
+    },
+    {
+      "type": "table",
+      "headers": [
+        "Role",
+        "Responsibility"
+      ],
+      "rows": [
+        [
+          "Requester",
+          "Drafts the change request, including rollback plan and expected impact"
+        ],
+        [
+          "Change Advisory Board",
+          "Classifies risk, approves or rejects the request, and records the decision"
+        ],
+        [
+          "Implementer",
+          "Carries out the approved change and verifies the outcome"
+        ],
+        [
+          "Release Manager",
+          "Schedules the deployment window and coordinates with dependent teams"
+        ]
+      ],
+      "caption": "Table 1. Roles referenced by this procedure."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A single individual may hold more than one of these roles for a low-risk change, but the Requester and the CAB approver must always be different people to preserve separation of duties."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "The CAB itself is a standing committee of at least three members drawn from engineering, security, and operations, with a rotating chair; a quorum of two members, including the chair or their delegate, is required to approve a medium- or high-risk change."
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "4. Procedure"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "The change lifecycle below applies to every standard change request, from initial submission through to closure of the change record."
+    },
+    {
+      "type": "swimlane",
+      "caption": "Figure 1. Standard change request lifecycle.",
+      "lanes": [
+        "Requester",
+        "Change Advisory Board",
+        "Implementer"
+      ],
+      "steps": [
+        {
+          "id": "s1",
+          "label": "Submit change request",
+          "lane": "Requester"
+        },
+        {
+          "id": "s2",
+          "label": "Classify risk",
+          "lane": "Change Advisory Board"
+        },
+        {
+          "id": "s3",
+          "label": "Approve or reject",
+          "lane": "Change Advisory Board"
+        },
+        {
+          "id": "s4",
+          "label": "Schedule window",
+          "lane": "Implementer"
+        },
+        {
+          "id": "s5",
+          "label": "Implement and verify",
+          "lane": "Implementer"
+        },
+        {
+          "id": "s6",
+          "label": "Close change record",
+          "lane": "Change Advisory Board"
+        }
+      ],
+      "transitions": [
+        [
+          "s1",
+          "s2"
+        ],
+        [
+          "s2",
+          "s3"
+        ],
+        [
+          "s3",
+          "s4"
+        ],
+        [
+          "s3",
+          "s6"
+        ],
+        [
+          "s4",
+          "s5"
+        ],
+        [
+          "s5",
+          "s6"
+        ]
+      ]
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.1 Change Request Submission"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "The Requester submits a change request describing the intended change, its business justification, the systems affected, and a rollback plan. All code changes bundled into the request must already have passed the review gates defined in the Code Review and Quality Gate Policy (POL-003), §4, before the request reaches the CAB — a change request referencing unreviewed code is returned to the Requester without a risk classification."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "The request template requires, at minimum: a description of the change, the systems and customer segments affected, the testing already performed, the planned deployment window, and an explicit rollback plan. A request missing any of these fields is returned to the Requester before it is queued for CAB review."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.2 CAB Review and Risk Classification"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "The CAB classifies the request as low, medium, or high risk based on the systems affected, the size of the customer base impacted, and whether the change touches an access-controlled production system. A change that provisions or modifies production credentials additionally requires sign-off from a Security Engineer under the Access Control and Least Privilege Policy (POL-006), §4.2, before the CAB may approve it."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "High-risk changes require a rollback rehearsal in a staging environment before approval; medium- and low-risk changes may proceed directly to scheduling once approved."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A request the CAB rejects is returned to the Requester with the specific concern recorded against the change record, rather than a bare rejection, so that a resubmission can address the concern directly instead of repeating the same review cycle."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.3 Implementation and Verification"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Once approved, the change proceeds to deployment under the Release and Deployment Management Policy (POL-004), §4, which governs the deployment window, staged rollout, and post-deployment monitoring. The Implementer verifies the change against the acceptance criteria stated in the original request before the CAB closes the change record."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.4 Post-Implementation Review"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "For every high-risk change, and for any change that required an emergency bypass of §4.1-§4.2, the CAB convenes a brief post-implementation review within five business days. The review confirms that the change achieved its intended outcome and that the rollback plan, had it been needed, would have worked as written."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Findings from a post-implementation review that point to a gap in this policy itself — rather than a one-off execution error — are logged as a policy improvement item and addressed at the CAB's next quarterly policy review."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.5 Change Calendar and Blackout Periods"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "The CAB maintains a shared change calendar so that Requesters can see what other changes are scheduled nearby in time, and avoid scheduling two changes to interdependent systems in the same deployment window without coordinating."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "During a designated blackout period — typically a period of unusually high customer traffic, such as a major seasonal sales event — only changes classified as low risk, or changes required to remediate an active incident, may proceed. Medium- and high-risk changes are deferred until the blackout period ends."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A team that believes its change should be exempt from a blackout period may request an exception from the CAB chair, who weighs the business cost of deferral against the incremental risk of proceeding during a period of reduced monitoring capacity."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Blackout periods are published at least four weeks in advance so that teams can plan their own release schedules around them rather than discovering a conflict at submission time."
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "5. References"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Related internal policies: Code Review and Quality Gate Policy (POL-003), Release and Deployment Management Policy (POL-004), Access Control and Least Privilege Policy (POL-006)."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "This policy's change-classification model is informed by ITIL 4 service transition practices (https://www.axelos.com/certifications/itil-service-management) and by the change-management control objectives of ISO/IEC 27001:2022 (https://www.iso.org/standard/27001)."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Change records, including CAB decisions and post-implementation review findings, are retained for a minimum of three years to support both internal audit and any external certification assessment against the standards cited above."
+    }
+  ]
+}

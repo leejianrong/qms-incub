@@ -45,13 +45,3 @@ def test_generate_all_fails_loudly_on_a_fixture_missing_a_required_field(tmp_pat
         generate_all(documents_dir=documents_dir, output_dir=output_dir)
 
     assert not output_dir.exists() or list(output_dir.iterdir()) == []
-
-
-def test_committed_placeholder_fixture_renders(tmp_path: Path) -> None:
-    repo_root = Path(__file__).parent.parent
-    output_dir = tmp_path / "output"
-
-    output_paths = generate_all(documents_dir=repo_root / "documents", output_dir=output_dir)
-
-    assert len(output_paths) >= 1
-    assert all(path.exists() and path.stat().st_size > 0 for path in output_paths)

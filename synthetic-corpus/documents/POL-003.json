@@ -1,0 +1,294 @@
+{
+  "meta": {
+    "doc_id": "POL-003",
+    "title": "Code Review and Quality Gate Policy",
+    "version": "1.0",
+    "effective_date": "2026-09-01",
+    "owner": "Engineering Manager"
+  },
+  "blocks": [
+    {
+      "type": "text",
+      "style": "h1",
+      "content": "Code Review and Quality Gate Policy"
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "1. Purpose"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "This policy defines the mandatory review process and automated quality gates that every code change must pass before it may be merged into a mainline branch, establishing a consistent quality bar across the engineering organization independent of any individual reviewer's judgment."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "It exists to catch defects, design issues, and security weaknesses before they reach a change request under the Software Change Management Policy, not to replace that policy's separate approval workflow."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A second reviewer's perspective consistently catches classes of defect that the author, having just written the code, cannot reliably catch alone — this is the single strongest justification for mandatory review, ahead of any specific technical benefit."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "This policy is deliberately narrow: it governs the mechanics of getting a change reviewed and merged, not the broader engineering practices — architecture, testing strategy, or documentation standards — that a team applies within its own codebase, which remain a matter of team-level convention."
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "2. Scope"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "This policy applies to every code change merged into a repository that contributes to a production system, regardless of the size of the change or the seniority of its author."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Documentation-only changes and changes confined to a repository's test fixtures still require at least one reviewer's approval, but are exempt from the static-analysis and coverage thresholds in §4.2, which apply only to production code paths."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Generated code — for example, code produced by a schema compiler or an API client generator — is exempt from manual review provided the generator itself is a reviewed, version-pinned dependency; the review burden in that case falls on whoever last changed the generator configuration."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A repository designated as experimental or archived by its owning team may be exempted from this policy entirely by its Engineering Manager, provided the repository does not build any artifact that reaches a production system."
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "3. Roles & Responsibilities"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Engineering Managers own this policy and adjudicate disputes between an author and a reviewer that cannot be resolved through discussion on the pull request itself. Every other role's responsibility is scoped to a single pull request at a time."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A Reviewer is expected to respond to a review request within one business day; if no reviewer responds within that window, the Author may escalate to their Engineering Manager to assign one, rather than waiting indefinitely."
+    },
+    {
+      "type": "table",
+      "headers": [
+        "Gate",
+        "Threshold"
+      ],
+      "rows": [
+        [
+          "Reviewer approval",
+          "At least one approval from someone other than the author"
+        ],
+        [
+          "Automated test coverage",
+          "No decrease versus the target branch"
+        ],
+        [
+          "Static analysis",
+          "Zero unresolved critical or high-severity findings"
+        ],
+        [
+          "CI pipeline",
+          "All required checks passing before merge"
+        ]
+      ],
+      "caption": "Table 1. Quality gates enforced before merge."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "These thresholds are enforced uniformly across every repository in scope; a team that believes a threshold does not fit its situation raises the concern with its Engineering Manager rather than disabling the check locally, since a locally disabled check is invisible to anyone auditing the organization's overall quality posture."
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "4. Procedure"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Every pull request moves through the same review cycle, whether it introduces a single-line fix or a large feature."
+    },
+    {
+      "type": "swimlane",
+      "caption": "Figure 1. Code review cycle.",
+      "lanes": [
+        "Author",
+        "CI System",
+        "Reviewer"
+      ],
+      "steps": [
+        {
+          "id": "s1",
+          "label": "Open pull request",
+          "lane": "Author"
+        },
+        {
+          "id": "s2",
+          "label": "Run automated checks",
+          "lane": "CI System"
+        },
+        {
+          "id": "s3",
+          "label": "Review code",
+          "lane": "Reviewer"
+        },
+        {
+          "id": "s4",
+          "label": "Request changes",
+          "lane": "Reviewer"
+        },
+        {
+          "id": "s5",
+          "label": "Approve",
+          "lane": "Reviewer"
+        },
+        {
+          "id": "s6",
+          "label": "Merge",
+          "lane": "CI System"
+        }
+      ],
+      "transitions": [
+        [
+          "s1",
+          "s2"
+        ],
+        [
+          "s2",
+          "s3"
+        ],
+        [
+          "s3",
+          "s4"
+        ],
+        [
+          "s3",
+          "s5"
+        ],
+        [
+          "s4",
+          "s1"
+        ],
+        [
+          "s5",
+          "s6"
+        ]
+      ]
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.1 Opening a Pull Request"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "The Author opens a pull request describing the change and, where the change is part of a larger initiative, linking the change request tracked under the Software Change Management Policy (POL-001), §4. The description must state how the change was tested."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A pull request that touches more than roughly 400 lines of production code should be split into smaller, independently reviewable pull requests wherever the change allows it; a large pull request is harder to review carefully and tends to receive a shallower review in practice."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.2 Automated Checks and Human Review"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "The CI system runs the thresholds listed in Table 1 before a human reviewer is assigned; a pull request that fails a required check is not eligible for review until it passes. This review gate is one of the mandatory stages a project must clear under the Secure Software Development Lifecycle Policy (POL-002), §4.2, before it may proceed to a release candidate."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A Reviewer either approves the change, or requests changes with specific, actionable comments; a pull request may cycle through revision more than once before it is approved."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A Reviewer who lacks sufficient context to assess part of a change — for example, an unfamiliar subsystem — should say so explicitly and request a second reviewer with the relevant background, rather than approving out of deference to the Author."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.3 Merge"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Once approved and all required checks pass, the CI system merges the change automatically. The Author remains responsible for monitoring the change once it reaches production, in coordination with whoever holds the Implementer role for the associated change request."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A merged change that later needs to be reverted is reverted through a new pull request following the same review cycle, not through a direct push — this keeps the revert itself subject to the same quality gates as any other change."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.4 Escalation and Emergency Exceptions"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A change required to restore service during an active incident may bypass §4.1's review requirement with the on-call Engineering Manager's explicit sign-off, recorded on the pull request itself. The change still passes through CI, and any check that is skipped is skipped explicitly and named in the pull request description, never silently."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Every emergency exception is reviewed retroactively at the next scheduled engineering-quality review, and a pattern of repeated exceptions from the same team is treated as a signal that the team's own process, not just the individual incident, needs attention."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.5 Review Metrics and Continuous Improvement"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Engineering Managers track two metrics for their teams on a rolling basis: median time from pull request open to first review response, and median time from open to merge. These metrics inform staffing and process discussions but are never used to evaluate an individual reviewer's or author's performance in isolation."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A team whose review turnaround consistently exceeds the one-business-day target in §3 is expected to discuss the underlying cause — for example, too few reviewers with context on a given subsystem — at its regular retrospective, rather than treating a slow review cycle as an unavoidable cost of doing business."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Quarterly, Engineering Managers review a sample of merged pull requests across the organization to confirm that review comments reflect substantive engagement with the change rather than a rubber-stamp approval, and share the aggregate findings at the engineering-wide quality review referenced in §4.4."
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "5. References"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Related internal policies: Software Change Management Policy (POL-001), Secure Software Development Lifecycle Policy (POL-002)."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "This policy's quality-gate model reflects common practice for ISO 9001:2015-aligned process control (https://www.iso.org/standard/62085.html), which requires documented verification before a work product is released downstream."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Pull request history, including review comments and approval records, is retained indefinitely in the source control system itself and is not subject to a separate retention schedule."
+    }
+  ]
+}

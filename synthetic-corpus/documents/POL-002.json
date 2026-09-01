@@ -1,0 +1,275 @@
+{
+  "meta": {
+    "doc_id": "POL-002",
+    "title": "Secure Software Development Lifecycle Policy",
+    "version": "1.0",
+    "effective_date": "2026-09-01",
+    "owner": "Security Engineer"
+  },
+  "blocks": [
+    {
+      "type": "text",
+      "style": "h1",
+      "content": "Secure Software Development Lifecycle Policy"
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "1. Purpose"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "This policy defines the security activities that must occur at each stage of software development, from initial design through to production monitoring, so that security review is embedded in the normal engineering workflow rather than bolted on immediately before release."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "It is written for engineering teams building internet-facing services or software that processes customer data, and it establishes the minimum bar every such team must meet regardless of the specific technology stack in use."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Security defects found after release are consistently more expensive to fix than the same defect found during design or build, both in engineering time and in the operational risk of running vulnerable code in production while a fix is prepared. This policy is written around that asymmetry."
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "2. Scope"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "This policy applies to all product engineering teams building or materially modifying internet-facing services, APIs, or software that stores or processes customer data. It applies from the first design review through to the retirement of the service."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Internal tooling with no external network exposure and no access to customer data is exempt from the threat-modeling requirement in §4.1, but remains subject to the secure-build and testing requirements in §4.2 and §4.3."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Third-party software integrated without modification is out of scope for this policy; its risk is instead assessed under the Vendor and Third-Party Risk Management Policy."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A service that is retired rather than modified still falls under §4.4's monitoring expectations until its decommissioning is complete and its credentials have been revoked, since a half-decommissioned service is frequently the least-monitored asset in an environment."
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "3. Roles & Responsibilities"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Security Engineers own this policy and provide threat-modeling facilitation on request. Software Engineers are responsible for implementing the controls this policy requires at each stage of their own work. QA Engineers own the security test suite referenced in §4.3, and Product Managers are responsible for prioritizing remediation work identified during any stage of the lifecycle."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A team may nominate a security champion — typically a Software Engineer with additional security training — to act as the first point of contact for questions arising during design and build, escalating to a dedicated Security Engineer only when the question requires it."
+    },
+    {
+      "type": "table",
+      "headers": [
+        "Role",
+        "Responsibility"
+      ],
+      "rows": [
+        [
+          "Security Engineer",
+          "Facilitates threat modeling and reviews high-risk designs"
+        ],
+        [
+          "Software Engineer",
+          "Implements required controls at each SSDLC stage"
+        ],
+        [
+          "QA Engineer",
+          "Maintains and executes the security regression test suite"
+        ],
+        [
+          "Product Manager",
+          "Prioritizes remediation of findings raised at any stage"
+        ]
+      ],
+      "caption": "Table 1. Roles referenced by this procedure."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Security Engineers are assigned to a portfolio of teams rather than a single team, so a given engineer typically facilitates threat modeling for several projects in parallel; teams are encouraged to request a session well ahead of their intended Build start date rather than at the last minute."
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "4. Procedure"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Every in-scope project moves through the six stages below in order; a project may not proceed to Build until its design has been threat-modeled, and may not proceed to Deploy until it has passed the security test gates in §4.3."
+    },
+    {
+      "type": "flowchart",
+      "caption": "Figure 1. Secure software development lifecycle stages.",
+      "steps": [
+        {
+          "id": "design",
+          "label": "Design",
+          "lane": null
+        },
+        {
+          "id": "threat_model",
+          "label": "Threat model",
+          "lane": null
+        },
+        {
+          "id": "build",
+          "label": "Build",
+          "lane": null
+        },
+        {
+          "id": "test",
+          "label": "Security test",
+          "lane": null
+        },
+        {
+          "id": "deploy",
+          "label": "Deploy",
+          "lane": null
+        },
+        {
+          "id": "monitor",
+          "label": "Monitor",
+          "lane": null
+        }
+      ],
+      "transitions": [
+        [
+          "design",
+          "threat_model"
+        ],
+        [
+          "threat_model",
+          "build"
+        ],
+        [
+          "build",
+          "test"
+        ],
+        [
+          "test",
+          "deploy"
+        ],
+        [
+          "deploy",
+          "monitor"
+        ]
+      ]
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.1 Design and Threat Modeling"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Before implementation begins, the team documents the system's trust boundaries, data flows, and the classification of any data it will handle under the Data Classification and Handling Policy (POL-007), §4. A Security Engineer facilitates a threat-modeling session using this documentation to identify credible attack paths and the mitigations each one requires."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "The output of this session is a short written record of the threats identified and the corresponding mitigation for each, attached to the project's design documentation. A design with an unmitigated high-severity threat may not proceed to Build until the mitigation is designed, even if that means revisiting an earlier design decision."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.2 Secure Build"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "All code produced during the build stage must pass the mandatory review gates defined in the Code Review and Quality Gate Policy (POL-003), §4, including its static-analysis threshold. Build pipeline credentials, including any that grant access to package registries or deployment targets, must be provisioned according to the Access Control and Least Privilege Policy (POL-006), §4.1, rather than embedded directly in build scripts."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Dependencies pulled into the build must come from an approved internal package mirror rather than directly from a public registry, so that a compromised upstream package cannot reach a production build without first passing through the mirror's own vetting step."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.3 Security Testing"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "QA Engineers run the automated security regression suite — covering, at minimum, the risk categories in the OWASP Top 10 (https://owasp.org/www-project-top-ten/) — against every release candidate. Any test dataset drawn from production data must first be classified and handled per the Data Classification and Handling Policy (POL-007), §4.1, before it may be used in this stage."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A finding at this stage is triaged the same day it is raised: a critical or high-severity finding blocks the release candidate outright, while a lower-severity finding may be accepted with a documented remediation deadline at the Product Manager's discretion."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.4 Deployment and Monitoring"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Once security testing passes, the release proceeds under the organization's standard deployment process. Post-deployment, the team monitors for anomalous authentication patterns and error-rate spikes for at least 72 hours following any change to an authentication or authorization code path."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "This monitoring window is deliberately longer than the standard post-deployment window used elsewhere in the organization, reflecting the fact that authentication and authorization regressions are frequently exploited before they are noticed through ordinary error-rate monitoring alone."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.5 Third-Party and Open-Source Component Review"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Every third-party library or open-source component introduced during the Build stage is recorded in the project's software bill of materials (SBOM), including its version and license. A component with no maintained upstream release in the past two years requires explicit Security Engineer sign-off before it may be introduced."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "The SBOM is checked against a known-vulnerability feed on an ongoing basis, not only at build time; a component found to carry a newly disclosed critical vulnerability triggers an out-of-cycle remediation regardless of where the project currently sits in its own release schedule."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A component's license must be compatible with this organization's distribution model; a Security Engineer or the legal team flags an incompatible license before the component reaches the Build stage, since removing a component after it is deeply integrated is markedly more expensive than substituting it beforehand."
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "5. References"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Related internal policies: Code Review and Quality Gate Policy (POL-003), Access Control and Least Privilege Policy (POL-006), Data Classification and Handling Policy (POL-007)."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "External references: OWASP Top 10 (https://owasp.org/www-project-top-ten/) and NIST SP 800-53 Rev. 5 (https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final), particularly its System and Services Acquisition (SA) control family."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Threat-modeling records and security test results are retained for the lifetime of the service plus one year, so that a later incident investigation can reconstruct what was known about the system's risk profile at the time it was built."
+    }
+  ]
+}

@@ -1,0 +1,295 @@
+{
+  "meta": {
+    "doc_id": "POL-004",
+    "title": "Release and Deployment Management Policy",
+    "version": "1.0",
+    "effective_date": "2026-09-01",
+    "owner": "Release Manager"
+  },
+  "blocks": [
+    {
+      "type": "text",
+      "style": "h1",
+      "content": "Release and Deployment Management Policy"
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "1. Purpose"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "This policy defines how approved changes move from a merged code state into production, including the staged rollout, sign-off, and monitoring steps required before a release is considered complete."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Its goal is to make every production deployment predictable and reversible, so that a regression can be detected and rolled back before it affects a meaningful share of customers."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A release process that is unpredictable in timing or difficult to reason about discourages teams from shipping small, frequent changes, which in turn makes each individual release riskier — this policy is written to keep releases boring and frequent rather than rare and high-stakes."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "This policy assumes the technical practices that make frequent, low-risk releases possible — automated regression testing, staged rollout tooling, and fast rollback — are already in place; it governs how those practices are used, not how they are built."
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "2. Scope"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "This policy applies to every deployment to a production environment, including scheduled releases, hotfixes, and configuration-only deployments that do not involve a code change."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Deployments to internal staging or development environments are not subject to the sign-off requirements in §4, though teams are encouraged to rehearse the same sequence there before a production release."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A deployment triggered automatically by an infrastructure scaling event (for example, adding a replica of an already-deployed version) is not a new release under this policy and does not require fresh sign-off, since no new code or configuration is being introduced."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A release that includes a database schema migration is additionally subject to the migration-review step in §4.1, since a schema change is one of the few categories of deployment that cannot always be rolled back cleanly by redeploying the previous version alone."
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "3. Roles & Responsibilities"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "The Release Manager coordinates the deployment window and is the single point of contact during a release. QA Engineers own the regression suite that gates release-candidate sign-off, and Site Reliability Engineers own the staged rollout and post-deployment monitoring."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "For a release spanning multiple services with interdependencies, the Release Manager also confirms the deployment order across services, since deploying a dependent service ahead of the service it depends on is a common and avoidable cause of a failed rollout."
+    },
+    {
+      "type": "table",
+      "headers": [
+        "Environment",
+        "Approval Required",
+        "Rollback SLA"
+      ],
+      "rows": [
+        [
+          "Staging",
+          "None",
+          "N/A"
+        ],
+        [
+          "Production (staged rollout)",
+          "QA sign-off",
+          "15 minutes"
+        ],
+        [
+          "Production (full rollout)",
+          "QA sign-off + SRE go/no-go",
+          "30 minutes"
+        ]
+      ],
+      "caption": "Table 1. Approval and rollback expectations by environment."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "These rollback SLAs are measured from the moment a regression is confirmed to the moment the previous version is fully restored, not from the moment the regression first began; a Site Reliability Engineer who cannot meet an SLA escalates immediately rather than continuing to attempt a rollback alone."
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "4. Procedure"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A release candidate proceeds through the stages below in order; a failure at any stage halts the release and returns it to the Release Manager rather than proceeding to the next stage."
+    },
+    {
+      "type": "swimlane",
+      "caption": "Figure 1. Release and deployment lifecycle.",
+      "lanes": [
+        "Release Manager",
+        "QA Engineer",
+        "Site Reliability Engineer"
+      ],
+      "steps": [
+        {
+          "id": "s1",
+          "label": "Freeze release branch",
+          "lane": "Release Manager"
+        },
+        {
+          "id": "s2",
+          "label": "Run regression suite",
+          "lane": "QA Engineer"
+        },
+        {
+          "id": "s3",
+          "label": "Sign off release candidate",
+          "lane": "QA Engineer"
+        },
+        {
+          "id": "s4",
+          "label": "Deploy to staging slice",
+          "lane": "Site Reliability Engineer"
+        },
+        {
+          "id": "s5",
+          "label": "Deploy to production",
+          "lane": "Site Reliability Engineer"
+        },
+        {
+          "id": "s6",
+          "label": "Monitor post-deploy",
+          "lane": "Site Reliability Engineer"
+        }
+      ],
+      "transitions": [
+        [
+          "s1",
+          "s2"
+        ],
+        [
+          "s2",
+          "s3"
+        ],
+        [
+          "s3",
+          "s4"
+        ],
+        [
+          "s4",
+          "s5"
+        ],
+        [
+          "s5",
+          "s6"
+        ]
+      ]
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.1 Branch Freeze and Regression"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "The Release Manager freezes the release branch and notifies dependent teams. Every deployment traces back to an approved change record under the Software Change Management Policy (POL-001), §4 — a release candidate with no linked change record cannot proceed past this stage."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "QA then runs the full regression suite against the frozen branch; a failing test returns the branch to the owning team for a fix, and the freeze is extended rather than lifted, so that unrelated changes cannot slip into the release while the failure is being investigated."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A release that bundles a database schema migration additionally requires the migration to be reviewed for backward compatibility with the currently running version, so that the old and new application versions can both operate correctly during the staged rollout window in §4.2."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.2 Staged Rollout"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Once QA signs off, Site Reliability Engineers deploy the release to a small slice of production traffic before a full rollout, watching the error rate and latency dashboards for the duration of the staged window."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "The size of the initial traffic slice depends on the release's risk classification carried over from its change record: a low-risk change may start at a larger traffic share than a high-risk one, shortening the time to full rollout for routine work without weakening the safeguard for riskier changes."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.3 Post-Deployment Monitoring and Rollback"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "If monitoring during or after the staged rollout detects a regression exceeding the thresholds in Table 1, the on-call Site Reliability Engineer initiates the rollback procedure defined in the Incident Management and Response Policy (POL-005), §4, rather than attempting a forward fix under release-window time pressure."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A rollback is itself a deployment and is logged against the same release record, so that the eventual post-implementation review under the Software Change Management Policy (POL-001), §4.4, has a complete picture of what actually reached production and for how long."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.4 Communication and Stakeholder Notification"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "The Release Manager notifies affected internal stakeholders — customer support, and any team whose service depends on the one being released — ahead of a scheduled release window, and again once the release completes or is rolled back."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "For a release visible to external customers, such as one that changes user-facing behavior, the Product Manager decides whether external release notes are needed; this decision is independent of the technical sign-off process in §4.1-§4.2."
+    },
+    {
+      "type": "text",
+      "style": "h3",
+      "content": "4.5 Canary Analysis and Automated Rollback Triggers"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Where the deployment platform supports it, the staged rollout in §4.2 is paired with automated canary analysis: a statistical comparison of the new version's error rate and latency against the previous version's, computed continuously during the staged window rather than checked only at its end."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "If the canary analysis crosses a pre-configured threshold, the platform automatically halts the rollout and pages the on-call Site Reliability Engineer, who then decides between an automatic rollback and a manual investigation, depending on how far the metric has moved past the threshold."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "A service without canary-analysis tooling in place falls back to the manual dashboard-watching procedure in §4.2 until that tooling is available; this policy does not require canary analysis, but strongly recommends it for any service handling a meaningful share of customer traffic."
+    },
+    {
+      "type": "text",
+      "style": "h2",
+      "content": "5. References"
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Related internal policies: Software Change Management Policy (POL-001), Incident Management and Response Policy (POL-005)."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "This policy's staged-rollout and rollback-SLA model follows ITIL 4 release management practice (https://www.axelos.com/certifications/itil-service-management) and the process-control expectations of ISO 9001:2015 (https://www.iso.org/standard/62085.html)."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Deployment and rollback records are retained for the same three-year period as change records under the Software Change Management Policy (POL-001), §5, since the two record types are frequently reviewed together during an audit."
+    },
+    {
+      "type": "text",
+      "style": "body",
+      "content": "Stakeholder notification records are retained for one year, matching the retention period this organization applies to routine internal operational communications more broadly."
+    }
+  ]
+}

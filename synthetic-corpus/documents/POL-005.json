@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "doc_id": "POL-005",
+    "title": "Incident Management and Response Policy",
+    "version": "1.0",
+    "effective_date": "2026-09-01",
+    "owner": "Site Reliability Engineer"
+  },
+  "blocks": [
+    { "type": "text", "style": "h1", "content": "Incident Management and Response Policy" },
+
+    { "type": "text", "style": "h2", "content": "1. Purpose" },
+    { "type": "text", "style": "body", "content": "This policy establishes a consistent, auditable process for detecting, triaging, mitigating, and resolving incidents that affect the availability, integrity, or confidentiality of the company's software products and supporting infrastructure. It exists so that when something goes wrong in production, every responder knows their role without having to improvise a process under pressure, and so that leadership and customers can trust that incidents are handled with appropriate urgency and are followed by an honest accounting of what happened." },
+    { "type": "text", "style": "body", "content": "An incident, for the purposes of this policy, is any unplanned event that degrades or interrupts a production service, exposes customer or company data outside its intended boundary, or otherwise creates material risk to customers, employees, or the business. Planned maintenance and known, budgeted degradations are out of scope unless they exceed their approved window, at which point they convert into an incident under this same process." },
+
+    { "type": "text", "style": "h2", "content": "2. Scope" },
+    { "type": "text", "style": "body", "content": "This policy applies to every production system operated or hosted on behalf of the company, including systems run by contracted vendors under the company's operational responsibility. It applies to all employees and contractors who develop, operate, or support those systems, and it applies regardless of whether the underlying root cause turns out to be a software defect, an infrastructure failure, a third-party outage, or human error." },
+    { "type": "text", "style": "body", "content": "Security incidents involving suspected unauthorized access, data exfiltration, or credential compromise are handled under this same lifecycle but are escalated immediately to the Security Engineer on call, who may invoke additional containment steps beyond what is described here. Nothing in this policy overrides legal or regulatory breach-notification obligations, which the Data Protection Officer tracks separately." },
+
+    { "type": "text", "style": "h2", "content": "3. Roles & Responsibilities" },
+    {
+      "type": "table",
+      "headers": ["Role", "Responsibility"],
+      "rows": [
+        ["Incident Commander (on-call Site Reliability Engineer)", "Owns the incident end to end: coordinates responders, makes the call on severity and escalation, and is the single source of truth for status until the incident is closed"],
+        ["Engineering Manager", "Ensures the right engineers are pulled in, protects the response team from unrelated interruptions, and approves any emergency change needed to mitigate"],
+        ["Security Engineer", "Leads response for any incident with a suspected security dimension and decides when law enforcement or external counsel needs to be involved"],
+        ["Product Manager", "Owns customer- and stakeholder-facing communication and decides what gets published to the status page"],
+        ["IT Support Analyst", "Handles internal employee-facing impact (e.g. an outage of an internal tool) and routes affected-user reports to the Incident Commander"]
+      ],
+      "caption": "Table 1. Incident response roles and responsibilities."
+    },
+    { "type": "text", "style": "body", "content": "Exactly one person holds the Incident Commander role at any given time during an active incident; the role can be handed off explicitly (with an announcement in the incident channel) but must never be ambiguous. Anyone in the company may declare an incident; only the Incident Commander may declare one resolved." },
+
+    { "type": "text", "style": "h2", "content": "4. Procedure" },
+
+    { "type": "text", "style": "h3", "content": "4.1 Detection and Triage" },
+    { "type": "text", "style": "body", "content": "Incidents are detected either automatically, through monitoring and alerting thresholds configured on each production service, or manually, through a report from an employee, customer support, or a customer directly. Whoever first detects a candidate incident opens an incident channel, pages the on-call Site Reliability Engineer if that hasn't already happened automatically, and posts a first, best-effort description of the impact." },
+    { "type": "text", "style": "body", "content": "The on-call Site Reliability Engineer, acting as Incident Commander until handed off, has fifteen minutes from being paged to make an initial severity call using the table in §4.2. This first call is deliberately allowed to be wrong in the direction of caution — over-declaring severity and downgrading later is preferred to under-declaring and having to escalate mid-response." },
+
+    { "type": "text", "style": "h3", "content": "4.2 Severity Classification" },
+    {
+      "type": "table",
+      "headers": ["Severity", "Definition", "Target Response", "Target Resolution"],
+      "rows": [
+        ["Sev1 — Critical", "Widespread customer-facing outage or confirmed data exposure", "15 minutes", "4 hours"],
+        ["Sev2 — Major", "Significant degradation of a core product capability for a large subset of customers", "30 minutes", "8 hours"],
+        ["Sev3 — Minor", "Limited impact confined to a non-critical feature or a small customer segment", "4 business hours", "3 business days"],
+        ["Sev4 — Low", "Cosmetic or internal-only issue with no direct customer impact", "next business day", "10 business days"]
+      ],
+      "caption": "Table 2. Incident severity levels and response targets."
+    },
+
+    { "type": "text", "style": "h3", "content": "4.3 Mitigation and Escalation" },
+    { "type": "text", "style": "body", "content": "Once severity is assigned, the Incident Commander pulls in whichever engineers, subject-matter owners, or vendor contacts are needed to mitigate, and keeps the incident channel updated with a running timeline. If the fastest path to mitigation is rolling back a recent deployment, that rollback follows the emergency-change path defined in the Release and Deployment Management Policy (POL-004), §4, rather than the standard change process." },
+    { "type": "text", "style": "body", "content": "Any Sev1 or Sev2 incident that is caused by, or threatens to cause, an extended loss of a production data store or region also triggers an assessment against the Business Continuity and Disaster Recovery Policy (POL-009), §4; the Incident Commander and the Site Reliability Engineer on call jointly decide whether to formally invoke that plan or continue mitigating within this incident's normal scope." },
+    { "type": "text", "style": "body", "content": "Communication follows a fixed cadence rather than an ad hoc one: Sev1 incidents get a status update at least every thirty minutes, Sev2 every hour, and Sev3/Sev4 at each material change in status. The Product Manager decides, in consultation with the Incident Commander, when and what to publish externally." },
+
+    {
+      "type": "flowchart",
+      "caption": "Figure 1. Incident lifecycle.",
+      "steps": [
+        { "id": "detect", "label": "Incident detected" },
+        { "id": "triage", "label": "Triaged and severity assigned" },
+        { "id": "mitigate", "label": "Mitigated" },
+        { "id": "resolve", "label": "Resolved" },
+        { "id": "review", "label": "Post-incident review completed" }
+      ],
+      "transitions": [
+        ["detect", "triage"],
+        ["triage", "mitigate"],
+        ["mitigate", "resolve"],
+        ["resolve", "review"]
+      ]
+    },
+
+    { "type": "text", "style": "h3", "content": "4.4 Resolution and Post-Incident Review" },
+    { "type": "text", "style": "body", "content": "An incident is resolved when the underlying impact has stopped and the Incident Commander confirms the affected service has returned to its normal operating state, not merely when a workaround has been applied. Resolution is announced in the incident channel with a short summary of impact, duration, and mitigation." },
+    { "type": "text", "style": "body", "content": "Every Sev1 and Sev2 incident receives a blameless post-incident review within five business days, owned by the Incident Commander and attended by every team that participated in the response. The review produces a written timeline, a root cause (or the best available explanation where a definitive root cause cannot be established), and a set of follow-up actions with named owners and due dates, tracked to completion by the Engineering Manager." },
+    { "type": "text", "style": "body", "content": "Follow-up actions that would themselves constitute a production change go through the Software Change Management Policy (POL-001) like any other change; a post-incident review does not grant an exemption from that process, even when the action is intended to prevent a recurrence of the same incident." },
+    { "type": "text", "style": "body", "content": "A recurring theme in post-incident reviews at the company has been that the fastest path to detection is rarely the fanciest monitoring dashboard but the simplest, most boring alert threshold tied directly to customer-visible behavior; teams are encouraged to weigh new detection investment against that observation before adding another dashboard nobody watches at 3 a.m." },
+
+    { "type": "text", "style": "h2", "content": "5. References" },
+    { "type": "text", "style": "body", "content": "Related internal policies: Release and Deployment Management Policy (POL-004); Business Continuity and Disaster Recovery Policy (POL-009); Software Change Management Policy (POL-001)." },
+    { "type": "text", "style": "body", "content": "External standards: this policy is informed by NIST SP 800-53 Rev. 5 (https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final), particularly its incident response control family, and by the incident-management practices described in ITIL 4 (https://www.axelos.com/certifications/itil-service-management)." }
+  ]
+}

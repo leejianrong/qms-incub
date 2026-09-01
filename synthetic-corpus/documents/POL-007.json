@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "doc_id": "POL-007",
+    "title": "Data Classification and Handling Policy",
+    "version": "1.0",
+    "effective_date": "2026-09-01",
+    "owner": "Data Protection Officer"
+  },
+  "blocks": [
+    { "type": "text", "style": "h1", "content": "Data Classification and Handling Policy" },
+
+    { "type": "text", "style": "h2", "content": "1. Purpose" },
+    { "type": "text", "style": "body", "content": "This policy defines the classification tiers the company uses for the data it creates, processes, and stores, and the handling requirements that follow from each tier. It exists so that everyone who touches company or customer data — whether writing code that stores it, running a query against it, or attaching it to an email — has a single, unambiguous answer to the question of how carefully that particular piece of data needs to be treated." },
+    { "type": "text", "style": "body", "content": "Classification is not an academic exercise performed once and forgotten; it directly determines which access controls apply, which encryption requirements apply, how long data may be retained, and what must happen when it is disposed of." },
+    { "type": "text", "style": "body", "content": "Getting classification wrong runs in both directions of harm: under-classifying sensitive data leaves it exposed to people and systems that should never have touched it, while over-classifying everything as Restricted \"to be safe\" makes the tiering meaningless and slows down legitimate work with controls that add no real protection. This policy is written to make the correct tier the easy, obvious choice in the common cases so that judgment is reserved for genuinely ambiguous data." },
+
+    { "type": "text", "style": "h2", "content": "2. Scope" },
+    { "type": "text", "style": "body", "content": "This policy applies to all data the company creates or receives, in any format and at any stage of its lifecycle, regardless of where it is stored — company-owned infrastructure, a cloud provider, a vendor's system, or a physical document. It applies to every employee, contractor, and vendor who handles company or customer data as part of their work." },
+    { "type": "text", "style": "body", "content": "Classification governs, but does not replace, the access-control mechanics defined in the Access Control and Least Privilege Policy (POL-006), §4 — a data store's classification determines which approval chain a request for access to it must follow, but the request, approval, and provisioning steps themselves are defined there, not here." },
+    { "type": "text", "style": "body", "content": "This policy does not govern classification of physical documents held by Facilities or Legal outside the company's engineering systems; those functions maintain their own records-management schedule, informed by but not subordinate to the tiers defined here." },
+
+    { "type": "text", "style": "h2", "content": "3. Roles & Responsibilities" },
+    {
+      "type": "table",
+      "headers": ["Role", "Responsibility"],
+      "rows": [
+        ["Data Protection Officer", "Owns this policy, arbitrates disputed classifications, and approves access requests for Confidential and Restricted data per POL-006"],
+        ["Engineering Manager", "Ensures every new data store their team creates is classified before it goes into production and that the classification is documented alongside it"],
+        ["Software Engineer", "Applies the handling requirements of a data store's classification in the code and infrastructure that reads or writes it"],
+        ["Security Engineer", "Reviews classification decisions for data stores that interact with external vendors or third parties"]
+      ],
+      "caption": "Table 1. Data classification roles and responsibilities."
+    },
+    { "type": "text", "style": "body", "content": "Classification decisions are not the sole responsibility of any one role acting alone: an Engineering Manager sets the initial tier, but the Data Protection Officer can override it, and the Security Engineer is expected to flag a classification they believe is wrong even outside a formal review, the same way anyone is expected to flag a safety issue regardless of whose area it falls in." },
+
+    { "type": "text", "style": "h2", "content": "4. Procedure" },
+
+    { "type": "text", "style": "h3", "content": "4.1 Classification Tiers" },
+    { "type": "text", "style": "body", "content": "Every data store, dataset, or document falls into exactly one of four tiers. Where a data store contains a mix of data at different sensitivities, it is classified at the level of its most sensitive element, not its average." },
+    {
+      "type": "table",
+      "headers": ["Tier", "Definition", "Example"],
+      "rows": [
+        ["Public", "Approved for release outside the company with no restriction", "Published marketing content, public API documentation"],
+        ["Internal", "Not sensitive, but not intended for external release", "Internal engineering wikis, non-sensitive internal metrics"],
+        ["Confidential", "Would cause meaningful harm to the company or a customer if disclosed", "Customer account data, unreleased product plans, employee compensation data"],
+        ["Restricted", "Subject to legal, regulatory, or contractual protection requiring the strictest controls", "Payment card data, government-issued identifiers, health information"]
+      ],
+      "caption": "Table 2. Data classification tiers."
+    },
+    { "type": "text", "style": "body", "content": "When a dataset combines fields from more than one tier — for instance, a support ticket that mixes a customer's plain-text question (Internal) with an embedded payment token (Restricted) — the whole record is treated as Restricted unless the sensitive field is separated into its own store with its own controls. Splitting fields out this way is generally the right long-term fix, since it lets the bulk of the data be handled at its true, lower sensitivity." },
+
+    { "type": "text", "style": "h3", "content": "4.2 Labeling and Handling" },
+    { "type": "text", "style": "body", "content": "A newly created data store is classified by the Engineering Manager responsible for the system that owns it, at design time, before real data is written to it. The classification is recorded in the system's own documentation and in the company's central data inventory, and it is not left implicit or assumed to be obvious from context." },
+    { "type": "text", "style": "body", "content": "Confidential and Restricted data must be encrypted both at rest and in transit, and access to it follows the elevated approval chain defined in the Access Control and Least Privilege Policy (POL-006), §4.2. Internal data does not require the same encryption-at-rest guarantee but must still sit behind authenticated access; Public data has no handling restriction beyond normal integrity controls." },
+    { "type": "text", "style": "body", "content": "Handling requirements travel with the data wherever it goes: a Confidential dataset copied into a spreadsheet for analysis, exported into a business intelligence tool, or attached to an internal ticket is still Confidential, and the same encryption and access requirements apply to that copy. A common and preventable mistake is treating an export as somehow lower-risk than the system it came from; this policy explicitly rejects that assumption." },
+
+    { "type": "text", "style": "h3", "content": "4.3 Sharing, Vendors, and Disposal" },
+    { "type": "text", "style": "body", "content": "Confidential or Restricted data may only be shared with a third party — including a vendor processing it on the company's behalf — after that relationship has been evaluated under the Vendor and Third-Party Risk Management Policy (POL-008), §4. Sharing such data outside that process, even with a vendor the company already works with for an unrelated purpose, is treated as a policy violation regardless of intent." },
+    { "type": "text", "style": "body", "content": "Data is disposed of according to the retention schedule attached to its classification, using a method appropriate to that tier: Confidential and Restricted data is disposed of using cryptographic erasure or physical destruction of the underlying media, never a plain file deletion that leaves recoverable remnants." },
+
+    { "type": "text", "style": "h3", "content": "4.4 Monitoring and Enforcement" },
+    { "type": "text", "style": "body", "content": "Automated scanning tools flag likely-Restricted patterns — payment card number formats, government identifier formats — appearing in systems not already classified at that tier, and route the finding to the Data Protection Officer for confirmation. A confirmed finding triggers either a reclassification of the system or removal of the offending data, whichever the Engineering Manager and Data Protection Officer agree is the right fix." },
+    { "type": "text", "style": "body", "content": "Repeated findings against the same team are treated as a signal that the team's engineering practices, not just an individual dataset, need attention, and are escalated to that team's Engineering Manager as a standing agenda item rather than handled as one-off tickets." },
+    { "type": "text", "style": "body", "content": "Scanning coverage is itself reviewed periodically: a tool that hasn't been updated to recognize a newer identifier format, or that only covers a subset of the company's data stores, gives a false sense of assurance that is arguably worse than having no automated scanning at all, since it can be mistaken for complete coverage during an audit." },
+
+    {
+      "type": "flowchart",
+      "caption": "Figure 1. Data lifecycle from classification to disposal.",
+      "steps": [
+        { "id": "classify", "label": "Data store classified" },
+        { "id": "label", "label": "Classification recorded" },
+        { "id": "handle", "label": "Handled per tier controls" },
+        { "id": "share", "label": "Shared only via approved process" },
+        { "id": "dispose", "label": "Disposed per retention schedule" }
+      ],
+      "transitions": [
+        ["classify", "label"],
+        ["label", "handle"],
+        ["handle", "share"],
+        ["share", "dispose"]
+      ]
+    },
+
+    { "type": "text", "style": "h2", "content": "5. References" },
+    { "type": "text", "style": "body", "content": "Related internal policies: Access Control and Least Privilege Policy (POL-006); Vendor and Third-Party Risk Management Policy (POL-008)." },
+    { "type": "text", "style": "body", "content": "External standards: this policy's tiering approach is aligned with ISO/IEC 27001:2022 (https://www.iso.org/standard/27001) information classification guidance, and Restricted-tier payment data handling additionally follows PCI DSS v4.0 (https://www.pcisecuritystandards.org/document_library/). Controls for Confidential and Restricted data are also mapped internally to the relevant control families in NIST SP 800-53 Rev. 5 (https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final) for customers who require that mapping as part of their own vendor assessment of the company." }
+  ]
+}

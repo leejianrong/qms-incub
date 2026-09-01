@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "doc_id": "POL-010",
+    "title": "IT Onboarding and Offboarding Policy",
+    "version": "1.0",
+    "effective_date": "2026-09-01",
+    "owner": "IT Support Analyst"
+  },
+  "blocks": [
+    {"type": "text", "style": "h1", "content": "IT Onboarding and Offboarding Policy"},
+
+    {"type": "text", "style": "h2", "content": "1. Purpose"},
+    {"type": "text", "style": "body", "content": "This policy defines how the company provisions IT systems access for a new employee or contractor, and how it revokes that access when the person leaves or changes role. Consistent onboarding gets new hires productive on their first day without ad hoc requests to individual system owners, and consistent offboarding closes the most common source of unnecessary standing access: former employees and contractors whose accounts were simply never disabled."},
+    {"type": "text", "style": "body", "content": "This is also one of the controls most frequently sampled during a SOC 2 audit, since access-termination timeliness is a direct, easily-tested indicator of whether access control is actually being enforced day to day rather than only on paper."},
+    {"type": "text", "style": "body", "content": "Getting onboarding right matters as much as getting offboarding right: a new hire who spends their first week chasing down access requests forms an early impression of the company's operational maturity, and a hiring manager who cannot predict when their new report will actually be productive cannot plan the first sprint around them."},
+
+    {"type": "text", "style": "h2", "content": "2. Scope"},
+    {"type": "text", "style": "body", "content": "This policy applies to every employee, intern, and contractor who receives a company identity and any associated system access, regardless of location or employment type. It covers the standard baseline access every new hire receives (identity provider account, email, chat, laptop management enrollment) as well as the role-specific access requested separately by the hiring manager, and it covers both a full offboarding (departure) and a partial one (internal role change that should narrow access rather than only add to it)."},
+    {"type": "text", "style": "body", "content": "Physical badge access to office locations is provisioned and revoked using the same trigger events described in this policy, but the underlying badge system itself is administered by Facilities and is documented separately."},
+    {"type": "text", "style": "body", "content": "Vendor personnel who are issued a company identity for the duration of an engagement — for example, an embedded contractor from a staffing partner, or a vendor engineer given temporary access to debug an integration — are also in scope, though their access is always time-boxed to the engagement's contracted end date rather than left open-ended the way an employee's access is by default."},
+
+    {"type": "text", "style": "h2", "content": "3. Roles & Responsibilities"},
+    {"type": "text", "style": "body", "content": "Onboarding and offboarding both depend on a timely, accurate signal from HR — a start date, a role, a manager, and, on departure, a last day of work. Everything IT Support does downstream depends on that signal arriving on time."},
+    {
+      "type": "table",
+      "headers": ["Role", "Responsibility"],
+      "rows": [
+        ["HR / People Team", "Creates the new-hire or departure record in the HR system, which is the system of record that triggers this workflow"],
+        ["Engineering Manager (or hiring manager)", "Requests role-specific system access for a new hire and confirms it is still needed at each periodic access review"],
+        ["IT Support Analyst", "Provisions and revokes baseline and role-specific access, and confirms account disablement on departure"],
+        ["Security Engineer", "Owns the access-tiering rules referenced during provisioning and audits offboarding timeliness"]
+      ],
+      "caption": "Table 1. Roles in onboarding and offboarding."
+    },
+
+    {"type": "text", "style": "h2", "content": "4. Procedure"},
+    {"type": "text", "style": "body", "content": "Onboarding and offboarding are mirror images of the same workflow, both driven by an HR system event and both routed through IT Support for execution. Role-specific access beyond the baseline is provisioned according to the tiering and approval rules of the Access Control and Least Privilege Policy (POL-006), §4."},
+
+    {"type": "text", "style": "h3", "content": "4.1 Onboarding"},
+    {"type": "text", "style": "body", "content": "HR creates the new-hire record at least five business days before the start date wherever possible, which gives IT Support time to provision baseline access and ship a laptop ahead of day one. The hiring manager submits role-specific access requests separately, referencing the least-privilege tiering rules in POL-006, §4, so that a new hire's day-one access matches their role rather than defaulting to whatever the previous person in the role happened to accumulate over time."},
+    {"type": "text", "style": "body", "content": "Baseline access — identity provider account, corporate email, chat, and device management enrollment — is provisioned automatically from the HR record without a separate manual request, since every employee needs it regardless of role."},
+    {
+      "type": "swimlane",
+      "caption": "Figure 1. Onboarding and offboarding workflow.",
+      "lanes": ["HR", "IT Support", "Engineering Manager"],
+      "steps": [
+        {"id": "o1", "label": "Create new-hire record", "lane": "HR"},
+        {"id": "o2", "label": "Request role-specific access", "lane": "Engineering Manager"},
+        {"id": "o3", "label": "Provision baseline access", "lane": "IT Support"},
+        {"id": "o4", "label": "Provision role-specific access", "lane": "IT Support"},
+        {"id": "o5", "label": "Confirm day-one access working", "lane": "Engineering Manager"},
+        {"id": "o6", "label": "Create departure record", "lane": "HR"},
+        {"id": "o7", "label": "Disable all access", "lane": "IT Support"}
+      ],
+      "transitions": [
+        ["o1", "o2"], ["o1", "o3"], ["o2", "o4"], ["o3", "o5"], ["o4", "o5"],
+        ["o6", "o7"]
+      ]
+    },
+
+    {"type": "text", "style": "h3", "content": "4.2 Role Changes"},
+    {"type": "text", "style": "body", "content": "An internal transfer or role change is treated as a partial offboarding followed by a partial onboarding: the new manager requests access appropriate to the new role, and the previous manager confirms which access tied to the old role should be removed. Access is not carried forward by default on the theory that it might still be useful; it must be re-justified for the new role."},
+    {"type": "text", "style": "body", "content": "This is the scenario IT Support sees go wrong most often in practice, because unlike a departure it has no hard deadline forcing the old access to be revoked: an employee who moves from Support into Engineering, for example, tends to keep their old support-tooling access long after they stop needing it, simply because removing it was never anyone's single clear responsibility. The quarterly access review in §4.4 exists partly to catch exactly this pattern."},
+
+    {"type": "text", "style": "h3", "content": "4.3 Offboarding"},
+    {"type": "text", "style": "body", "content": "HR creates the departure record as soon as a departure date is known, ideally in advance for a planned departure and immediately for an involuntary one. IT Support disables all system access — identity provider, email, chat, VPN, and every role-specific system granted under POL-006 — no later than the end of the employee's last working day, and immediately in the case of an involuntary termination flagged as high-risk by HR or Security."},
+    {"type": "text", "style": "body", "content": "Disabling an account is distinct from deleting it: accounts are disabled immediately and retained for a standard 90-day window before deletion, so that a manager can request read-only access to a departed employee's mailbox or files during an ownership handoff without needing to restore anything."},
+
+    {"type": "text", "style": "h3", "content": "4.4 Verification and Access Reviews"},
+    {"type": "text", "style": "body", "content": "IT Support reconciles the HR system's active-employee list against every system's active-account list on a monthly cadence, specifically to catch any offboarding step that was missed. Any account found active for a person no longer with the company is disabled the same day it is found, and the gap is logged for the quarterly access review."},
+
+    {"type": "text", "style": "h3", "content": "4.5 Contractor and Time-Boxed Access"},
+    {"type": "text", "style": "body", "content": "A contractor's access is provisioned with an expiration date matching the engagement's contracted end date whenever the identity system supports it, rather than relying on someone remembering to disable the account manually when the contract ends. If the engagement is extended, the hiring manager must submit an explicit renewal before the original expiration date; access does not lapse gracefully into an indefinite grant simply because no one got around to disabling it."},
+    {"type": "text", "style": "body", "content": "IT Support reviews all time-boxed accounts nearing expiration on the same monthly cadence used for the general reconciliation in §4.4, flagging any that are approaching expiry without a renewal on file so the hiring manager has advance notice rather than a surprise access cutoff mid-engagement."},
+
+    {"type": "text", "style": "h2", "content": "5. References"},
+    {"type": "text", "style": "body", "content": "Access Control and Least Privilege Policy (POL-006), §4 — the tiering and approval rules used when provisioning role-specific access during onboarding, and the access this policy revokes on offboarding."},
+    {"type": "text", "style": "body", "content": "External standards: SOC 2 (AICPA Trust Services Criteria) (https://www.aicpa-cima.com/topic/audit-assurance/audit-and-assurance-greater-than-soc-2), which routinely samples offboarding timeliness as a logical access control; ISO/IEC 27001:2022 (https://www.iso.org/standard/27001), Annex A.5 human resource security controls."}
+  ]
+}
