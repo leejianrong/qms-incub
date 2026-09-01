@@ -35,12 +35,13 @@ export interface PolicyDocument {
 export async function askChat(
   apiBase: string,
   question: string,
+  projectId: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ChatAnswer> {
   const response = await fetchImpl(`${apiBase}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question }),
+    body: JSON.stringify({ question, project_id: projectId }),
   });
   if (!response.ok) {
     throw new Error(`backend returned ${response.status}`);

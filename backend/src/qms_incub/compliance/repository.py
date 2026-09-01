@@ -293,6 +293,34 @@ def list_todos_for_project(project_id: str) -> list[TodoItemOut]:
         return [_todo_out(session, todo) for todo in rows]
 
 
+def get_chat_context(
+    project_id: str,
+) -> tuple[ProjectOut, list[TodoItemOut], dict[str, list[ArtifactOut]]] | None:
+    """Fetch the complete current state injected into one V8 chat prompt."""
+    with get_session() as session:
+        project = session.get(Project, project_id)
+        if project is None:
+            return None
+        todo_rows = session.query(TodoItem).filter(TodoItem.project_id == project_id).all()
+        todo_ids = [todo.id for todo in todo_rows]
+        artifact_rows = []
+        if todo_ids:
+            artifact_rows = (
+                session.query(Artifact).filter(Artifact.todo_item_id.in_(todo_ids)).all()
+            )
+        artifacts_by_todo: dict[str, list[ArtifactOut]] = {}
+        for artifact in artifact_rows:
+            artifacts_by_todo.setdefault(artifact.todo_item_id, []).append(
+                ArtifactOut(
+                    id=artifact.id,
+                    todo_item_id=artifact.todo_item_id,
+                    filename=artifact.filename,
+                )
+            )
+        todos = [_todo_out(session, todo) for todo in todo_rows]
+        return _project_out(project), todos, artifacts_by_todo
+
+
 def get_todo(todo_item_id: str) -> TodoItemOut | None:
     with get_session() as session:
         todo = session.get(TodoItem, todo_item_id)
