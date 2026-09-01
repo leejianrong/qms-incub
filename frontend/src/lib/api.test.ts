@@ -1,5 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { askChat, createProject, fetchHealth, getProject, resolveApiBase } from "./api";
+import {
+  askChat,
+  createProject,
+  fetchHealth,
+  getProject,
+  resolveApiBase,
+  uploadArtifact,
+} from "./api";
 
 describe("resolveApiBase", () => {
   it("falls back to localhost when VITE_API_BASE is unset", () => {
@@ -140,5 +147,52 @@ describe("getProject", () => {
 
     expect(result.project.id).toBe("proj-1");
     expect(fakeFetch).toHaveBeenCalledWith("http://api.internal/projects/proj-1");
+  });
+});
+
+describe("uploadArtifact", () => {
+  it("posts the file as multipart form data and returns the self-attested todo", async () => {
+    const fakeFetch = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          artifact: { id: "art-1", todo_item_id: "todo-1", filename: "evidence.pdf" },
+          todo: {
+            id: "todo-1",
+            project_id: "proj-1",
+            requirement_id: "req-1",
+            requirement_description: "Upload proof of testing",
+            clause_text: "Clause 1",
+            standard_name: "Change Management",
+            status: "complied",
+          },
+        }),
+        { status: 201 },
+      ),
+    );
+
+    const file = new File(["fake pdf bytes"], "evidence.pdf", { type: "application/pdf" });
+    const result = await uploadArtifact(
+      "http://api.internal",
+      "todo-1",
+      file,
+      fakeFetch as typeof fetch,
+    );
+
+    expect(result.todo.status).toBe("complied");
+    expect(fakeFetch).toHaveBeenCalledWith(
+      "http://api.internal/todos/todo-1/artifacts",
+      expect.objectContaining({ method: "POST" }),
+    );
+    const init = (fakeFetch.mock.calls[0] as unknown as [string, RequestInit])[1];
+    expect(init.body).toBeInstanceOf(FormData);
+  });
+
+  it("throws when the backend responds with an error status", async () => {
+    const fakeFetch = vi.fn(async () => new Response("", { status: 404 }));
+    const file = new File(["x"], "evidence.pdf");
+
+    await expect(
+      uploadArtifact("http://api.internal", "missing", file, fakeFetch as typeof fetch),
+    ).rejects.toThrow("404");
   });
 });

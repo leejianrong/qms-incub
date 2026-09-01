@@ -6,3 +6,4 @@ from pathlib import Path
 
 BACKEND_ROOT = Path(__file__).resolve().parent.parent.parent
 UPLOADED_DOCUMENTS_DIR = BACKEND_ROOT / "var" / "documents"
+UPLOADED_ARTIFACTS_DIR = BACKEND_ROOT / "var" / "artifacts"

@@ -87,3 +87,18 @@ class TodoItem(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class Artifact(Base):
+    """Proof of compliance uploaded against a `TodoItem` (S3). Uploading
+    one is self-attestation, not a reviewed submission — it flips the
+    TodoItem straight to Complied (ADR-0002), no reviewer gate."""
+
+    __tablename__ = "artifacts"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    todo_item_id: Mapped[str] = mapped_column(String, ForeignKey("todo_items.id"), nullable=False)
+    filename: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
