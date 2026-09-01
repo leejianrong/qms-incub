@@ -9,7 +9,9 @@ existed (fresh mode).
 
 ## Open forks
 
-<empty — all three rounds closed>
+Q48, Q49, Q50 — surfaced by the 2026-09-01 agents/MCP/CLI/identity
+research session (ADR-0014/0015/0016); none block the current milestone.
+All three rounds of the original interview are closed.
 
 ## Register
 
@@ -32,7 +34,7 @@ existed (fresh mode).
 | Q15 | Chatbot grounding scope: corpus only, or corpus + the asking user's own compliance state? | ASSUMED | Hybrid — vector retrieval over the corpus, plus direct structured injection of the asking PM's own project/todo/artifact state | ADR-0003 |
 | Q16 | QA-reviewer approval surface | DEFERRED | Named next-iteration feature, not this milestone | PLAN §Scope (Out) |
 | Q17 | External REST API for third-party integration | DEFERRED | Not needed this milestone | PLAN §Scope (Out) |
-| Q18 | SSO / external identity provider | DEFERRED | Not needed this milestone | PLAN §Scope (Out) |
+| Q18 | SSO / external identity provider | DEFERRED | Not needed this milestone | PLAN §Scope (Out); next-milestone mechanism decided at Q45 (ADR-0014), not yet activated |
 | Q19 | RAG retrieval evaluation/benchmarking harness | DEFERRED | v1 needs ingestion/retrieval to work and be demoable, not rigorously tuned | PLAN §Scope (Out) |
 | Q20 | On-prem / air-gapped deployment | DEFERRED | Cloud-hosted only this milestone | PLAN §Scope (Out) |
 | Q21 | Multi-tenant SaaS | DEFERRED | Single-org this milestone (see Q4) | PLAN §Scope (Out) |
@@ -59,6 +61,12 @@ existed (fresh mode).
 | Q42 | The mock shows a full PM → QA Office → Authority approval route (submitted/approved/returned, SLA). ADR-0002 decided self-attestation only, reviewer gate deferred — should `TodoItem` gain approval-state fields now? | DECIDED | Yes, schema-only. Add `approval_state`/`approval_authority`/`sla_target`/`decided_at` now so the UI can render the approval-route pill from the mock, but the PM's own self-attestation action sets them in this milestone — no second role, no auth gate. Matches ADR-0002's Consequences ("adding a reviewer role later is additive... not a rework"); does not reopen or reverse ADR-0002 | ADR-0002 (unchanged), new slice, SLICES.md V11 |
 | Q43 | The mock auto-offers an AI-drafted "project learnings" blog post on project completion, for the PM to publish — does the backend author it? | DECIDED | No — drafting new document content, even unpublished, is exactly what ADR-0012 forbids, and collides with V6's admin-authored blog scope. Replaced with a chat capability: the PM can ask V8's compliance-aware chatbot to summarize a completed project as a chat answer — never a publishable or authored artifact | ADR-0012 (unchanged), V8 (unchanged) |
 | Q44 | ADR-0009 picked Svelte + Vite for the frontend but never a component library — replicating the mock's dashboard/wizard/navigator needs a consistent set of primitives (steppers, dropdowns, modals, cards). Which library? | DECIDED | shadcn-svelte, components copied into the repo and themed to the mock's tokens rather than pulled in as an opaque dependency. Brings Tailwind CSS and Bits UI into the frontend toolchain for the first time | ADR-0013 |
+| Q45 | A research session mapped agents, MCP, a CLI, and auth onto this project (2026-09-01) — what identity provider and mechanism back human login and machine-agent auth for that work, whenever it starts? | DECIDED | Keycloak, one self-hosted realm, backing OIDC human login, OAuth2 client-credentials machine auth (CLI, CI), and the MCP server's spec-required OAuth 2.1 resource-server flow. Decided for the **next milestone**, not activated in V1–V13 | ADR-0014, SLICES.md V14 |
+| Q46 | Should QA-authors get a scriptable path (bulk document upload, Standard/Clause/Requirement seeding) alongside the web UI? | DECIDED | Yes — a CLI as a thin client over the same FastAPI endpoints the browser uses, no parallel logic path. Next-milestone, not V1–V13 | ADR-0015, SLICES.md V15 |
+| Q47 | How should external agents (a PM's own Claude Code session, an internal ops agent, CI) query this backend's data? | DECIDED | A narrow, read-only MCP server (`ask_policy`, `get_project_status`) running alongside the chat pipeline, not inside it. Next-milestone, not V1–V13 | ADR-0016, SLICES.md V16 |
+| Q48 | Does a team-facing MCP server (Q47/ADR-0016) count as the "external REST API for third-party integration" Q17 deferred? | FORK | Not yet decided. Q17 was framed around third-party integration; an MCP surface for the org's own agents is a narrower audience, but it's still a new network-exposed surface with its own auth story | *(open)* |
+| Q49 | Does org-wide compliance reporting ("which projects are non-compliant," named but not decided in ADR-0003's Consequences) need a role beyond PM/QA-author? | FORK | Not yet decided. This is a different authz shape — organization-wide read — from everything else in the app, which is scoped to the asking user's own state. Deliberately excluded from ADR-0016's first MCP tool set | *(open)* |
+| Q50 | If Q9 (agentic chat) is ever reopened, does an agent acting on a PM's behalf need its own audit trail distinct from self-attestation? | FORK | Not yet decided. ADR-0002's self-attestation model assumes the PM is the one who acted; an agent acting on their behalf blurs that unless every agent action is attributed back to the human who authorized it | *(open)* |
 
 ## Coverage
 
@@ -76,3 +84,4 @@ existed (fresh mode).
 | Measurable success | Q29 |
 | Security and secrets | Q27 |
 | Versioning and migration | Q28 |
+| Agents, MCP, CLI, and identity (next milestone) | Q45, Q46, Q47, Q48, Q49, Q50 |

@@ -517,3 +517,144 @@ slice's screens, not its own logic.
 
 - Wizard step-validation (can't advance without a name, date, AOR, and all
   3 answers) matches V2/V9's stated preconditions.
+
+## Next milestone: agents & identity
+
+Not part of this MVP. PLAN.md's Scope > Out ("SSO / external identity
+provider integration") and Q18 (DEFERRED) still hold for V1–V13 — nothing
+below is scheduled or committed to the current milestone. It's sketched
+here because a research session mapping agents, MCP, a CLI, and auth onto
+this project's architecture decided the *mechanism* for each
+(ADR-0014/0015/0016), so picking any of it up for real starts from a
+decided shape rather than a blank page. Cut from a fresh `main` the same
+as any other slice, whenever that milestone actually starts.
+
+### V14: Keycloak + human login
+
+**Delivers:** new — the next-milestone mechanism for what Q18 deferred;
+see ADR-0014
+
+**Build plan**
+
+1. Keycloak added to `docker-compose.yml`/`make up` as a fourth service
+   (alongside Postgres and Qdrant); one realm, seeded with `pm` and
+   `qa-author` roles, plus a placeholder `reviewer` role (unused until
+   F7's reviewer-gate feature is actually built).
+2. Svelte frontend gains an OIDC login flow (authorization code + PKCE)
+   against the realm; an unauthenticated visitor is redirected to
+   Keycloak's login page.
+3. FastAPI backend validates the Keycloak-issued JWT on every request
+   (`POST /documents`, `GET /documents`, `POST /chat`), reading role and
+   `org_id` claims off it; `org_id` (ADR-0004) becomes an enforced query
+   filter for the first time.
+4. Seed data assigns a demo PM and a demo QA-author to the single seeded
+   org.
+
+**Demo:** An unauthenticated visitor hitting the console is redirected to
+Keycloak's login page; logging in as the seeded PM lands on a dashboard
+scoped to that PM's own org; the same three backend endpoints reject a
+request carrying no token.
+
+**Rests on assumptions:** none new — ADR-0014 already settled the
+mechanism. Cost if a managed IdP is preferred later instead: swap the
+provider, the app-side OIDC/JWT integration doesn't change.
+
+### Test plan
+
+#### End-to-end
+
+- An unauthenticated request to any of the three endpoints is rejected; a
+  valid PM token can only see that PM's own org-scoped data.
+
+#### Integration
+
+- JWT validation middleware extracts role and `org_id` claims correctly
+  from a Keycloak-issued token.
+
+#### Unit
+
+- Token validation rejects an expired or wrong-audience token.
+
+### V15: CLI
+
+**Delivers:** new; see ADR-0015
+
+**Build plan**
+
+1. A CLI, packaged alongside the backend, authenticating via
+   client-credentials against the Keycloak realm from V14.
+2. `documents upload <path>` / `documents list`, mirroring
+   `POST /documents` / `GET /documents` — no direct DB access, same code
+   path a human's upload takes.
+3. `standards seed <file>`: bulk-creates a `Standard`/`Clause`/
+   `Requirement` tree from a structured file, for loading a real QMS's
+   initial content in one pass.
+4. `make seed` is rewritten to call the CLI instead of maintaining its
+   own ad hoc upload script.
+
+**Demo:** Running the CLI's document-upload command from a terminal
+ingests a document exactly as the web upload would, visible in
+`GET /documents`/the dashboard.
+
+**Rests on assumptions:** V14 (auth) — the CLI has nothing to
+authenticate against until Keycloak exists.
+
+### Test plan
+
+#### Integration
+
+- CLI upload produces the same ingestion result shape as the web UI's
+  upload.
+
+#### Unit
+
+- `standards seed` rejects a file missing a required field before any row
+  is written.
+
+### V16: MCP server (read-only tools)
+
+**Delivers:** new; see ADR-0016
+
+**Build plan**
+
+1. MCP server process exposing `ask_policy` (wraps `POST /chat`'s corpus
+   retrieval, no per-user state) and `get_project_status` (a project's
+   own todo/artifact state, scoped by the caller's token).
+2. OAuth 2.1 resource-server validation against the same Keycloak realm as
+   V14/V15 — the MCP spec's own requirement for a remote server.
+3. Tool handlers call V15's CLI client library rather than reimplementing
+   request logic a third time.
+
+**Demo:** An MCP client (e.g. a Claude Code session) with the server
+configured answers "what's the approving authority for X" via
+`ask_policy`, citing the same source `POST /chat` would.
+
+**Rests on assumptions:** V14, V15. Explicitly excludes cross-project
+reporting (QUESTIONS.md Q49) and any tool that authors or acts rather
+than reads (QUESTIONS.md Q50, Q9) — both are open questions, not part of
+this slice.
+
+### Test plan
+
+#### End-to-end
+
+- An MCP client calling `ask_policy` with a question answerable from the
+  corpus gets the same answer and citation `POST /chat` would give the
+  same PM.
+
+#### Integration
+
+- `get_project_status` refuses to return another org's project data given
+  a token scoped to a different org.
+
+#### Unit
+
+- Tool-call schema validation rejects a call missing a required
+  parameter.
+
+---
+
+Two ideas the same research surfaced are deliberately **not** slices yet:
+cross-project compliance reporting and agentic chat actions. Both need a
+product decision before a mechanism, not just this infrastructure — see
+QUESTIONS.md Q49 and Q50.
