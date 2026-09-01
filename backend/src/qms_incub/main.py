@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from qms_incub.aor_routing.classifier import classify_aor_pdf
-from qms_incub.chat.service import answer_question
+from qms_incub.chat.service import ProjectNotFoundError, answer_question
 from qms_incub.compliance.api import router as compliance_router
 from qms_incub.ingestion.pipeline import ingest_pdf
 from qms_incub.ingestion.repository import create_pending, list_all, mark_embedded, mark_failed
@@ -114,6 +114,7 @@ async def classify_aor(file: UploadFile = File(...)) -> AorClassificationOut:
 
 class ChatRequest(BaseModel):
     question: str
+    project_id: str
 
 
 class CitationOut(BaseModel):
@@ -128,7 +129,10 @@ class ChatResponse(BaseModel):
 
 @app.post("/chat")
 def chat(request: ChatRequest) -> ChatResponse:
-    result = answer_question(request.question)
+    try:
+        result = answer_question(request.question, request.project_id)
+    except ProjectNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Project not found") from exc
     return ChatResponse(
         answer=result.answer,
         citations=[

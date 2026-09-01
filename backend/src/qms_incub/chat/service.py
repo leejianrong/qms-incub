@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from qms_incub.chat.compliance_context import get_compliance_state
 from qms_incub.chat.llm import get_llm_client
 from qms_incub.chat.prompt import build_messages
 from qms_incub.chat.retrieval import RetrievedChunk, retrieve_top_k
@@ -37,9 +38,16 @@ def _dedupe_citations(chunks: list[RetrievedChunk]) -> list[Citation]:
     return citations
 
 
-def answer_question(question: str, top_k: int = 4) -> ChatAnswer:
+class ProjectNotFoundError(ValueError):
+    pass
+
+
+def answer_question(question: str, project_id: str, top_k: int = 4) -> ChatAnswer:
+    compliance_state = get_compliance_state(project_id)
+    if compliance_state is None:
+        raise ProjectNotFoundError(project_id)
     chunks = retrieve_top_k(question, k=top_k)
-    messages = build_messages(question, chunks)
+    messages = build_messages(question, chunks, compliance_state)
 
     client, model = get_llm_client()
     response = client.chat.completions.create(

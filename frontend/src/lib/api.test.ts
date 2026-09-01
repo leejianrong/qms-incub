@@ -63,6 +63,7 @@ describe("askChat", () => {
     const result = await askChat(
       "http://api.internal",
       "Who is the approving authority?",
+      "project-1",
       fakeFetch as typeof fetch,
     );
 
@@ -74,7 +75,7 @@ describe("askChat", () => {
       "http://api.internal/chat",
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ question: "Who is the approving authority?" }),
+        body: JSON.stringify({ question: "Who is the approving authority?", project_id: "project-1" }),
       }),
     );
   });
@@ -83,7 +84,7 @@ describe("askChat", () => {
     const fakeFetch = vi.fn(async () => new Response("", { status: 500 }));
 
     await expect(
-      askChat("http://api.internal", "irrelevant", fakeFetch as typeof fetch),
+      askChat("http://api.internal", "irrelevant", "project-1", fakeFetch as typeof fetch),
     ).rejects.toThrow("500");
   });
 });
