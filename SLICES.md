@@ -723,3 +723,78 @@ Two ideas the same research surfaced are deliberately **not** slices yet:
 cross-project compliance reporting and agentic chat actions. Both need a
 product decision before a mechanism, not just this infrastructure — see
 QUESTIONS.md Q49 and Q50.
+
+## V18: Console Visual Rework (ui-reference parity)
+
+Replaces the console's current bare-bones screens with the fuller visual
+and interaction design `ui-reference/QMS Console.dc.html` depicts, for the
+surfaces V13 deliberately left plain or left out entirely: the persistent
+header, a richer Dashboard/Projects list, richer Wizard chrome, a richer
+todo detail panel, plus the screens V13 explicitly deferred (Blog/FAQ
+PM-facing reader views, the floating AI assistant). Per QUESTIONS.md's
+Q53, this slice deliberately crosses the line Q52 held for V13: the
+Discussion thread (todo sub-steps), Blog post comments, notifications, and
+favourites/starring are built with **local-only, non-persistent client
+state** — no backend model for any of them exists — so the console
+matches the reference end to end for a demo. Each gets a tracked backend
+follow-up issue (#57–#60, QMS Incub GitHub Projects board) rather than
+being silently dropped or silently treated as production-ready.
+
+**Delivers:** frontend-only, no backend changes. Visual/interaction
+parity with `ui-reference/` for the PM console; new PM-facing Blog/FAQ
+reader routes consuming V6's existing publish APIs, which had no console
+consumer until now.
+
+**Build plan**
+
+1. Shell: persistent header nav (Home/Blog/FAQ tabs), user identity area,
+   notifications bell (client-state stub), favourites entry point
+   (client-state stub).
+2. ProjectsDashboard: search/filter/sort, richer project cards (per-
+   process-step progress-cell strip, awaiting-approval flag), a stats
+   strip.
+3. Wizard: stepper chrome, discard-confirm modal.
+4. ProjectDetail: stepper polish, richer todo detail panel — Discussion
+   thread (client-state stub, Q53) alongside V11's existing approval-route
+   card and V3's existing artifact upload.
+5. New: PM-facing Blog list/detail view (search/topic filter, hero post)
+   plus comments (client-state stub, Q53), consuming V6's existing
+   endpoints.
+6. New: PM-facing FAQ accordion view, consuming V6's existing endpoints.
+7. Floating "Ask QMS Assistant" global chat widget, replacing
+   `ProjectDetail`'s inline chat card — same V8 `/chat` endpoint,
+   project-aware when a project is open.
+8. Add missing shadcn-svelte primitives as needed (progress, avatar,
+   tooltip, sheet/popover) via the existing `/showcase` route (V12)
+   before wiring them into real screens.
+
+Explicitly **not** in this slice: the reference's per-todo "contact the
+step owner" chat drawer (redundant with the Discussion thread once that
+exists) and the "wrap-up" AI-drafted blog post modal — Q43 already
+replaced that with an ask-the-chatbot capability, not a new UI surface.
+
+**Demo:** Open the console end to end and compare it screen by screen
+against `ui-reference/QMS Console.dc.html`; post a comment on a todo's
+Discussion thread and on a Blog post (both non-persistent — a refresh
+clears them, called out in the UI as a known limitation); browse Blog and
+FAQ from the header nav for the first time from a PM-facing route.
+
+**Rests on assumptions:** Q53 — the Discussion/comments/notifications/
+favourites client-state stubs are demo-only and known non-persistent;
+backend follow-up is tracked as GitHub issues #57 (todo comment threads),
+#58 (blog comments), #59 (notifications), #60 (favourites), all on the
+QMS Incub GitHub Projects board.
+
+### Test plan
+
+#### Integration
+
+- Each new screen's data-fetching wires to the correct real endpoint
+  (Blog/FAQ list/detail) and renders a loading/error state when that
+  endpoint fails.
+
+#### Unit
+
+- The client-state stubs (comments, notifications, favourites) behave
+  correctly within a session (add/remove/toggle) — these tests assert
+  in-session behavior only, not persistence across reload.
