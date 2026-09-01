@@ -93,10 +93,25 @@ def test_uploading_an_artifact_self_attests_the_todo_to_complied(
     assert body["artifact"]["filename"] == "evidence.pdf"
     assert body["todo"]["id"] == todo_id
     assert body["todo"]["status"] == "complied"
+    assert body["todo"]["approval_state"] == "approved"
+    assert body["todo"]["decided_at"] is not None
 
     fetched = client.get(f"/projects/{seeded_project['project_id']}").json()
     fetched_todo = next(t for t in fetched["todos"] if t["id"] == todo_id)
     assert fetched_todo["status"] == "complied"
+    assert fetched_todo["approval_state"] == "approved"
+    assert fetched_todo["decided_at"] is not None
+
+
+def test_generated_todo_starts_not_started_with_seeded_authority_and_sla(
+    seeded_project: dict[str, str],
+) -> None:
+    fetched = client.get(f"/projects/{seeded_project['project_id']}").json()
+    todo = next(t for t in fetched["todos"] if t["id"] == seeded_project["todo_id"])
+    assert todo["approval_state"] == "not_started"
+    assert todo["approval_authority"] == "QA Office"
+    assert todo["sla_target"] is not None
+    assert todo["decided_at"] is None
 
 
 def test_uploading_against_an_unknown_todo_returns_404() -> None:

@@ -4,6 +4,7 @@ and self-attestation (S3)."""
 
 from __future__ import annotations
 
+import datetime
 import uuid
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
@@ -132,6 +133,10 @@ class TodoItemOut(BaseModel):
     clause_text: str
     standard_name: str
     status: str
+    approval_state: str
+    approval_authority: str
+    sla_target: datetime.datetime | None
+    decided_at: datetime.datetime | None
 
 
 class ProjectOut(BaseModel):
@@ -157,6 +162,10 @@ def _todo_out(t: repository.TodoItemOut) -> TodoItemOut:
         clause_text=t.clause_text,
         standard_name=t.standard_name,
         status=t.status,
+        approval_state=t.approval_state,
+        approval_authority=t.approval_authority,
+        sla_target=t.sla_target,
+        decided_at=t.decided_at,
     )
 
 

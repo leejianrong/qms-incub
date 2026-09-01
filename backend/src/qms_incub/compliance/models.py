@@ -19,6 +19,7 @@ from qms_incub.db import Base
 
 RiskTier = Literal["low", "medium", "high"]
 TodoStatus = Literal["pending", "complied"]
+ApprovalState = Literal["not_required", "not_started", "submitted", "approved", "returned"]
 
 
 def _uuid() -> str:
@@ -85,6 +86,12 @@ class Project(Base):
 
 
 class TodoItem(Base):
+    """`approval_state`/`approval_authority`/`sla_target` are assigned at
+    generation time (S2, `classify_project`); self-attestation (S3) sets
+    `approval_state` to `approved` and stamps `decided_at` in the same
+    transaction as the Complied status flip. Schema-only — no reviewer
+    role or gate exists yet (Q42, additive to ADR-0002)."""
+
     __tablename__ = "todo_items"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
@@ -93,6 +100,14 @@ class TodoItem(Base):
         String, ForeignKey("requirements.id"), nullable=False
     )
     status: Mapped[str] = mapped_column(String, nullable=False, default="pending")
+    approval_state: Mapped[str] = mapped_column(String, nullable=False, default="not_started")
+    approval_authority: Mapped[str] = mapped_column(String, nullable=False, default="QA Office")
+    sla_target: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    decided_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

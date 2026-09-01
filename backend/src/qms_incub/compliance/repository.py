@@ -8,6 +8,7 @@ see `Project`'s docstring in `models.py`."""
 
 from __future__ import annotations
 
+import datetime
 from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
@@ -23,6 +24,13 @@ from qms_incub.compliance.models import (
 )
 from qms_incub.compliance.scoring import RequirementSummary, filter_requirements_by_tier
 from qms_incub.db import get_session
+
+# V11 (Q42): no reviewer role exists yet, so there's no per-Requirement
+# signal for who the approval authority is or how urgent it is. Every
+# generated TodoItem gets the same seed default; a real per-Requirement
+# authority/SLA is a decision for whenever the reviewer role is built.
+DEFAULT_APPROVAL_AUTHORITY = "QA Office"
+DEFAULT_APPROVAL_SLA = datetime.timedelta(days=5)
 
 
 @dataclass
@@ -66,6 +74,10 @@ class TodoItemOut:
     clause_text: str
     standard_name: str
     status: str
+    approval_state: str
+    approval_authority: str
+    sla_target: datetime.datetime | None
+    decided_at: datetime.datetime | None
 
 
 @dataclass
@@ -87,6 +99,10 @@ def _todo_out(session: Session, todo: TodoItem) -> TodoItemOut:
         clause_text=clause.text if clause else "",
         standard_name=standard.name if standard else "",
         status=todo.status,
+        approval_state=todo.approval_state,
+        approval_authority=todo.approval_authority,
+        sla_target=todo.sla_target,
+        decided_at=todo.decided_at,
     )
 
 
@@ -207,7 +223,14 @@ def classify_project(
 
         todos: list[TodoItemOut] = []
         for requirement in matching_requirements:
-            todo = TodoItem(project_id=project.id, requirement_id=requirement.id, status="pending")
+            todo = TodoItem(
+                project_id=project.id,
+                requirement_id=requirement.id,
+                status="pending",
+                approval_state="not_started",
+                approval_authority=DEFAULT_APPROVAL_AUTHORITY,
+                sla_target=datetime.datetime.now(datetime.UTC) + DEFAULT_APPROVAL_SLA,
+            )
             session.add(todo)
             session.flush()
             todos.append(_todo_out(session, todo))
@@ -255,6 +278,9 @@ def upload_artifact(todo_item_id: str, filename: str) -> tuple[ArtifactOut, Todo
         artifact = Artifact(todo_item_id=todo_item_id, filename=filename)
         session.add(artifact)
         todo.status = "complied"
+        if todo.approval_state != "not_required":
+            todo.approval_state = "approved"
+            todo.decided_at = datetime.datetime.now(datetime.UTC)
         session.flush()
 
         return (
