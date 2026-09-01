@@ -107,6 +107,19 @@ Frontend-only, from `frontend/`: `npm run test`, `npm run lint`,
 - **Sub-agents: hard cap of 3 running in parallel at any one time.** Don't
   spin one up unless the task genuinely needs the parallelism — most work
   in this repo is a single sequential thread.
+- **Parallel sub-agents that write files: always give each one its own
+  git worktree, never a shared working directory.** Two or more agents
+  editing files in the same working tree race with each other and with
+  any `git stash`/`checkout`/`rebase` the coordinator runs meanwhile —
+  this has already silently wiped a batch of in-progress sub-agent edits
+  once. Use the `treehouse` CLI to manage the worktree pool: `treehouse
+  get --lease --lease-holder <label>` to acquire one (prints its path;
+  `--lease` makes it durable/non-interactive, so it survives across the
+  agent's whole run rather than just one subshell), `treehouse return
+  <path>` to release it when the agent is done, `treehouse status` to
+  see what's currently leased. Have each agent commit its own work on its
+  own branch inside its worktree; the coordinator merges/rebases branches
+  together afterward, never mid-flight while agents are still writing.
 
 ## Layout
 
