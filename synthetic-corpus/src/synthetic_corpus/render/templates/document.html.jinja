@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ meta.title }}</title>
+<style>
+  @page {
+    size: A4;
+    margin: 2.5cm 2cm 2.8cm 2cm;
+    @top-center {
+      content: "{{ meta.title | cssescape }} \2014 {{ meta.doc_id | cssescape }}";
+      font-family: "Times New Roman", Times, serif;
+      font-size: 9pt;
+      color: #555555;
+    }
+    @bottom-center {
+      content: "Page " counter(page) " of " counter(pages);
+      font-family: "Times New Roman", Times, serif;
+      font-size: 9pt;
+      color: #555555;
+    }
+    @bottom-left {
+      content: "{{ meta.doc_id | cssescape }} v{{ meta.version | cssescape }}";
+      font-family: "Times New Roman", Times, serif;
+      font-size: 8pt;
+      color: #888888;
+    }
+  }
+
+  body {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 11pt;
+    line-height: 1.4;
+    color: #111111;
+  }
+  h1 { font-size: 20pt; margin-top: 1.2em; margin-bottom: 0.4em; }
+  h2 { font-size: 16pt; margin-top: 1em; margin-bottom: 0.3em; }
+  h3 { font-size: 13pt; margin-top: 0.8em; margin-bottom: 0.3em; }
+  p { text-align: justify; margin: 0 0 0.6em 0; }
+
+  table { border-collapse: collapse; width: 100%; margin: 0.6em 0; font-size: 10pt; }
+  th, td { border: 1px solid #999999; padding: 4px 8px; text-align: left; }
+  th { background: #eeeeee; }
+
+  figure { margin: 1em 0; text-align: center; }
+  figure.diagram-figure svg { max-width: 100%; }
+  figcaption { font-size: 9pt; color: #555555; margin-top: 0.3em; font-style: italic; }
+</style>
+</head>
+<body>
+{{ body_html }}
+</body>
+</html>
