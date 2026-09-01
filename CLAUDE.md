@@ -21,10 +21,12 @@ no HTTP dependency on the backend either.
 | V1: chat (S8) | `POST /chat` — vector retrieval + LLM call, citations derived from retrieved chunks (not parsed from model output). LLM provider swappable, see Secrets/Q37 |
 | V2: compliance wizard + todos (S1/S2) | `POST /standards` / `/clauses` / `/requirements` (QA-author editor, ADR-0008). `POST /projects` scores a 3-boolean-question wizard (Q8, `compliance/scoring.py`) into a Low/Medium/High tier and generates one `TodoItem` per matching `Requirement` in one transaction. `GET /projects/{id}` for the dashboard |
 | Frontend (Svelte+Vite) | V1's chat panel, plus Tailwind + shadcn-svelte (V12, ADR-0013) and V2's routes: `/editor` (Standard/Clause/Requirement), `/wizard` (3-question classification), `/project?id=` (todo dashboard). No unified console shell yet — that's V13 |
-| Database (PostgreSQL) | `policy_documents` (V1/V4) plus V2's `compliance_standards`/`clauses`/`requirements`/`projects`/`todo_items` — Alembic-managed, see `backend/migrations/`. No `Artifact`, `ProcessStep`, or approval-state columns yet (V3/V10/V11) |
+| V3: artifact upload + self-attestation (S3) | `Artifact` row created on upload against a `TodoItem`, which flips to `Complied` (ADR-0002, no reviewer gate). PM dashboard shows compliance % (Complied / total todos) |
+| V17: AOR route classification (R&T/SSD) | `POST /aor/classify` — embeds an uploaded AOR's extracted text with the RAG pipeline's own model, cosine-compares against two labeled reference descriptions, returns route + confidence + `needs_review`. Standalone from the `Project`/wizard flow, not part of V9's AOR intake — see Q51. `scripts/classify_aor.py` is the same classifier as a CLI |
+| Database (PostgreSQL) | `policy_documents` (V1/V4) plus V2's `compliance_standards`/`clauses`/`requirements`/`projects`/`todo_items`, plus V3's `artifacts` — Alembic-managed, see `backend/migrations/`. No `ProcessStep` or approval-state columns yet (V10/V11) |
 | Vector store (Qdrant) | In real use since V1 — collection `qms_incub_corpus`, see `qms_incub.rag_clients` |
 | `synthetic-corpus/` | Independent tool generating realistic QMS-policy-shaped PDFs to manually test the backend's RAG pipeline. No shared code with `backend/`, no HTTP call to it either — its output is PDF files on disk; testing them against the backend is a manual upload-and-ask step. See `docs/shaping/synthetic-doc-realism/` for its own planning |
-| Everything else in PLAN.md / SLICES.md (V3, V6, V8, V9-V11, V13) | **Not built yet.** |
+| Everything else in PLAN.md / SLICES.md (V6, V8, V9-V11, V13) | **Not built yet.** |
 
 If you're about to implement a slice, check this table (and `git log`)
 before trusting a stale claim elsewhere that something is "done."

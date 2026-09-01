@@ -82,6 +82,10 @@ existing ADRs rather than adopted wholesale; see Q40–Q44.
 - Approval-state fields on a todo (state/authority/SLA), set by the PM's
   own self-attestation action — schema only, no reviewer role or gate
   (Q42).
+- AOR route classification: an uploaded AOR is classified as R&T or SSD
+  by semantic similarity against two labeled reference descriptions,
+  independent of the Project/wizard flow — a standalone check, not part
+  of project intake (Q51).
 - RAG ingestion pipeline for uploaded policy documents, blog posts, and
   FAQ entries.
 - RAG chatbot (OpenRouter): grounded answers from the ingested corpus plus
@@ -134,6 +138,7 @@ existing ADRs rather than adopted wholesale; see Q40–Q44.
 | R9 | A project's intake document is parsed and its declared attributes extracted to inform classification (Q40) | Must-have |
 | R10 | Todos are grouped for navigation under a small, fixed set of process-phase steps (Q41) | Must-have |
 | R11 | A todo surfaces an approval-route status (state/authority/SLA), even though only self-attestation gates completion this milestone (Q42) | Must-have |
+| R12 | An uploaded AOR can be classified as R&T or SSD, standalone from project intake (Q51) | Must-have |
 
 ## Shape
 
@@ -151,6 +156,7 @@ existing ADRs rather than adopted wholesale; see Q40–Q44.
 | S10 | AOR intake: project-scoped upload → Docling parse → LLM structured-field extraction → stored on the `Project`, never enters the corpus | ADR-0012 |
 | S11 | Process-step grouping: fixed, config-seeded `ProcessStep` rows; todo generation (S2) assigns each `TodoItem` a step | ADR-0008 |
 | S12 | Approval-state fields: `TodoItem` carries state/authority/SLA, set by S3's self-attestation action, no reviewer role | ADR-0002 |
+| S13 | AOR route classification: extracted AOR text → embedded with the RAG pipeline's own model → cosine similarity against two labeled reference descriptions (R&T, SSD) → route + confidence + `needs_review` flag. No Project/wizard linkage, no corpus write | ADR-0012 |
 
 ## Affordances
 
@@ -180,6 +186,7 @@ existing ADRs rather than adopted wholesale; see Q40–Q44.
 | LlamaIndex ingestion/query pipeline | library, orchestrates S6/S8 | S6, S8 |
 | OpenRouter API client | handler | S8 |
 | `make up` / `make seed` (Makefile) | one-command local bring-up; `make seed` uploads a fixture PDF through the real endpoint | all — ADR-0005 |
+| `POST /aor/classify` + `scripts/classify_aor.py` | endpoint and CLI, both call the same classifier | S13 |
 
 ## Implementation decisions
 
