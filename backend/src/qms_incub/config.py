@@ -51,8 +51,16 @@ class Settings(BaseSettings):
     retrieval_candidate_k: int = 20
 
     # --- Reranker ---
-    reranker_provider: Literal["none", "zenmux"] = "zenmux"
-    reranker_model: str = "qwen/qwen3-rerank"
+    # "none": passthrough, keep the retriever's own order (default — no
+    #   provider should be assumed configured).
+    # "zenmux": ZenMux's hosted cross-encoder /rerank endpoint (cheap, no
+    #   LLM tokens spent) — needs ZENMUX_API_KEY.
+    # "llm": prompt whichever provider LLM_PROVIDER is already set to
+    #   (ollama/openrouter/zenmux) to rank the candidates — reuses
+    #   chat/llm.py's get_llm_client(), so it works with any of the three
+    #   without a dedicated rerank API.
+    reranker_provider: Literal["none", "zenmux", "llm"] = "none"
+    reranker_model: str = "qwen/qwen3-rerank"  # zenmux-only; llm mode uses LLM_PROVIDER's own model
     zenmux_rerank_url: str = "https://zenmux.ai/api/v1/rerank"
     reranker_timeout_s: float = 30.0
 

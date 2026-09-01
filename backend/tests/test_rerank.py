@@ -109,3 +109,106 @@ def test_factory_falls_back_to_noop_without_key(monkeypatch: pytest.MonkeyPatch)
 def test_factory_none_provider_is_noop(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(rerank_mod.settings, "reranker_provider", "none")
     assert isinstance(_build_reranker(), NoOpReranker)
+
+
+def test_factory_default_is_none_provider() -> None:
+    # No reranker provider should be assumed configured out of the box.
+    from qms_incub.config import Settings
+
+    assert Settings().reranker_provider == "none"
+
+
+def test_llm_reranker_parses_json_order_and_fills_remainder() -> None:
+    from qms_incub.chat.rerank import LLMPromptReranker
+
+    chunks = [_chunk("a", "x"), _chunk("b", "y"), _chunk("c", "z")]
+
+    class _Message:
+        content = "Sure, here you go: [2, 0]"
+
+    class _Choice:
+        message = _Message()
+
+    class _Response:
+        choices = [_Choice()]
+
+    class _Completions:
+        def create(self, **_kwargs: object) -> _Response:
+            return _Response()
+
+    class _Chat:
+        completions = _Completions()
+
+    class _Client:
+        chat = _Chat()
+
+    reranker = LLMPromptReranker(client=_Client(), model="m")  # type: ignore[arg-type]
+    out = reranker.rerank("q", chunks, top_n=3)
+    # Explicit order first, then the untouched remainder (b) appended.
+    assert [c.document_id for c in out] == ["c", "a", "b"]
+
+
+def test_llm_reranker_falls_back_to_retriever_order_on_unparseable_response() -> None:
+    from qms_incub.chat.rerank import LLMPromptReranker
+
+    chunks = [_chunk("a", "x"), _chunk("b", "y")]
+
+    class _Message:
+        content = "I'm not going to output JSON today."
+
+    class _Choice:
+        message = _Message()
+
+    class _Response:
+        choices = [_Choice()]
+
+    class _Completions:
+        def create(self, **_kwargs: object) -> _Response:
+            return _Response()
+
+    class _Chat:
+        completions = _Completions()
+
+    class _Client:
+        chat = _Chat()
+
+    reranker = LLMPromptReranker(client=_Client(), model="m")  # type: ignore[arg-type]
+    out = reranker.rerank("q", chunks, top_n=2)
+    assert [c.document_id for c in out] == ["a", "b"]
+
+
+def test_llm_reranker_falls_back_on_client_exception() -> None:
+    from qms_incub.chat.rerank import LLMPromptReranker
+
+    chunks = [_chunk("a", "x"), _chunk("b", "y")]
+
+    class _Completions:
+        def create(self, **_kwargs: object) -> None:
+            raise RuntimeError("network exploded")
+
+    class _Chat:
+        completions = _Completions()
+
+    class _Client:
+        chat = _Chat()
+
+    reranker = LLMPromptReranker(client=_Client(), model="m")  # type: ignore[arg-type]
+    out = reranker.rerank("q", chunks, top_n=2)
+    assert [c.document_id for c in out] == ["a", "b"]
+
+
+def test_factory_llm_provider_builds_llm_reranker(monkeypatch: pytest.MonkeyPatch) -> None:
+    from qms_incub.chat.rerank import LLMPromptReranker
+
+    monkeypatch.setattr(rerank_mod.settings, "reranker_provider", "llm")
+    monkeypatch.setattr(rerank_mod.settings, "llm_provider", "ollama")
+    assert isinstance(_build_reranker(), LLMPromptReranker)
+
+
+def test_factory_llm_provider_falls_back_to_noop_when_llm_unconfigured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(rerank_mod.settings, "reranker_provider", "llm")
+    monkeypatch.setattr(rerank_mod.settings, "llm_provider", "openrouter")
+    monkeypatch.setattr(rerank_mod.settings, "openrouter_api_key", None)
+    assert isinstance(_build_reranker(), NoOpReranker)
