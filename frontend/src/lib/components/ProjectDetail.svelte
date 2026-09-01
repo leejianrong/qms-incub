@@ -13,7 +13,6 @@
   import CheckCircle2Icon from "@lucide/svelte/icons/check-circle-2";
   import CircleIcon from "@lucide/svelte/icons/circle";
   import {
-    askChat,
     resolveApiBase,
     getProject,
     uploadArtifact,
@@ -21,7 +20,6 @@
     type ProjectWithTodos,
     type ProcessStep,
     type TodoItem,
-    type ChatAnswer,
   } from "$lib/api";
   import { approvalRouteViewModel } from "$lib/approvalRoute";
   import { projectCode } from "$lib/projectCards";
@@ -43,10 +41,6 @@
   let selectedTodoId = $state<string | null>(null);
   let navigatorCollapsed = $state(false);
   let expandedStepId = $state<string | null>(null);
-  let question = $state("");
-  let asking = $state(false);
-  let chatResult = $state<ChatAnswer | null>(null);
-  let chatError = $state<string | null>(null);
   let commentDraft = $state("");
 
   // Refetches this project's data without disturbing the user's current
@@ -79,8 +73,6 @@
     data = null;
     selectedTodoId = null;
     expandedStepId = null;
-    chatResult = null;
-    chatError = null;
     load();
   });
 
@@ -96,19 +88,6 @@
       error = err instanceof Error ? err.message : String(err);
     } finally {
       uploadingTodoId = null;
-    }
-  }
-
-  async function ask() {
-    if (!question.trim() || asking || !projectId) return;
-    asking = true;
-    chatError = null;
-    try {
-      chatResult = await askChat(apiBase, question, projectId);
-    } catch (err) {
-      chatError = err instanceof Error ? err.message : String(err);
-    } finally {
-      asking = false;
     }
   }
 
@@ -427,40 +406,5 @@
         {/if}
       </div>
     </div>
-
-    <Card.Root aria-label="Project-aware compliance chat">
-      <Card.Header>
-        <Card.Title>Ask about this project</Card.Title>
-        <Card.Description>
-          Answers use this project's current todo and artifact state plus the policy corpus.
-        </Card.Description>
-      </Card.Header>
-      <Card.Content class="space-y-3">
-        <form class="flex gap-2" onsubmit={(event) => { event.preventDefault(); ask(); }}>
-          <input
-            class="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-            bind:value={question}
-            placeholder="e.g. Am I compliant yet?"
-            disabled={asking}
-          />
-          <Button type="submit" disabled={asking || !question.trim()}>
-            {asking ? "Asking…" : "Ask"}
-          </Button>
-        </form>
-        {#if chatError}
-          <p class="text-sm text-destructive">Chat error: {chatError}</p>
-        {/if}
-        {#if chatResult}
-          <div class="rounded-md border border-border p-3 text-sm">
-            <p>{chatResult.answer}</p>
-            {#if chatResult.citations.length > 0}
-              <p class="mt-2 text-xs text-muted-foreground">
-                Policy sources: {chatResult.citations.map((citation) => citation.document_title).join(", ")}
-              </p>
-            {/if}
-          </div>
-        {/if}
-      </Card.Content>
-    </Card.Root>
   {/if}
 </main>
