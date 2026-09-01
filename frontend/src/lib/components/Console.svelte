@@ -10,6 +10,7 @@
   import Wizard from "./Wizard.svelte";
   import ProjectDetail from "./ProjectDetail.svelte";
   import Blog from "./Blog.svelte";
+  import Faq from "./Faq.svelte";
   import Favourites from "./Favourites.svelte";
   import { routePath } from "$lib/router.svelte";
 
@@ -38,11 +39,7 @@
   {:else if view === "favourites"}
     <Favourites />
   {:else if view === "faq"}
-    <!-- V18 step 6 lands the real FAQ reader; the Shell slice only needs
-         this route to exist so the header's nav is clickable. -->
-    <main class="mx-auto max-w-3xl p-8">
-      <p class="text-sm text-muted-foreground">The FAQ view lands in a follow-up slice (V18 step 6).</p>
-    </main>
+    <Faq />
   {:else}
     <ProjectsDashboard />
   {/if}

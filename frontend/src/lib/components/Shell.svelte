@@ -10,6 +10,8 @@
   import TriangleAlertIcon from "@lucide/svelte/icons/triangle-alert";
   import { navigate, routePath } from "$lib/router.svelte";
   import { resolveApiBase, listProjects, listBlogPosts, listFAQEntries, type Project } from "$lib/api";
+  import { publishedPosts } from "$lib/blogCards";
+  import { publishedFaqEntries } from "$lib/faqCards";
   import {
     deriveUnseenPlanNotifications,
     getSeenProjectIds,
@@ -42,12 +44,16 @@
       projects = [];
     }
     try {
-      blogCount = (await listBlogPosts(apiBase)).length;
+      // Nav badge counts what the PM-facing Blog/FAQ views actually show
+      // — published entries only (V6/ADR-0012's rule), not the admin's
+      // full draft+published list — same publishedPosts/publishedFaqEntries
+      // filter Blog.svelte/Faq.svelte apply.
+      blogCount = publishedPosts(await listBlogPosts(apiBase)).length;
     } catch {
       blogCount = 0;
     }
     try {
-      faqCount = (await listFAQEntries(apiBase)).length;
+      faqCount = publishedFaqEntries(await listFAQEntries(apiBase)).length;
     } catch {
       faqCount = 0;
     }
