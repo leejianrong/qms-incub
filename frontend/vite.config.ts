@@ -11,4 +11,13 @@ export default defineConfig({
       $lib: path.resolve(import.meta.dirname, './src/lib'),
     },
   },
+  server: {
+    // Backend CORS is hardcoded to http://localhost:5173 (see
+    // backend/src/qms_incub/main.py) with no equivalent fallback wiring
+    // for the frontend's port. Without strictPort, Vite silently moves to
+    // 5174 when 5173 is taken and every API call breaks with a CORS error
+    // that doesn't obviously point back here — fail loudly instead.
+    port: 5173,
+    strictPort: true,
+  },
 })
