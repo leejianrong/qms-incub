@@ -49,8 +49,13 @@ export function buildProjectCard(
   project: Project,
   todos: TodoItem[],
   steps: ProcessStep[],
+  // True when this project's todos/steps come from the create-wizard's
+  // client-only stashed plan rather than a real backend classification
+  // (wizardPlan.ts) — risk_tier is still null in that case, but the
+  // project isn't an empty draft, so it shouldn't render as one.
+  hasWizardPlan = false,
 ): ProjectCardViewModel {
-  const isDraft = project.risk_tier === null;
+  const isDraft = project.risk_tier === null && !hasWizardPlan;
   const returnedTodo = todos.find((t) => t.approval_state === "returned") ?? null;
   const submittedTodo = todos.find((t) => t.approval_state === "submitted") ?? null;
 

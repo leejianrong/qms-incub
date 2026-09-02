@@ -41,4 +41,19 @@ describe("deriveUnseenPlanNotifications", () => {
     const result = deriveUnseenPlanNotifications(projects, new Set());
     expect(result[0].title).toBe("QMS plan ready — Untitled project");
   });
+
+  it("notifies for an unclassified project that has the create-wizard's stashed plan", () => {
+    // Regression: a project made through Wizard.svelte's client-only demo
+    // flow never gets risk_tier set (no real backend classification), so
+    // it never got a "plan ready" notification at all without this.
+    const projects = [project({ id: "p1", risk_tier: null })];
+    const result = deriveUnseenPlanNotifications(projects, new Set(), new Set(["p1"]));
+    expect(result).toEqual([
+      {
+        id: "p1",
+        title: "QMS plan ready — Ledger Recon",
+        text: "Classification is complete and the todo list has been generated. Open the record to get started.",
+      },
+    ]);
+  });
 });

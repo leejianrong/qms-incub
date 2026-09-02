@@ -10,8 +10,9 @@
   // reinventing their view-models here.
   import StarIcon from "@lucide/svelte/icons/star";
   import { Button } from "$lib/components/ui/button/index.js";
-  import { resolveApiBase, listProjects, listProcessSteps, listBlogPosts, getProject, type Project, type TodoItem, type BlogPost } from "$lib/api";
-  import { buildProjectCard, type ProjectCardViewModel } from "$lib/projectCards";
+  import { resolveApiBase, listBlogPosts, type BlogPost } from "$lib/api";
+  import { loadProjectCards } from "$lib/projectCardData";
+  import { type ProjectCardViewModel } from "$lib/projectCards";
   import { deriveExcerpt, favoritedPosts, formatPublishedAt, publishedPosts, sortByRecency } from "$lib/blogCards";
   import {
     goToProject,
@@ -31,19 +32,7 @@
   async function load() {
     error = null;
     try {
-      const [projects, steps] = await Promise.all([listProjects(apiBase), listProcessSteps(apiBase)]);
-      const details = await Promise.all(
-        projects.map(async (project: Project) => {
-          if (project.risk_tier === null) return { project, todos: [] as TodoItem[] };
-          try {
-            const detail = await getProject(apiBase, project.id);
-            return { project, todos: detail.todos };
-          } catch {
-            return { project, todos: [] as TodoItem[] };
-          }
-        }),
-      );
-      cards = details.map((d) => buildProjectCard(d.project, d.todos, steps));
+      cards = (await loadProjectCards(apiBase)).cards;
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
     }

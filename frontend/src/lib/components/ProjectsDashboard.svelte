@@ -7,16 +7,9 @@
   // and markup.
   import { Button } from "$lib/components/ui/button/index.js";
   import StarIcon from "@lucide/svelte/icons/star";
+  import { resolveApiBase, type TodoItem } from "$lib/api";
+  import { loadProjectCards } from "$lib/projectCardData";
   import {
-    resolveApiBase,
-    listProjects,
-    listProcessSteps,
-    getProject,
-    type Project,
-    type TodoItem,
-  } from "$lib/api";
-  import {
-    buildProjectCard,
     computeStats,
     matchesFilter,
     matchesSearch,
@@ -42,20 +35,9 @@
   async function load() {
     error = null;
     try {
-      const [projects, steps] = await Promise.all([listProjects(apiBase), listProcessSteps(apiBase)]);
-      const details = await Promise.all(
-        projects.map(async (project: Project) => {
-          if (project.risk_tier === null) return { project, todos: [] as TodoItem[] };
-          try {
-            const detail = await getProject(apiBase, project.id);
-            return { project, todos: detail.todos };
-          } catch {
-            return { project, todos: [] as TodoItem[] };
-          }
-        }),
-      );
-      allTodos = details.flatMap((d) => d.todos);
-      cards = details.map((d) => buildProjectCard(d.project, d.todos, steps));
+      const result = await loadProjectCards(apiBase);
+      cards = result.cards;
+      allTodos = result.allTodos;
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
     }
