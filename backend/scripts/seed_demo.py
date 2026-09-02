@@ -14,9 +14,11 @@ DB that already has this demo data (or partial runs from a failed attempt).
 It does NOT touch the document/RAG corpus (ADR-0012) — that's `make seed` /
 the synthetic-corpus walkthrough's job, not this script's.
 
-Usage (needs `make up` running):
+Usage (needs `make up` running, or invoked via `make seed-demo`, which
+passes the right --api-base for you):
+    cd backend && uv run python scripts/seed_demo.py --api-base http://localhost:5173/api
+    # --api-base default below only reachable via `make backend-dev` (ADR-0017):
     cd backend && uv run python scripts/seed_demo.py
-    cd backend && uv run python scripts/seed_demo.py --api-base http://localhost:8001
 """
 
 from __future__ import annotations
