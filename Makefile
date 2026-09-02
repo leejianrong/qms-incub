@@ -1,4 +1,4 @@
-.PHONY: help up down migrate seed test lint typecheck install install-hooks backend-dev frontend-dev
+.PHONY: help up down migrate seed seed-demo test lint typecheck install install-hooks backend-dev frontend-dev
 
 # Bare `make` shows available targets instead of running the first one.
 .DEFAULT_GOAL := help
@@ -9,6 +9,7 @@ help:
 	@echo "  down           Stop and remove the Postgres/Qdrant containers"
 	@echo "  migrate        Apply Alembic migrations against Postgres"
 	@echo "  seed           Upload the sample fixture PDF, proving local ingestion+chat work"
+	@echo "  seed-demo      Seed demo standard/projects/blog/FAQ content (ui-reference-shaped)"
 	@echo "  install        Install backend and frontend dependencies"
 	@echo "  install-hooks  Symlink the pre-push git hook"
 	@echo "  test           Run backend and frontend fast/no-infra tests"
@@ -56,6 +57,13 @@ migrate:
 seed:
 	@port=$$(cat .backend-port.local 2>/dev/null || echo 8000); \
 	 curl -sf -F "file=@backend/tests/fixtures/sample_policy_document.pdf" "http://localhost:$$port/documents" | tee /dev/stderr | grep -q '"status":"embedded"'
+
+# Seeds a QMS standard, five demo projects, and blog/FAQ content shaped
+# like ui-reference/QMS Console.dc.html, through the real API (backend/
+# scripts/seed_demo.py). Idempotent — safe to re-run. Requires `make up`.
+seed-demo:
+	@port=$$(cat .backend-port.local 2>/dev/null || echo 8000); \
+	 cd backend && uv run python scripts/seed_demo.py --api-base "http://localhost:$$port"
 
 install:
 	cd backend && uv sync
