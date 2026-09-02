@@ -48,13 +48,19 @@ once Docling has parsed, chunked, and embedded that document into Qdrant.
 
 ## 4. Ask it questions
 
-Open http://localhost:5173 and ask questions in the chat panel, or call
-the API directly:
+Chat is project-scoped (V8): open http://localhost:5173, create a project
+from the dashboard, then use the floating "Ask QMS Assistant" widget on
+that project's page. Calling the API directly needs a `project_id` too —
+create one first, then pass its id along with your question:
 
 ```bash
+PROJECT_ID=$(curl -sf -X POST http://localhost:8000/projects \
+  -H "Content-Type: application/json" -d '{"name": "Spot check"}' \
+  | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
+
 curl -s -X POST http://localhost:8000/chat \
   -H "Content-Type: application/json" \
-  -d '{"question": "..."}'
+  -d "{\"question\": \"...\", \"project_id\": \"$PROJECT_ID\"}"
 ```
 
 A good first question — it requires following a cross-reference between

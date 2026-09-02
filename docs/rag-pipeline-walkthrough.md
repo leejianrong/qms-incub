@@ -86,8 +86,12 @@ anything.
 
 ## Stage 3: retrieval and chat
 
-`POST /chat` takes a `{"question": "..."}` body and walks through four
-files in `backend/src/qms_incub/chat/`:
+`POST /chat` takes a `{"question": "...", "project_id": "..."}` body — V8
+grounds every answer in that project's compliance state alongside the
+retrieved chunks, so a `project_id` is required even when you only care
+about the document corpus (`POST /projects` with just `{"name": "..."}`
+is enough to get one) — and walks through four files in
+`backend/src/qms_incub/chat/`:
 
 - **`retrieval.py`** fetches candidates via `RETRIEVAL_MODE` — `bm25`
   (sparse lexical, the default) or `vector` (dense similarity, embedding the
@@ -132,6 +136,27 @@ uv run python -m rag_eval                 # score retrieval: NDCG@k, Recall@k, M
 It depends on `qms_incub` (a local `uv` path dependency on `backend/`) so
 it scores the real `RetrievalPort` implementation rather than a copy —
 unlike `synthetic-corpus/`, which shares no code with the backend at all.
+
+**Config gotcha:** `rag_eval` imports `qms_incub.config.settings` directly,
+and `pydantic-settings` resolves `env_file=".env"` relative to the current
+working directory — so running the commands above from `rag-eval/` reads
+`rag-eval/.env`, not `backend/.env`. Copy `rag-eval/.env.example` to
+`rag-eval/.env` and keep its embedding/retrieval/reranker values identical
+to whatever `backend/.env` actually used to ingest the corpus you're
+scoring. A mismatch (e.g. scoring with `EMBEDDING_PROVIDER=zenmux` against
+a collection ingested with the local model) doesn't error — it just
+quietly scores nonsense, since switching embedding providers changes
+vector dimensionality and needs a full re-ingest (see `EMBEDDING_PROVIDER`
+in `backend/.env.example`).
+
+Want to run the bench against ZenMux embeddings and an LLM-prompted
+rerank pass instead of the local/BM25 defaults? Set `EMBEDDING_PROVIDER=
+zenmux`, `RETRIEVAL_MODE=vector`, `RERANKER_PROVIDER=llm`, and
+`LLM_PROVIDER=zenmux` in both `backend/.env` and `rag-eval/.env`, drop and
+re-ingest the corpus (`curl -X DELETE http://localhost:6333/collections/
+qms_incub_corpus`, then repeat the upload loop above) so Qdrant holds
+ZenMux-dimensioned vectors, then rerun `python -m rag_eval`. `--no-rerank`
+skips the rerank pass; `--json` gives the full machine-readable report.
 
 ## Where to look next
 
