@@ -73,6 +73,18 @@ describe("buildProjectCard", () => {
     expect(card.pct).toBe(0);
   });
 
+  it("is not a draft when unclassified but the create-wizard stashed a plan", () => {
+    // Regression: a project made through Wizard.svelte's client-only demo
+    // flow never gets a real backend classification, so risk_tier stays
+    // null forever — without hasWizardPlan it showed as "Draft" on the
+    // dashboard indefinitely even once a plan existed for it.
+    const todos = [todo({ id: "wiz:0:0", process_step_id: "wiz:0" })];
+    const wizSteps: ProcessStep[] = [{ id: "wiz:0", title: "P002: Project Planning", ordering: 0 }];
+    const card = buildProjectCard(project({ risk_tier: null }), todos, wizSteps, true);
+    expect(card.isDraft).toBe(false);
+    expect(card.status).not.toBe("draft");
+  });
+
   it("flags needs_action and surfaces a rework alert when a todo was returned", () => {
     const todos = [todo({ approval_state: "returned", requirement_description: "Attach the DPIA" })];
     const card = buildProjectCard(project(), todos, steps);

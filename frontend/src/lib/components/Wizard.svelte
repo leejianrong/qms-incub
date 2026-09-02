@@ -38,6 +38,9 @@
   // (rendered under the title, like ui-reference/QMS Console.dc.html's
   // "Your QMS plan" card). Frontend-only demo wiring; the real generator
   // is backend work that isn't in this slice.
+  // synthetic-corpus/AOR_Project_1.docx (name matches "_1" -> PLAN_A,
+  // iterative) and AOR_Project_2.docx (-> PLAN_B, staged) are ready-made
+  // uploads for manually exercising both variants of this step.
   type PlanStep = { code: string; title: string; subs: string };
 
   const STEP_P002 = "Open the project record · Agree scope, schedule and resources · Project management plan approval";
@@ -88,20 +91,22 @@
   const totalSubSteps = $derived(planSteps.reduce((n, s) => n + subCount(s.subs), 0));
 
   // V18 step 3: guards navigation away from the wizard (via Shell's nav,
-  // not just this component's own back link) while there's unsaved setup.
-  // Nothing left to lose once the plan is generated, so "preview" is never
-  // dirty.
+  // not just this component's own back link) while there's unsaved setup
+  // — mirrors ui-reference/'s setupDirty. "preview" is also dirty: by the
+  // time it's reached, generatePlan() has already kicked off (or
+  // finished) creating a real backend project, so navigating away would
+  // silently abandon it.
   const dirty = $derived(
-    phase === "intake" &&
-      (projectName.trim() !== "" || targetDate !== "" || aorFile !== null),
+    phase === "preview" ||
+      (phase === "intake" && (projectName.trim() !== "" || targetDate !== "" || aorFile !== null)),
   );
   $effect(() => {
     setWizardDirty(dirty);
     return () => setWizardDirty(false);
   });
 
-  const STEP_LABELS = ["Project details", "Clarification", "QMS plan"] as const;
-  const PHASE_INDEX: Record<Phase, number> = { intake: 0, preview: 2 };
+  const STEP_LABELS = ["Project details", "QMS plan"] as const;
+  const PHASE_INDEX: Record<Phase, number> = { intake: 0, preview: 1 };
   const stepperIndex = $derived(PHASE_INDEX[phase]);
 
   const detailsOk = $derived(projectName.trim() !== "" && targetDate !== "" && aorFile !== null);
@@ -111,7 +116,6 @@
         ? "Name, date and AOR in"
         : "AOR in · details missing"
       : "Name, date and AOR",
-    "Set from the AOR",
     "Tailored control set",
   ]);
   const heading = $derived(
@@ -135,6 +139,7 @@
   }
 
   function setAorFile(file: File | null | undefined) {
+    if (aorLocked) return;
     aorFile = file ?? null;
   }
 
@@ -155,7 +160,15 @@
   // never has to wait on Docling/the LLM; finish() awaits this promise so
   // a fast click can't race ahead of it and fall back to the home page.
   let registration = $state<Promise<void> | null>(null);
+  let registrationError = $state<string | null>(null);
   let finishing = $state(false);
+
+  // Once a backend project exists (or is being created), the AOR pack it
+  // was created from can't be swapped out from under it — the preview's
+  // "Your QMS plan" is derived live from aorFile, so changing the file
+  // after registration has started would show a plan that no longer
+  // matches what was actually sent to the backend.
+  const aorLocked = $derived(project !== null || registration !== null);
 
   function planForDetail() {
     return planSteps.map((s) => ({
@@ -166,9 +179,10 @@
   }
 
   function generatePlan() {
-    if (!projectName.trim() || !aorFile) return;
+    if (!detailsOk || !aorFile) return;
     phase = "preview";
     if (project || registration) return;
+    registrationError = null;
     const file = aorFile;
     registration = (async () => {
       try {
@@ -185,6 +199,12 @@
         }
       } catch (err) {
         console.warn("Wizard: project registration failed —", err);
+        // Reset so a retry (Previous, then Next again) actually retries
+        // instead of the `if (project || registration) return;` guard
+        // above silently no-opping forever.
+        registration = null;
+        registrationError = err instanceof Error ? err.message : String(err);
+        phase = "intake";
       }
     })();
   }
@@ -203,7 +223,7 @@
         prevDisabled: true,
         onPrev: () => {},
         nextLabel: "Next",
-        nextDisabled: !projectName.trim() || !aorFile,
+        nextDisabled: !detailsOk,
         onNext: generatePlan,
       };
     }
@@ -233,7 +253,7 @@
     </div>
     <h1 class="mt-1 text-[32px] leading-tight font-medium">{heading}</h1>
     <p class="mt-2 text-[13px] text-muted-foreground">
-      Step {stepperIndex + 1} of 3 · {STEP_LABELS[stepperIndex]}
+      Step {stepperIndex + 1} of 2 · {STEP_LABELS[stepperIndex]}
     </p>
   </header>
 
@@ -275,6 +295,12 @@
 
   {#if phase === "intake"}
     <div class="space-y-5 px-8">
+      {#if registrationError}
+        <p class="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          Couldn't create the project: {registrationError}. Fix the details below and try again.
+        </p>
+      {/if}
+
       <section class="rounded-2xl border border-border bg-card px-6 py-6 shadow-sm">
         <div class="mb-4 flex items-center gap-3">
           <span
@@ -319,22 +345,29 @@
           {/if}
         </div>
         <p class="mb-3.5 text-[13px] text-muted-foreground">
-          The Approval of Requirement pack states what is being built and why in-house. The QMS reads
-          it to work out which approvals and controls apply, so the plan cannot be generated without
-          it.
+          {#if aorLocked}
+            This project has already been created from the pack below — remove it and start a new
+            project to use a different one.
+          {:else}
+            The Approval of Requirement pack states what is being built and why in-house. The QMS
+            reads it to work out which approvals and controls apply, so the plan cannot be generated
+            without it.
+          {/if}
         </p>
 
         <button
           type="button"
+          disabled={aorLocked}
           onclick={() => fileInput?.click()}
           ondragover={(e) => {
             e.preventDefault();
-            dragOver = true;
+            if (!aorLocked) dragOver = true;
           }}
           ondragleave={() => (dragOver = false)}
           ondrop={onDrop}
           class={[
             "flex w-full items-center gap-4 rounded-2xl border-2 border-dashed px-6 py-6 text-left transition-colors",
+            aorLocked && "cursor-not-allowed opacity-60",
             aorFile
               ? "border-border bg-[var(--color-surface)]"
               : "border-primary bg-accent hover:border-[var(--color-accent-600)]",
@@ -360,6 +393,7 @@
           type="file"
           accept=".pdf,.docx,.xlsx"
           class="hidden"
+          disabled={aorLocked}
           onchange={onAorFileSelected}
         />
 
@@ -371,7 +405,9 @@
                 {formatSize(aorFile.size)} · {aorFile.type || "file"}
               </div>
             </div>
-            <Button variant="ghost" size="sm" onclick={() => setAorFile(null)}>Remove</Button>
+            <Button variant="ghost" size="sm" disabled={aorLocked} onclick={() => setAorFile(null)}>
+              Remove
+            </Button>
           </div>
         {/if}
       </section>
@@ -394,6 +430,29 @@
           </div>
         {/each}
       </section>
+
+      {#if project?.aor_extracted_fields}
+        <section class="rounded-2xl border border-border bg-card px-6 py-6 shadow-sm">
+          <div class="mb-3 flex items-center gap-3">
+            <span
+              class="flex size-[34px] flex-none items-center justify-center rounded-[10px] bg-accent text-accent-foreground"
+            >
+              <FileTextIcon class="size-[18px]" />
+            </span>
+            <h2 class="text-[17px] font-medium">Read from the pack</h2>
+          </div>
+          <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-sm">
+            <dt class="text-muted-foreground">Criticality tier</dt>
+            <dd>{project.aor_extracted_fields.criticality_tier}</dd>
+            <dt class="text-muted-foreground">Data classification</dt>
+            <dd>{project.aor_extracted_fields.data_classification}</dd>
+            <dt class="text-muted-foreground">External dependencies</dt>
+            <dd>{project.aor_extracted_fields.external_dependencies.join(", ") || "none"}</dd>
+            <dt class="text-muted-foreground">In-house rationale</dt>
+            <dd>{project.aor_extracted_fields.in_house_rationale}</dd>
+          </dl>
+        </section>
+      {/if}
 
       <section class="rounded-2xl border border-border bg-card px-6 py-6 shadow-sm">
         <div class="mb-3 flex items-center gap-3">

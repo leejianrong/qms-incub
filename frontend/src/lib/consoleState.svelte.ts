@@ -14,12 +14,21 @@ export interface ShellNotification {
 
 // Pure and unit-testable: which classified (plan-ready) projects the
 // viewer hasn't opened yet, in the shape the notification dropdown needs.
+// `wizardPlanProjectIds` additionally counts a project as plan-ready when
+// it has the create-wizard's stashed client-only plan (wizardPlan.ts) even
+// though risk_tier is still null — otherwise a project made through that
+// flow would never get a "plan ready" notification at all.
 export function deriveUnseenPlanNotifications(
   projects: Project[],
   seenProjectIds: ReadonlySet<string>,
+  wizardPlanProjectIds: ReadonlySet<string> = new Set(),
 ): ShellNotification[] {
   return projects
-    .filter((project) => project.risk_tier !== null && !seenProjectIds.has(project.id))
+    .filter(
+      (project) =>
+        (project.risk_tier !== null || wizardPlanProjectIds.has(project.id)) &&
+        !seenProjectIds.has(project.id),
+    )
     .map((project) => ({
       id: project.id,
       title: `QMS plan ready — ${project.name.trim() || "Untitled project"}`,

@@ -12,6 +12,7 @@
   import { resolveApiBase, listProjects, listBlogPosts, listFAQEntries, type Project } from "$lib/api";
   import { publishedPosts } from "$lib/blogCards";
   import { publishedFaqEntries } from "$lib/faqCards";
+  import { loadWizardPlan } from "$lib/wizardPlan";
   import {
     deriveUnseenPlanNotifications,
     getSeenProjectIds,
@@ -62,7 +63,12 @@
 
   load();
 
-  const notifications = $derived(deriveUnseenPlanNotifications(projects, new Set(Object.keys(getSeenProjectIds()))));
+  const wizardPlanProjectIds = $derived(
+    new Set(projects.filter((p) => p.risk_tier === null && loadWizardPlan(p.id) !== null).map((p) => p.id)),
+  );
+  const notifications = $derived(
+    deriveUnseenPlanNotifications(projects, new Set(Object.keys(getSeenProjectIds())), wizardPlanProjectIds),
+  );
   const unreadCount = $derived(notifications.length);
 
   const navItems = $derived(

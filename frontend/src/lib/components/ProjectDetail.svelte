@@ -25,7 +25,7 @@
   import { projectCode } from "$lib/projectCards";
   import { getComments, postComment } from "$lib/discussionState.svelte";
   import { navigate, routeParam } from "$lib/router.svelte";
-  import { loadWizardPlan } from "$lib/wizardPlan";
+  import { loadWizardPlan, wizardPlanToSteps, wizardPlanToTodos } from "$lib/wizardPlan";
 
   const apiBase = resolveApiBase(import.meta.env);
 
@@ -54,38 +54,11 @@
   });
   const useWizardPlan = $derived(!!data && data.todos.length === 0 && !!wizardPlan);
 
-  function synthTodo(stepIdx: number, subIdx: number, sub: string, stepLabel: string): TodoItem {
-    return {
-      id: `wiz:${stepIdx}:${subIdx}`,
-      project_id: projectId,
-      requirement_id: `wiz:${stepIdx}:${subIdx}`,
-      requirement_description: sub,
-      clause_text: stepLabel,
-      standard_name: "QMS plan",
-      status: "pending",
-      process_step_id: `wiz:${stepIdx}`,
-      approval_state: "not_required",
-      approval_authority: "",
-      sla_target: null,
-      decided_at: null,
-    };
-  }
-
   const navSteps = $derived<ProcessStep[]>(
-    useWizardPlan && wizardPlan
-      ? wizardPlan.steps.map((s, i) => ({
-          id: `wiz:${i}`,
-          title: `${s.code}: ${s.title}`,
-          ordering: i,
-        }))
-      : steps,
+    useWizardPlan && wizardPlan ? wizardPlanToSteps(wizardPlan) : steps,
   );
   const navTodos = $derived<TodoItem[]>(
-    useWizardPlan && wizardPlan
-      ? wizardPlan.steps.flatMap((s, si) =>
-          s.subs.map((sub, bi) => synthTodo(si, bi, sub, `${s.code}: ${s.title}`)),
-        )
-      : (data?.todos ?? []),
+    useWizardPlan && wizardPlan ? wizardPlanToTodos(projectId, wizardPlan) : (data?.todos ?? []),
   );
   const compliedCount = $derived(navTodos.filter((t) => t.status === "complied").length);
   const compliancePct = $derived(
