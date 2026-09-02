@@ -74,6 +74,16 @@ the user tell you a value directly. `backend/.env.example` and
 
 Run from the repo root unless noted.
 
+- `make install` — `uv sync` (backend) + `npm install` (frontend), plus a
+  one-time `make env` (below). Safe to run repeatedly.
+- `make env` — copies each `.env.example` to its real `.env`
+  (`backend/.env`, `frontend/.env.local`, `rag-eval/.env`) wherever one
+  doesn't already exist yet; never overwrites a real one. Defaults need no
+  API key (`ollama`/local embeddings/`bm25`/no rerank), so a fresh clone
+  works before anyone fills in a real provider key. `make install` and
+  `make up` both depend on this, so you rarely need to run it directly.
+- `make install-hooks` — symlinks `scripts/git-hooks/pre-push` into
+  `.git/hooks/pre-push`. Run this once per clone.
 - `make up` — start Postgres + Qdrant (Docker), then the FastAPI backend
   (`:8000`, falling back to `:8001`, `:8002`, ... if that port's already
   taken — watch the output for which port it picked, and the Vite dev
@@ -81,14 +91,19 @@ Run from the repo root unless noted.
   dev server (`:5173`) in the foreground. Ctrl+C stops both dev servers;
   containers stay running. **The frontend's port has no equivalent
   fallback wiring** — CORS in `main.py` is hardcoded to
-  `http://localhost:5173`, so if something else already holds `:5173`,
-  Vite silently moves to `:5174` and every API call breaks with a CORS
-  error in the browser console, not an obviously-related one. Free
-  `:5173` first rather than chasing that error.
-- `make down` — stop and remove the Postgres/Qdrant containers.
-- `make install` — `uv sync` (backend) + `npm install` (frontend).
-- `make install-hooks` — symlinks `scripts/git-hooks/pre-push` into
-  `.git/hooks/pre-push`. Run this once per clone.
+  `http://localhost:5173` and `frontend/vite.config.ts` pins the dev
+  server there with `strictPort: true`, so `make up` checks `:5173` is
+  free *before* touching Docker and refuses immediately with an
+  actionable message if it's taken, rather than starting everything else
+  first and letting Vite fail after the fact.
+- `make down` — stop the Postgres/Qdrant containers; their data volumes
+  are kept.
+- `make reset` — `docker compose down -v`: stop the containers **and**
+  wipe their data volumes. Needed when a pull changes Qdrant's (or
+  Postgres's) schema and a volume from before that change is still on
+  disk — ingestion suddenly 500ing with a Qdrant error like `Not existing
+  vector name` is exactly this, since `make down` alone deliberately
+  leaves volumes in place. Re-seed afterwards.
 - `make lint` — `ruff check` (backend) + `eslint` (frontend).
 - `make typecheck` — `mypy` (backend) + `svelte-check`/`tsc` (frontend).
 - `make test` — `pytest` (backend) + `vitest run` (frontend). Fast, no-infra
@@ -102,6 +117,20 @@ Run from the repo root unless noted.
   `POST /documents` endpoint, proving local ingestion+chat work. Needs
   `make up` running (backend + Qdrant) — first run also downloads the
   embedding model.
+- `make seed-corpus` — generates the 10-doc synthetic policy corpus
+  (`synthetic-corpus/`) and ingests every PDF through the real
+  `POST /documents` endpoint, the same path `synthetic-corpus/README.md`
+  and `docs/rag-pipeline-walkthrough.md` describe by hand. Needs `make up`
+  running. Not idempotent by document identity — re-running adds a fresh
+  copy of each document, same as running the manual curl loop twice would.
+- `make seed-demo` — seeds a QMS standard/clauses/requirements, five demo
+  projects shaped like `ui-reference/QMS Console.dc.html` at varied risk
+  tiers and completion states, and a few published blog posts/FAQ entries
+  (`backend/scripts/seed_demo.py`), all through the real API. Idempotent —
+  matches existing records by name, so re-running is a safe no-op. Needs
+  `make up` running.
+- `make seed-all` — `seed` + `seed-corpus` + `seed-demo` in one command,
+  for the full demo experience from a clean database.
 - `make migrate` — applies Alembic migrations against Postgres. `make up`
   runs this automatically once Postgres is healthy, before starting the
   dev servers.

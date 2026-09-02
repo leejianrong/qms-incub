@@ -70,11 +70,15 @@ Requires Docker, [`uv`](https://docs.astral.sh/uv/), and Node 22+.
 ```bash
 git clone https://github.com/leejianrong/qms-incub.git
 cd qms-incub
-make install        # backend + frontend dependencies
+make install        # backend + frontend deps, plus a local .env for each from its .env.example
 make install-hooks  # pre-push hook — run once
-cp backend/.env.example backend/.env  # fill in an OpenRouter key if you want one (see Configuration)
 make up              # Postgres + Qdrant (Docker), backend, frontend :5173, in the foreground
 ```
+
+`make install`'s `.env` files default to `ollama`/local-embeddings/`bm25`/
+no-rerank — no API key needed, so this works out of the box on a fresh
+clone. Fill in `OPENROUTER_API_KEY` etc. afterwards if you want a hosted
+provider (see Configuration).
 
 `make up` prints which port it put the backend on — it tries `:8000` first
 and falls back to `:8001`, `:8002`, ... if something else on your machine
@@ -85,43 +89,35 @@ It wires the frontend's `VITE_API_BASE` to match automatically, so
 
 > **Frontend port must stay `:5173`.** The backend's CORS is currently
 > locked to `http://localhost:5173` (see `backend/src/qms_incub/main.py`)
-> — there's no equivalent fallback wiring for the *frontend's* port. If
-> something else already holds `:5173`, Vite will silently move to
-> `:5174` and every API call breaks with a CORS error in the browser
-> console. Free `:5173` first (`lsof -i :5173` / stop the other process)
-> rather than trying to work around it.
+> — there's no equivalent fallback wiring for the *frontend's* port, so
+> `make up` checks `:5173` before touching Docker and refuses immediately
+> with an actionable message if something else already holds it, rather
+> than starting everything else first and letting Vite fail later. Free
+> the port (`lsof -i :5173` / stop the other process) and re-run.
 
-In another terminal, seed a demo document (needs `make up` running):
+In another terminal, seed the demo data (needs `make up` running):
 
 ```bash
-make seed
+make seed-all   # the fixture doc, the 10-doc synthetic corpus, and the compliance/blog/FAQ demo data
 ```
 
-Open http://localhost:5173, click **Create project**, then use the
-floating **Ask QMS Assistant** widget on that project's page — chat is
-project-scoped (V8), so it always needs a project to ground against, even
-for a document-only question.
+Open http://localhost:5173 — the dashboard already has five demo projects
+at different risk tiers and stages of completion. Open one and use the
+floating **Ask QMS Assistant** widget — chat is project-scoped (V8), so it
+always needs a project to ground against, even for a document-only
+question.
+
+`make seed-all` runs three independent, idempotent-ish steps you can also
+run on their own — `make seed` (the single fixture doc), `make seed-corpus`
+(the 10-doc synthetic corpus), `make seed-demo` (the compliance/blog/FAQ
+data — genuinely idempotent, safe to re-run any time). See `make help` for
+the full target list.
 
 ## Try the full workflow
 
-The single seeded document is enough to prove ingestion+chat work, but the
-real demo needs the 10-document synthetic policy corpus and a classified
-project with generated todos:
-
-```bash
-# 1. Generate 10 realistic QMS-policy-shaped PDFs (no real/sensitive content — ADR-0012)
-cd synthetic-corpus && uv sync && uv run python scripts/generate.py && cd ..
-
-# 2. Ingest all of them the same way a real upload would (adjust the port if `make up` fell back)
-for f in synthetic-corpus/output/POL-*.pdf; do
-  curl -sf -F "file=@$f" http://localhost:8000/documents
-done
-```
-
-Then, in the console: **Create project** → walk the 3-step wizard
-(answer the classification questions to get a risk tier and a generated
-todo list, grouped by process step) → open the project and ask the chat
-widget a question that spans two policies, e.g.:
+`make seed-all` above already ingested the 10-document synthetic policy
+corpus and seeded five classified demo projects. In the console, open one
+of them and ask the chat widget a question that spans two policies, e.g.:
 
 > If a proposed change requires provisioning new access to a system
 > storing Confidential data, which policies apply and what does each one
@@ -156,8 +152,7 @@ Recall@k, MRR — against a 110-question gold set derived from the
 synthetic corpus:
 
 ```bash
-cp rag-eval/.env.example rag-eval/.env   # keep values identical to backend/.env — see the doc below
-cd rag-eval
+cd rag-eval   # make install already created rag-eval/.env — keep its values identical to backend/.env
 uv run python -m rag_eval.build_goldset   # (re)build the gold set, only if the corpus/chunking changed
 uv run python -m rag_eval                 # score retrieval: NDCG@k, Recall@k, MRR
 ```
@@ -192,6 +187,21 @@ Postgres). The ones worth knowing about up front:
 Postgres and Qdrant ports (`5433`, `6333`) are set in `docker-compose.yml`;
 5433 rather than Postgres's usual 5432 to avoid colliding with a Postgres
 already running on your machine.
+
+## Troubleshooting
+
+**`/documents` or `/chat` suddenly 500s after pulling latest, with Qdrant
+logging something like `Not existing vector name`.** A schema-changing
+pull (e.g. a renamed vector field) landed on top of a Qdrant volume from
+before that change — `make down` deliberately keeps Postgres/Qdrant data
+around, so an old collection schema can outlive the code that created it.
+Fix: `make reset` (wipes both volumes) then `make up` and re-seed
+(`make seed-all`).
+
+**Chat returns a 500 with `openai.NotFoundError: invalid_model`.** Your
+`backend/.env`'s model name for the active `LLM_PROVIDER` is stale — most
+often `ZENMUX_MODEL` left at a retired alias. Check the current default in
+`backend/.env.example` and update your `.env` to match.
 
 ## Contributing
 
