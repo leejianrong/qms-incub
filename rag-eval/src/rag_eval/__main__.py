@@ -1,10 +1,10 @@
 """CLI entry point for the retrieval eval harness (BM25, single cutoff).
 
-    uv run python -m qms_incub.eval [evals/retrieval_goldset.json]
+    uv run python -m rag_eval [evals/retrieval_goldset.json]
         [--k 3] [--no-rerank] [--json]
 
 With no gold-set path, defaults to ``evals/retrieval_goldset.json``. Build
-or refresh that file first with ``python -m qms_incub.eval.build_goldset``.
+or refresh that file first with ``python -m rag_eval.build_goldset``.
 """
 
 from __future__ import annotations
@@ -15,8 +15,8 @@ import sys
 from dataclasses import asdict
 from pathlib import Path
 
-from qms_incub.eval.dataset import load_goldset
-from qms_incub.eval.harness import DEFAULT_K, evaluate
+from rag_eval.dataset import load_goldset
+from rag_eval.harness import DEFAULT_K, evaluate
 
 _DEFAULT_GOLDSET = Path("evals/retrieval_goldset.json")
 
@@ -29,7 +29,7 @@ def _row(label: str, m: dict[str, float]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m qms_incub.eval")
+    parser = argparse.ArgumentParser(prog="python -m rag_eval")
     parser.add_argument(
         "goldset", type=Path, nargs="?", default=_DEFAULT_GOLDSET,
         help=f"path to the gold-set JSON (default: {_DEFAULT_GOLDSET})",

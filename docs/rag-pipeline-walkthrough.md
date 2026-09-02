@@ -77,11 +77,12 @@ Behind that endpoint, `ingestion/pipeline.py` does four things, in order:
    citations possible later.
 
 One detail that matters if you're going to re-run ingestion repeatedly,
-which an eval harness will: it's idempotent per `document_id`. Re-ingesting
-the same ID deletes its existing chunks first, so running the upload loop
-twice doesn't leave duplicate vectors sitting in Qdrant. `GET /documents`
-lists every document's ingestion status and chunk count, which is the
-quickest way to confirm all ten landed before querying anything.
+which `rag-eval/` (below) does: it's idempotent per `document_id`.
+Re-ingesting the same ID deletes its existing chunks first, so running the
+upload loop twice doesn't leave duplicate vectors sitting in Qdrant.
+`GET /documents` lists every document's ingestion status and chunk count,
+which is the quickest way to confirm all ten landed before querying
+anything.
 
 ## Stage 3: retrieval and chat
 
@@ -115,6 +116,22 @@ means citation accuracy doesn't depend on the model reliably following a
 citation format. A weaker or differently-prompted model can still produce
 answers whose citations are correct, because the citations never came from
 the model in the first place.
+
+## Scoring retrieval quality: `rag-eval/`
+
+Once the corpus above is ingested, `rag-eval/` (a standalone tool at the
+repo root, not part of `backend/`) scores retrieval against a 110-question
+gold set derived from `synthetic-corpus/rag_policy_compliance_qa.md`:
+
+```bash
+cd rag-eval
+uv run python -m rag_eval.build_goldset   # (re)build the gold set, if the corpus/chunking changed
+uv run python -m rag_eval                 # score retrieval: NDCG@k, Recall@k, MRR
+```
+
+It depends on `qms_incub` (a local `uv` path dependency on `backend/`) so
+it scores the real `RetrievalPort` implementation rather than a copy —
+unlike `synthetic-corpus/`, which shares no code with the backend at all.
 
 ## Where to look next
 

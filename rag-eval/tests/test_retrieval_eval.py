@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from qms_incub.eval.dataset import load_goldset
-from qms_incub.eval.metrics import dcg, ndcg_at_k, recall_at_k, reciprocal_rank
+from rag_eval.dataset import load_goldset
+from rag_eval.metrics import dcg, ndcg_at_k, recall_at_k, reciprocal_rank
 
 
 def test_dcg_matches_manual_computation() -> None:

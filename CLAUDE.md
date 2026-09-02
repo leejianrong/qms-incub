@@ -153,6 +153,13 @@ frontend/         Svelte + Vite app (src/), vitest tests colocated as *.test.ts
 synthetic-corpus/ Independent tool generating synthetic QMS-policy-shaped PDFs
                   to manually test the backend's RAG pipeline (ADR-0012).
                   Shares no code with backend/, doesn't call it over HTTP either.
+rag-eval/         Scores the backend's retrieval quality (NDCG/Recall/MRR)
+                  against a gold set derived from synthetic-corpus's Q&A
+                  pairs (`uv run python -m rag_eval`). Unlike
+                  synthetic-corpus, this *does* depend on qms_incub — a
+                  local `uv` path dependency on backend/ (see its
+                  pyproject.toml), since it scores the real RetrievalPort
+                  implementation rather than a stand-in.
 docs/adr/         Architecture decision records, numbered sequentially
 ui-reference/     Static design mock (QMS Console.dc.html) from the UI/UX
                   engineer — look-and-feel + workflow reference for the
