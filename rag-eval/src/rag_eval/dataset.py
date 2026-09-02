@@ -1,8 +1,8 @@
 """Gold-set loading for retrieval evaluation.
 
 The gold set is generated from ``synthetic-corpus/rag_policy_compliance_qa.md``
-by ``qms_incub.eval.build_goldset`` and lives at
-``backend/evals/retrieval_goldset.json``. Shape::
+by ``rag_eval.build_goldset`` and lives at
+``rag-eval/evals/retrieval_goldset.json``. Shape::
 
     {
       "meta": {...},

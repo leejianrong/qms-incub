@@ -23,9 +23,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from qms_incub.eval.dataset import EvalQuery
-from qms_incub.eval.metrics import ndcg_at_k, recall_at_k, reciprocal_rank
 from qms_incub.rag.factory import get_retrieval_port
+
+from rag_eval.dataset import EvalQuery
+from rag_eval.metrics import ndcg_at_k, recall_at_k, reciprocal_rank
 
 MODE = "bm25"  # the retrieval port is BM25-only; kept as a label for the report
 DEFAULT_K = 3

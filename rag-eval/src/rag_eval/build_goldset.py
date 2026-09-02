@@ -4,10 +4,10 @@ The source of truth is ``synthetic-corpus/rag_policy_compliance_qa.md`` (110
 Q&A pairs). This script turns each pair into a graded relevance judgement
 over the chunks that are *actually ingested in Qdrant*, and writes:
 
-- ``backend/evals/retrieval_goldset.json`` — the gold set the eval harness
+- ``rag-eval/evals/retrieval_goldset.json`` — the gold set the eval harness
   loads. Relevance is keyed ``"<document_title>::<chunk_index>"`` (both
   stable across re-ingestion, unlike the per-upload ``document_id``).
-- ``backend/evals/chunk_map.json`` — an audit trail: for every policy,
+- ``rag-eval/evals/chunk_map.json`` — an audit trail: for every policy,
   which chunk_index each section resolved to, and anything that didn't
   resolve. Not consumed by the harness; kept so the mapping is reviewable.
 
@@ -22,9 +22,10 @@ How a Q&A pair maps to chunks:
    section's source paragraphs (from ``synthetic-corpus/documents/POL-*.json``)
    against the ingested chunk text, plus a heading-scan fallback.
 
-Run from ``backend/`` with Qdrant up (``make up``)::
+Run from ``rag-eval/`` with Qdrant up (``make up``) and the synthetic
+corpus ingested::
 
-    uv run python -m qms_incub.eval.build_goldset
+    uv run python -m rag_eval.build_goldset
 """
 
 from __future__ import annotations
@@ -36,13 +37,12 @@ from pathlib import Path
 from typing import Any
 
 from qdrant_client import QdrantClient
-
 from qms_incub.config import settings
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 QA_MD = REPO_ROOT / "synthetic-corpus" / "rag_policy_compliance_qa.md"
 DOCS_DIR = REPO_ROOT / "synthetic-corpus" / "documents"
-EVALS_DIR = REPO_ROOT / "backend" / "evals"
+EVALS_DIR = REPO_ROOT / "rag-eval" / "evals"
 GOLDSET_OUT = EVALS_DIR / "retrieval_goldset.json"
 CHUNK_MAP_OUT = EVALS_DIR / "chunk_map.json"
 
