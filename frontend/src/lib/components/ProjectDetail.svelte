@@ -25,6 +25,7 @@
   import { projectCode } from "$lib/projectCards";
   import { getComments, postComment } from "$lib/discussionState.svelte";
   import { navigate, routeParam } from "$lib/router.svelte";
+  import { loadWizardPlan } from "$lib/wizardPlan";
 
   const apiBase = resolveApiBase(import.meta.env);
 
@@ -43,6 +44,61 @@
   let expandedStepId = $state<string | null>(null);
   let commentDraft = $state("");
 
+  // The create-project wizard stashes its generated "QMS plan" (steps +
+  // sub-steps) in sessionStorage before navigating here. When the backend
+  // project has no todos yet — this flow skips the classify step — drive
+  // the navigator from that plan instead of an empty backend step list.
+  const wizardPlan = $derived.by(() => {
+    void data;
+    return loadWizardPlan(projectId);
+  });
+  const useWizardPlan = $derived(!!data && data.todos.length === 0 && !!wizardPlan);
+
+  function synthTodo(stepIdx: number, subIdx: number, sub: string, stepLabel: string): TodoItem {
+    return {
+      id: `wiz:${stepIdx}:${subIdx}`,
+      project_id: projectId,
+      requirement_id: `wiz:${stepIdx}:${subIdx}`,
+      requirement_description: sub,
+      clause_text: stepLabel,
+      standard_name: "QMS plan",
+      status: "pending",
+      process_step_id: `wiz:${stepIdx}`,
+      approval_state: "not_required",
+      approval_authority: "",
+      sla_target: null,
+      decided_at: null,
+    };
+  }
+
+  const navSteps = $derived<ProcessStep[]>(
+    useWizardPlan && wizardPlan
+      ? wizardPlan.steps.map((s, i) => ({
+          id: `wiz:${i}`,
+          title: `${s.code}: ${s.title}`,
+          ordering: i,
+        }))
+      : steps,
+  );
+  const navTodos = $derived<TodoItem[]>(
+    useWizardPlan && wizardPlan
+      ? wizardPlan.steps.flatMap((s, si) =>
+          s.subs.map((sub, bi) => synthTodo(si, bi, sub, `${s.code}: ${s.title}`)),
+        )
+      : (data?.todos ?? []),
+  );
+  const compliedCount = $derived(navTodos.filter((t) => t.status === "complied").length);
+  const compliancePct = $derived(
+    navTodos.length === 0 ? 0 : Math.round((compliedCount / navTodos.length) * 100),
+  );
+  const selectedIsSynthetic = $derived(selectedTodoId?.startsWith("wiz:") ?? false);
+
+  $effect(() => {
+    if (expandedStepId === null && navSteps.length > 0) {
+      expandedStepId = navSteps[0].id;
+    }
+  });
+
   // Refetches this project's data without disturbing the user's current
   // selection — used both for the initial load and to refresh after an
   // artifact upload, where clearing the selected todo would hide the very
@@ -58,9 +114,9 @@
       .then(([project, processSteps]) => {
         data = project;
         steps = processSteps;
-        if (expandedStepId === null && processSteps.length > 0) {
-          expandedStepId = processSteps[0].id;
-        }
+        // expandedStepId's default is set by an $effect off navSteps so it
+        // works whether the navigator is backed by the process-step list
+        // or the wizard's stashed plan.
       })
       .catch((err) => (error = err instanceof Error ? err.message : String(err)));
   }
@@ -98,7 +154,7 @@
   };
 
   function todosForStep(stepId: string): TodoItem[] {
-    return data?.todos.filter((t) => t.process_step_id === stepId) ?? [];
+    return navTodos.filter((t) => t.process_step_id === stepId);
   }
 
   function stepProgress(stepId: string): { done: number; total: number } {
@@ -110,7 +166,7 @@
     return todosForStep(stepId).some((t) => t.approval_state === "returned");
   }
 
-  const selectedTodo = $derived(data?.todos.find((t) => t.id === selectedTodoId) ?? null);
+  const selectedTodo = $derived(navTodos.find((t) => t.id === selectedTodoId) ?? null);
 
   function selectTodo(todo: TodoItem) {
     selectedTodoId = todo.id;
@@ -172,12 +228,11 @@
         <div class="h-2.5 flex-1 rounded-full bg-muted">
           <div
             class="h-2.5 rounded-full bg-gradient-to-r from-[var(--color-accent-500)] to-primary"
-            style={`width: ${Math.round(data.compliance_percentage)}%`}
+            style={`width: ${compliancePct}%`}
           ></div>
         </div>
         <div class="font-heading text-xs font-medium whitespace-nowrap">
-          {Math.round(data.compliance_percentage)}% · {data.todos.filter((t) => t.status === "complied").length}/{data
-            .todos.length} sub-steps
+          {compliancePct}% · {compliedCount}/{navTodos.length} sub-steps
         </div>
       </div>
     </header>
@@ -195,7 +250,7 @@
             <div class="min-w-0 flex-1">
               <div class="text-[9.5px] tracking-widest text-primary uppercase">QMS plan</div>
               <div class="mt-0.5 text-[11px] text-muted-foreground">
-                {data.todos.filter((t) => t.status === "complied").length}/{data.todos.length} sub-steps done
+                {compliedCount}/{navTodos.length} sub-steps done
               </div>
             </div>
           {/if}
@@ -216,7 +271,7 @@
 
         {#if navigatorCollapsed}
           <div class="flex flex-col items-center gap-1 py-3">
-            {#each steps as step, i (step.id)}
+            {#each navSteps as step, i (step.id)}
               {@const Icon = stepIcon(i)}
               {@const attention = stepNeedsAttention(step.id)}
               <button
@@ -240,7 +295,7 @@
           </div>
         {:else}
           <ul>
-            {#each steps as step, i (step.id)}
+            {#each navSteps as step, i (step.id)}
               {@const progress = stepProgress(step.id)}
               {@const pct = progress.total === 0 ? 0 : Math.round((progress.done / progress.total) * 100)}
               {@const attention = stepNeedsAttention(step.id)}
@@ -337,7 +392,12 @@
                   {route.statusText} · {route.authority}{route.slaText ? ` · ${route.slaText}` : ""}
                 </p>
               {/if}
-              {#if selectedTodo.status === "pending"}
+              {#if selectedIsSynthetic}
+                <p class="text-sm text-muted-foreground">
+                  Generated from the QMS plan. Evidence upload opens once this project's control set
+                  is finalised.
+                </p>
+              {:else if selectedTodo.status === "pending"}
                 <input
                   type="file"
                   id={`artifact-${selectedTodo.id}`}
