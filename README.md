@@ -45,15 +45,26 @@ this is welcome; nothing here is locked in.
 ```mermaid
 flowchart LR
     subgraph Browser
-        FE[Svelte + Vite<br/>:5173]
+        UA[Single origin<br/>:5173]
     end
-    subgraph "Local host / Docker (make up)"
-        FE -->|HTTP| BE[FastAPI<br/>:8000+]
-        BE --> PG[(PostgreSQL<br/>:5433)]
-        BE --> QD[(Qdrant<br/>:6333)]
-        BE -->|RAG + LLM| LLM[OpenRouter / Ollama / ZenMux]
+    subgraph "Docker Compose (make up)"
+        UA -->|"/"| PX[nginx proxy]
+        UA -->|"/api/*"| PX
+        PX --> FE[Svelte + Vite]
+        PX --> BE[FastAPI]
+        BE --> PG[(PostgreSQL)]
+        BE --> QD[(Qdrant)]
+        BE -->|RAG + LLM| LLM[OpenRouter / ZenMux]
     end
 ```
+
+Everything — Postgres, Qdrant, the FastAPI backend, the Svelte/Vite
+frontend, and an nginx reverse proxy — runs in Docker Compose (ADR-0017).
+The proxy is the only container that publishes a port to the host: it
+routes `/` to the frontend dev server (HMR included) and `/api/*` to the
+backend, so the browser only ever talks to one origin and CORS never
+comes into play. A port already taken is a one-line `.env` edit
+(`APP_PORT`), not a code change.
 
 The backend only ever ingests documents and answers questions grounded in
 them and in a project's compliance state — it never authors or generates
@@ -65,35 +76,41 @@ over HTTP either.
 
 ## Quick start
 
-Requires Docker, [`uv`](https://docs.astral.sh/uv/), and Node 22+.
+Requires Docker (with Compose) and [`uv`](https://docs.astral.sh/uv/) +
+Node 22+ for `make install`/`make test`/lint/typecheck — the app itself
+runs entirely in containers, but those two toolchains still need to exist
+on your host for the fast, no-infra checks (`make test`, `make lint`,
+`make typecheck`) that don't need `make up` running at all.
 
 ```bash
 git clone https://github.com/leejianrong/qms-incub.git
 cd qms-incub
 make install        # backend + frontend deps, plus a local .env for each from its .env.example
 make install-hooks  # pre-push hook — run once
-make up              # Postgres + Qdrant (Docker), backend, frontend :5173, in the foreground
+make up              # the whole stack, in the foreground — see ADR-0017
 ```
 
-`make install`'s `.env` files default to `ollama`/local-embeddings/`bm25`/
-no-rerank — no API key needed, so this works out of the box on a fresh
-clone. Fill in `OPENROUTER_API_KEY` etc. afterwards if you want a hosted
-provider (see Configuration).
+`make install` creates a root `.env` (just `APP_PORT`, default `5173`)
+alongside the backend/frontend/rag-eval ones. **You need a real
+`OPENROUTER_API_KEY` (or `ZENMUX_API_KEY` during the Q39 promotional
+window — see Configuration) in `backend/.env` before `/chat` will work** —
+`LLM_PROVIDER` defaults to `openrouter` rather than a zero-key local
+`ollama`, because the Dockerized backend has no route to a host-run Ollama
+(ADR-0017). `EMBEDDING_PROVIDER`/`RETRIEVAL_MODE`/reranking stay
+zero-key/local as before.
 
-`make up` prints which port it put the backend on — it tries `:8000` first
-and falls back to `:8001`, `:8002`, ... if something else on your machine
-already owns it (watch for a line like `Backend will run on port 8001`).
-It wires the frontend's `VITE_API_BASE` to match automatically, so
-`:5173` keeps working either way. `Ctrl+C` stops both dev servers;
-`make down` also stops the Postgres/Qdrant containers.
+`make up` runs `docker compose up --build` for the full stack — Postgres,
+Qdrant, a one-shot migration step, the backend, the frontend, and an
+nginx proxy — and streams all of their logs. `Ctrl+C` stops everything;
+`make down` also removes the containers.
 
-> **Frontend port must stay `:5173`.** The backend's CORS is currently
-> locked to `http://localhost:5173` (see `backend/src/qms_incub/main.py`)
-> — there's no equivalent fallback wiring for the *frontend's* port, so
-> `make up` checks `:5173` before touching Docker and refuses immediately
-> with an actionable message if something else already holds it, rather
-> than starting everything else first and letting Vite fail later. Free
-> the port (`lsof -i :5173` / stop the other process) and re-run.
+> **A port already taken is now a one-line `.env` edit, not a hard
+> failure.** Only one container (the nginx proxy) publishes a port to the
+> host, and it's controlled by `APP_PORT` in the root `.env`
+> (default `5173`) — change it and re-run `make up` if something else on
+> your machine already owns `5173`. Nothing inside the Docker network is
+> port-sensitive: the frontend, backend, Postgres, and Qdrant all reach
+> each other by service name regardless of what's free on the host.
 
 In another terminal, seed the demo data (needs `make up` running):
 
@@ -167,8 +184,7 @@ ZenMux embeddings/reranking instead of the local/BM25 defaults.
 > **2026-09-01 through 2026-09-05 only:** prefer `LLM_PROVIDER=zenmux` — a
 > ZenMux API key was sent to the team separately for this promotional
 > window (Q39, `QUESTIONS.md`). From 2026-09-06, this lapses automatically;
-> go back to `openrouter` (preferred) or `ollama`, whichever you'd use
-> normally.
+> go back to `openrouter` (the default either way — see below).
 
 Every variable is documented where it's read: `backend/.env.example` for
 the backend and `rag-eval/.env.example` for the eval tool (a subset of the
@@ -177,16 +193,19 @@ Postgres). The ones worth knowing about up front:
 
 | Variable | Where | Default | Purpose |
 |----------|-------|---------|---------|
-| `VITE_API_BASE` | `frontend/.env.local` (see `.env.example`) | `http://localhost:8000` | Where the frontend looks for the backend — `make up` sets this for you |
-| `LLM_PROVIDER` | `backend/.env` | `ollama` | `ollama` (local, no key), `openrouter` (ADR-0003's decided default — needs `OPENROUTER_API_KEY`), or `zenmux` (needs `ZENMUX_API_KEY` — promotional window only, see above) |
+| `APP_PORT` | root `.env` (see `.env.example`) | `5173` | The one port `make up` publishes to the host (the nginx proxy) — change this if it's already taken (ADR-0017) |
+| `VITE_API_BASE` | `frontend/.env.local` (see `.env.example`) | `http://localhost:8000` | Host-only `make frontend-dev` default. `make up`'s Dockerized frontend overrides this to `/api` (proxy-routed) directly in `docker-compose.yml` |
+| `LLM_PROVIDER` | `backend/.env` | `openrouter` | `openrouter` (ADR-0003's decided default — needs `OPENROUTER_API_KEY`) or `zenmux` (needs `ZENMUX_API_KEY` — promotional window only, see above). `ollama` also works, but only via the host-only `make backend-dev` path — the Dockerized backend has no route to a host-run Ollama (ADR-0017) |
 | `EMBEDDING_PROVIDER` | `backend/.env` | `local` | `local` runs a small HuggingFace model in-process, no key needed. `openrouter`/`zenmux` call a hosted `/embeddings` endpoint instead. **Switching this requires re-ingesting the corpus** — it changes vector dimensionality, unlike `RETRIEVAL_MODE` |
 | `RETRIEVAL_MODE` | `backend/.env` | `bm25` | `bm25` (sparse lexical) or `vector` (dense, via `EMBEDDING_PROVIDER`) — hot-swappable, no re-ingest needed |
 | `RERANKER_PROVIDER` | `backend/.env` | `none` | `none`, `zenmux` (hosted cross-encoder), or `llm` (prompts whichever `LLM_PROVIDER` is already set) |
 | `OPENROUTER_API_KEY` / `ZENMUX_API_KEY` | `backend/.env` | unset | Required only when the matching provider above is selected |
 
-Postgres and Qdrant ports (`5433`, `6333`) are set in `docker-compose.yml`;
-5433 rather than Postgres's usual 5432 to avoid colliding with a Postgres
-already running on your machine.
+Postgres and Qdrant still publish `5433`/`6333` to the host (for direct
+`psql`/Qdrant-dashboard access) — 5433 rather than Postgres's usual 5432
+to avoid colliding with a Postgres already running on your machine — but
+the backend reaches both over the Docker Compose network by service name
+(`postgres`, `qdrant`) regardless of what's free on the host.
 
 ## Troubleshooting
 

@@ -32,6 +32,7 @@ no HTTP dependency on the backend either.
 | Database (PostgreSQL) | `policy_documents` (V1/V4), V6's `blog_posts`/`faq_entries`, plus V2's `compliance_standards`/`clauses`/`requirements`/`projects`/`todo_items`, V3's `artifacts`, V9's `projects.aor_filename`/`aor_extracted_fields` (`projects.risk_tier` now nullable), V10's `process_steps` table plus `requirements.process_step_id`/`todo_items.process_step_id`, and V11's `todo_items.approval_state`/`approval_authority`/`sla_target`/`decided_at` — Alembic-managed, see `backend/migrations/` |
 | Vector store (Qdrant) | In real use since V1 — collection `qms_incub_corpus`, see `qms_incub.rag_clients` |
 | `synthetic-corpus/` | Independent tool generating realistic QMS-policy-shaped PDFs to manually test the backend's RAG pipeline. No shared code with `backend/`, no HTTP call to it either — its output is PDF files on disk; testing them against the backend is a manual upload-and-ask step. See `docs/shaping/synthetic-doc-realism/` for its own planning |
+| Local infra: full containerization (ADR-0017) | Backend, frontend, Postgres, and Qdrant all run in Docker Compose, plus an nginx proxy (`nginx/default.conf`) that's the only container publishing a port to the host (`APP_PORT`) — routes `/` to the Vite dev server (HMR passed through) and `/api/*` to the backend, so the browser only ever sees one origin and CORS never comes into play. `make up` = `docker compose up --build` for the whole stack. `backend-dev`/`frontend-dev` remain as host-only Makefile targets (native debugger, or `ollama` — see Stack, below) |
 | Everything else in PLAN.md / SLICES.md | **Not built yet.** |
 
 If you're about to implement a slice, check this table (and `git log`)
@@ -48,13 +49,15 @@ HuggingFace model, no API key, no GPU needed) or a hosted OpenAI-compatible
 `/embeddings` endpoint (`openrouter`/`zenmux`) for a machine you'd rather
 not run a local model on. LLM is provider-swappable — Ollama for local dev,
 OpenRouter as ADR-0003's decided default otherwise (Q37) — see Secrets
-below.
+below. **`ollama` only works via the host-only `make backend-dev` path**
+— the Dockerized `make up` backend has no route to a host-run Ollama
+(ADR-0017), so `backend/.env.example`'s default is `openrouter`.
 
 **2026-09-01 through 2026-09-05 only (Q39):** prefer `LLM_PROVIDER=zenmux`
 — a ZenMux API key was distributed to the team separately for this
 promotional window. This lapses automatically from 2026-09-06; go back to
-`openrouter` (preferred) or `ollama` after that date, same as before this
-note existed. Doesn't change Q37's decision or ADR-0003.
+`openrouter` after that date, same as before this note existed. Doesn't
+change Q37's decision or ADR-0003.
 
 ## Secrets
 
@@ -78,27 +81,25 @@ Run from the repo root unless noted.
 - `make install` — `uv sync` (backend) + `npm install` (frontend), plus a
   one-time `make env` (below). Safe to run repeatedly.
 - `make env` — copies each `.env.example` to its real `.env`
-  (`backend/.env`, `frontend/.env.local`, `rag-eval/.env`) wherever one
-  doesn't already exist yet; never overwrites a real one. Defaults need no
-  API key (`ollama`/local embeddings/`bm25`/no rerank), so a fresh clone
-  works before anyone fills in a real provider key. `make install` and
-  `make up` both depend on this, so you rarely need to run it directly.
+  (root `.env`, `backend/.env`, `frontend/.env.local`, `rag-eval/.env`)
+  wherever one doesn't already exist yet; never overwrites a real one.
+  Root `.env` just sets `APP_PORT` (default `5173`). `backend/.env`'s
+  default `LLM_PROVIDER=openrouter` needs a real `OPENROUTER_API_KEY` (or
+  `ZENMUX_API_KEY` during the Q39 window) before `/chat` works — see
+  Stack, above, and ADR-0017. `make install` and `make up` both depend on
+  this, so you rarely need to run it directly.
 - `make install-hooks` — symlinks `scripts/git-hooks/pre-push` into
   `.git/hooks/pre-push`. Run this once per clone.
-- `make up` — start Postgres + Qdrant (Docker), then the FastAPI backend
-  (`:8000`, falling back to `:8001`, `:8002`, ... if that port's already
-  taken — watch the output for which port it picked, and the Vite dev
-  server's `VITE_API_BASE` is wired to match automatically) and the Vite
-  dev server (`:5173`) in the foreground. Ctrl+C stops both dev servers;
-  containers stay running. **The frontend's port has no equivalent
-  fallback wiring** — CORS in `main.py` is hardcoded to
-  `http://localhost:5173` and `frontend/vite.config.ts` pins the dev
-  server there with `strictPort: true`, so `make up` checks `:5173` is
-  free *before* touching Docker and refuses immediately with an
-  actionable message if it's taken, rather than starting everything else
-  first and letting Vite fail after the fact.
-- `make down` — stop the Postgres/Qdrant containers; their data volumes
-  are kept.
+- `make up` — `docker compose up --build` for the whole stack: Postgres,
+  Qdrant, a one-shot Alembic-migration service, the FastAPI backend, the
+  Vite dev server, and an nginx proxy (`nginx/default.conf`), in the
+  foreground (ADR-0017). The proxy is the *only* container publishing a
+  port to the host — `APP_PORT` (root `.env`, default `5173`) — routing
+  `/` to the frontend (HMR included) and `/api/*` to the backend, so the
+  browser only ever sees one origin and CORS never comes into play. A
+  port already taken is a one-line `APP_PORT` edit, not a code change.
+  Ctrl+C stops everything; `make down` also removes the containers.
+- `make down` — stop all containers; their data volumes are kept.
 - `make reset` — `docker compose down -v`: stop the containers **and**
   wipe their data volumes. Needed when a pull changes Qdrant's (or
   Postgres's) schema and a volume from before that change is still on
@@ -115,9 +116,9 @@ Run from the repo root unless noted.
   or `-m e2e` from `backend/`.
 - `make seed` — uploads a fixture PDF
   (`backend/tests/fixtures/sample_policy_document.pdf`) through the real
-  `POST /documents` endpoint, proving local ingestion+chat work. Needs
-  `make up` running (backend + Qdrant) — first run also downloads the
-  embedding model.
+  `POST /documents` endpoint (via the proxy's `/api` prefix), proving
+  local ingestion+chat work. Needs `make up` running — first run also
+  downloads the embedding model.
 - `make seed-corpus` — generates the 10-doc synthetic policy corpus
   (`synthetic-corpus/`) and ingests every PDF through the real
   `POST /documents` endpoint, the same path `synthetic-corpus/README.md`
@@ -132,9 +133,11 @@ Run from the repo root unless noted.
   `make up` running.
 - `make seed-all` — `seed` + `seed-corpus` + `seed-demo` in one command,
   for the full demo experience from a clean database.
-- `make migrate` — applies Alembic migrations against Postgres. `make up`
-  runs this automatically once Postgres is healthy, before starting the
-  dev servers.
+- `make migrate` — runs the `migrate` service (`docker compose run --rm
+  migrate`) to apply Alembic migrations against Postgres by hand, without
+  restarting the stack. `make up` already runs this automatically, once,
+  before the backend starts (`migrate` service in `docker-compose.yml`,
+  ADR-0017).
 
 Backend-only, from `backend/`: `uv run alembic revision --autogenerate -m
 "..."` after changing a model in `models.py`, then `uv run alembic upgrade
@@ -142,7 +145,9 @@ head` — review the generated migration before committing it, autogenerate
 doesn't catch everything (renames, some constraint changes).
 
 Backend-only, from `backend/`: `uv run pytest -q`, `uv run ruff check .`,
-`uv run mypy src`, `uv run uvicorn qms_incub.main:app --reload --port 8000`.
+`uv run mypy src`, `uv run uvicorn qms_incub.main:app --reload --port 8000`
+(the last one is what `make backend-dev` runs — host-only, e.g. for a
+native debugger or `LLM_PROVIDER=ollama`, see Stack above).
 
 Frontend-only, from `frontend/`: `npm run test`, `npm run lint`,
 `npm run check`, `npm run dev`, `npm run build`.
@@ -204,6 +209,10 @@ ui-reference/     Static design mock (QMS Console.dc.html) from the UI/UX
                   engineer — look-and-feel + workflow reference for the
                   console frontend (SLICES.md V9-V13). Not shipped code.
 scripts/          git-hooks/pre-push — the fast local gate
+nginx/            default.conf — the single-origin dev proxy `make up`
+                  runs in front of everything (ADR-0017).
+docker-compose.yml  Postgres, Qdrant, backend, frontend, migrate, proxy —
+                    the whole local stack, brought up by `make up`.
 ```
 
 ## Docs map — read these before planning new work

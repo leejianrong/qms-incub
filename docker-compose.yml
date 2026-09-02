@@ -8,6 +8,9 @@ services:
     ports:
       # Host-side 5433, not 5432 — 5432 collides with a locally-installed
       # Postgres on plenty of laptops. Container-internal port is unchanged.
+      # Kept published for direct psql access; the backend reaches this
+      # container over the compose network by service name instead
+      # (postgres:5432), so this mapping no longer matters to app wiring.
       - "5433:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -20,10 +23,90 @@ services:
   qdrant:
     image: qdrant/qdrant:latest
     ports:
+      # Kept published for the Qdrant dashboard/API from the host; the
+      # backend reaches this container by service name (qdrant:6333).
       - "6333:6333"
     volumes:
       - qdrant-data:/qdrant/storage
 
+  # One-shot: applies Alembic migrations, then exits. `backend` waits for
+  # this to finish successfully before starting (ADR-0017) — replaces the
+  # old Makefile bash loop that polled Postgres's healthcheck by hand.
+  migrate:
+    build: ./backend
+    # Same tag as `backend` below -- they share a Dockerfile, so this
+    # keeps Compose from building (and storing) two identical images.
+    image: qms-incub-backend
+    # --no-dev: without it, `uv run`'s implicit sync re-installs the dev
+    # dependency group (mypy/ruff/pytest) into the image's venv at every
+    # container start, even though the image was built with --no-dev.
+    command: ["uv", "run", "--no-dev", "alembic", "upgrade", "head"]
+    env_file:
+      - backend/.env
+    environment:
+      DATABASE_URL: postgresql+psycopg://qms_incub:qms_incub@postgres:5432/qms_incub
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    build: ./backend
+    image: qms-incub-backend
+    volumes:
+      - ./backend:/app
+      # Named volume, not the bind mount above, so downloaded HuggingFace/
+      # Docling models survive `docker compose down` and aren't re-fetched
+      # on every `docker compose up --build`.
+      - backend-cache:/root/.cache
+    env_file:
+      - backend/.env
+    environment:
+      # Compose-network service names, not the localhost defaults in
+      # backend/.env.example (those still serve the host-only
+      # backend-dev/frontend-dev path, see AGENTS.md).
+      DATABASE_URL: postgresql+psycopg://qms_incub:qms_incub@postgres:5432/qms_incub
+      QDRANT_URL: http://qdrant:6333
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      qdrant:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  frontend:
+    build: ./frontend
+    volumes:
+      - ./frontend:/app
+      # Anonymous volume: keeps the image's installed node_modules from
+      # being shadowed by the bind mount above (the host doesn't need its
+      # own node_modules for this to work).
+      - /app/node_modules
+    environment:
+      # Relative to whatever origin loads the page — the `proxy` service
+      # forwards /api/* to the backend, so this works regardless of
+      # APP_PORT. See nginx/default.conf and ADR-0017.
+      VITE_API_BASE: /api
+    depends_on:
+      - backend
+
+  # The only service that publishes a port to the host (ADR-0017) — single
+  # origin for the browser, so CORS never comes into play, and a busy port
+  # is a one-line APP_PORT edit in .env instead of a code change.
+  proxy:
+    image: nginx:1.27-alpine
+    ports:
+      - "${APP_PORT:-5173}:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+      - frontend
+
 volumes:
   postgres-data:
   qdrant-data:
+  backend-cache:

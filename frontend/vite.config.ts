@@ -19,5 +19,10 @@ export default defineConfig({
     // that doesn't obviously point back here — fail loudly instead.
     port: 5173,
     strictPort: true,
+    // Bind all interfaces, not just localhost — inside the `frontend`
+    // container (ADR-0017) the nginx `proxy` service reaches this by its
+    // Docker-network hostname, which only works if Vite listens on more
+    // than the container's own loopback. Harmless for host-based dev too.
+    host: true,
   },
 })
